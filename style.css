@@ -64,6 +64,14 @@ h1 {
   font-size: 21px;
 }
 
+.idea .sig {
+  text-align: right;
+  font-family: 'Caveat', cursive;
+  font-size: 24px;
+  color: #555;
+  transform: rotate(-2deg);
+}
+
 .note {
   position: absolute;
   top: 130px;
