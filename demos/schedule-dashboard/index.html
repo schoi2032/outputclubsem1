@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sked Dashboard Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="top">
+  <div class="logo">🗓️ Sked</div>
+  <div class="top-links">
+    <a href="#">Week</a>
+    <a href="#">Home</a>
+    <a href="cli.html">CLI version</a>
+    <span class="bell">🔔</span>
+    <span class="me"><span class="av small">TE</span> Taeyang</span>
+  </div>
+</nav>
+
+<div class="subnav">
+  <div class="subnav-inner">
+    <span class="who"><span class="av small">TE</span> Taeyang E.</span>
+    <a href="#" class="on">Today</a>
+    <a href="#">Classes</a>
+    <a href="#">Clubs</a>
+    <a href="#">Tests</a>
+    <button class="edit">✎ Edit schedule</button>
+  </div>
+</div>
+
+<main class="wrap">
+
+  <aside class="card profile">
+    <div class="big-av">TE</div>
+    <h2>Taeyang E.</h2>
+    <p class="grade">Grade 10, Output Club</p>
+    <p class="muted">You havent connected Google Classroom yet.</p>
+
+    <hr>
+
+    <p class="label">Right now</p>
+    <div class="now">
+      <div class="now-icon">📘</div>
+      <div>
+        <span class="pill">● AP World History</span>
+        <p class="muted small-text">Room 214, ends at 10:35<br>Chemistry is next in B wing</p>
+      </div>
+    </div>
+
+    <hr>
+
+    <p class="label">Connected</p>
+    <p>Google Calendar ✓</p>
+    <p>School portal ✓</p>
+    <p class="muted">Canvas (not yet)</p>
+  </aside>
+
+  <section class="right">
+
+    <div class="stats">
+      <div class="stat orange">
+        <div class="stat-icon">6</div>
+        <div>
+          <p class="stat-label">Classes today</p>
+          <p class="stat-num">6</p>
+        </div>
+      </div>
+      <div class="stat green">
+        <div class="stat-icon">📝</div>
+        <div>
+          <p class="stat-label">Next test</p>
+          <p class="stat-num">Thu</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>This week</h3>
+      <p class="label">Tests coming up <a href="#">See all</a></p>
+      <div class="tests">
+        <div class="test">
+          <div class="medal red">!</div>
+          <div>
+            <p class="test-name">Chemistry Unit 2 Test</p>
+            <p class="muted small-text">Thursday, period 3</p>
+          </div>
+        </div>
+        <div class="test">
+          <div class="medal gray">?</div>
+          <div>
+            <p class="test-name">Spanish vocab quiz</p>
+            <p class="muted small-text">Friday, period 5</p>
+          </div>
+        </div>
+      </div>
+
+      <p class="label">Clubs <a href="#">See all</a></p>
+      <div class="badges">
+        <span class="badge">💻</span>
+        <span class="badge">🎨</span>
+        <span class="badge">🏀</span>
+        <span class="badge">♟️</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Today's schedual</h3>
+      <div class="rows">
+        <div class="row done">
+          <span class="time">8:00</span>
+          <span class="what">English 10</span>
+          <span class="where">Room 108</span>
+          <span class="check">✓</span>
+        </div>
+        <div class="row done">
+          <span class="time">8:55</span>
+          <span class="what">Geometry</span>
+          <span class="where">Room 301</span>
+          <span class="check">✓</span>
+        </div>
+        <div class="row now-row">
+          <span class="time">9:50</span>
+          <span class="what">AP World History</span>
+          <span class="where">Room 214</span>
+          <span class="check">now</span>
+        </div>
+        <div class="row">
+          <span class="time">10:45</span>
+          <span class="what">Chemistry</span>
+          <span class="where">B wing lab</span>
+          <span class="check"></span>
+        </div>
+        <div class="row">
+          <span class="time">12:20</span>
+          <span class="what">Spanish 2</span>
+          <span class="where">Room 119</span>
+          <span class="check"></span>
+        </div>
+        <div class="row club">
+          <span class="time">3:15</span>
+          <span class="what">Output Club meeting</span>
+          <span class="where">Library</span>
+          <span class="check">🔔</span>
+        </div>
+      </div>
+    </div>
+
+  </section>
+</main>
+
+<p class="demo-note">This is just a demo so none of the buttons do anything yet. Its all fake data for now.</p>
+
+</body>
+</html>
