@@ -1,1 +1,1 @@
-# outputclubsem1 app making
+### Output Club Semester 1 Github Repo
