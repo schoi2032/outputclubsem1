@@ -1,1 +1,5 @@
 .vercel
+node_modules
+.DS_Store
+**/supabase/.temp
+sked/quick chat.txt
