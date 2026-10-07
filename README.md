@@ -1,6 +1,6 @@
 ### Output Club 2026
 
-##Current Project and future goals
+## Current Project and future goals
 This is a checklist to see how far we have gotten :)
 - [x] Split Roles
 - [ ] Reportable Messages/Users
