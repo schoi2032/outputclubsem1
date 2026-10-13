@@ -51,5 +51,5 @@ The new app lives in `wicky/`. Its a fresh start, the old `sked` and `chat` stuf
 3. Add the env vars to Vercel and test the whole thing with real accounts.
 4. Real frontend for everything the temp UI skips (stickers, images, reports, settings, mod pages, wiki).
 
-The checklist boxes up top stay unchecked untill the frontend is done too.
+Most of the checklist boxes up top stay unchecked untill the frontend is done too, even tho the backend for them works.
 
