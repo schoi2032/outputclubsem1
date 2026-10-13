@@ -10,7 +10,7 @@ This is a checklist to see how far we have gotten :)
 - [ ] Should have its own AI WICKYpedia
 - [ ] Custom GIFs and Stickers of WICKY
 - [ ] Tag AI-Generated Messages
-- [ ] Prevents Spam by blocking messages that are sent 2-3 times in a row by the same user
+- [x] Prevents Spam by blocking messages that are sent 2-3 times in a row by the same user
 - [ ] No AI-Slop Stickers or GIF
 - [ ] Decent AI Moderation (self-trained)
 - [ ] Intuitive UI & UX
@@ -19,8 +19,6 @@ This is a checklist to see how far we have gotten :)
 - [ ] Teachers are automatically prompted to Owner/Manager of chat
 - [ ] Students can create there own stickers that go through AI moderation
 - [ ] All Images go through AI moderation
-
-[demos/notes/lol.md](demos/notes/lol.md)
 
 ## Where we left off (Oct 13 2026)
 
