@@ -1,1 +1,0 @@
-Just to clarify, I’m not leaving the coding club because shane told me to. If there’s an actual issue with my attitude or contributions, the club supervisor can handle it. Until then, I’m here to code. Removing me from the group chat doesn’t exactly change that lol.
