@@ -19,5 +19,3 @@ This is a checklist to see how far we have gotten :)
 - [ ] Teachers are automatically prompted to Owner/Manager of chat
 - [ ] Students can create there own stickers that go through AI moderation
 - [ ] All Images go through AI moderation
-
-[demos/notes/lol.md](demos/notes/lol.md) 
