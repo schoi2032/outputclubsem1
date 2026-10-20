@@ -12,7 +12,7 @@ This is a checklist to see how far we have gotten :)
 - [ ] Tag AI-Generated Messages
 - [x] Prevents Spam by blocking messages that are sent 2-3 times in a row by the same user
 - [ ] No AI-Slop Stickers or GIF
-- [ ] Decent AI Moderation (self-trained)
+- [ ] Decent AI Moderation (self-trained) (woojin go is going to do)
 - [ ] Intuitive UI & UX
 - [ ] Customizability for ===POWER USERS===
 - [ ] Home Screen with unread chat messages
