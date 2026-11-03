@@ -4,7 +4,7 @@
 This is a checklist to see how far we have gotten :)
 - [x] Split Roles
 - [ ] Reportable Messages/Users
-- [ ] Swear word censor
+- [ ] Swear word censor: Isaac, Eric
 - [ ] Doesn’t allow chat that has more than the 3 people (unless has a teacher)
 - [ ] Can make a chat with ourselves
 - [ ] Should have its own AI WICKYpedia
