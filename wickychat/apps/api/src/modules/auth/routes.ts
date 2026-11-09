@@ -28,7 +28,7 @@ import { renderEmail } from '../../adapters/email'
 import { clearSessionCookie, createSession, requireUser, SESSION_COOKIE } from '../../core/auth'
 import type { AppContext } from '../../core/context'
 import { randomToken, sha256 } from '../../core/crypto'
-import { badRequest, forbidden, notFound, unauthorized } from '../../core/errors'
+import { badRequest, conflict, forbidden, notFound, unauthorized } from '../../core/errors'
 import { type App, authRateLimit, idParams } from '../../core/http'
 import { isPlatformAdmin } from '../../core/platform'
 import { assertSchoolEmail } from '../../core/school'
@@ -168,6 +168,10 @@ export async function authRoutes(app: App, ctx: AppContext) {
         where: sql`lower(${users.email}) = ${email}`,
         columns: { id: true, name: true, isBot: true },
       })
+      if (existing && ctx.config.SKIP_EMAIL_VERIFICATION) {
+        // No email service to tell the owner, so say it plainly.
+        throw conflict('An account with this email already exists. Sign in instead.')
+      }
       if (existing) {
         // Don't reveal that the account exists; tell the owner by email instead.
         await ctx.email.send({
@@ -202,13 +206,18 @@ export async function authRoutes(app: App, ctx: AppContext) {
           email,
           name,
           passwordHash: await hash(password),
-          emailVerifiedAt: invite ? new Date() : null,
+          emailVerifiedAt: invite || ctx.config.SKIP_EMAIL_VERIFICATION ? new Date() : null,
           termsAcceptedAt: new Date(),
         })
         .returning()
 
       if (invite && inviteToken) {
         await acceptInvitation(ctx, inviteToken, user!.id, req.ip)
+        await createSession(ctx, req, reply, user!.id)
+        return reply.code(201).send({ status: 'signed_in' as const })
+      }
+
+      if (ctx.config.SKIP_EMAIL_VERIFICATION) {
         await createSession(ctx, req, reply, user!.id)
         return reply.code(201).send({ status: 'signed_in' as const })
       }

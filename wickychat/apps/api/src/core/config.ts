@@ -71,6 +71,11 @@ const schema = z
 
     /** Allow anyone to register. Invites always work. */
     OPEN_REGISTRATION: bool.default(true),
+    /**
+     * TEMPORARY, for testing without an email service: school-domain sign-ups are marked verified
+     * and signed in straight away. Anyone can claim any school address while this is on.
+     */
+    SKIP_EMAIL_VERIFICATION: bool.default(false),
   })
   .superRefine((env, ctx) => {
     // A chosen email API needs its key in every environment, or nothing is delivered.
