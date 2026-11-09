@@ -1,0 +1,69 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "regions": [
+    "icn1"
+  ],
+  "services": {
+    "web": {
+      "root": "apps/web",
+      "framework": "nextjs",
+      "installCommand": "cd ../.. && pnpm install --frozen-lockfile"
+    },
+    "api": {
+      "root": "apps/api",
+      "entrypoint": "src/vercel.ts",
+      "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
+      "buildCommand": "echo 'API is compiled by Vercel from src/vercel.ts'"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": {
+        "service": "api"
+      }
+    },
+    {
+      "source": "/ws",
+      "destination": {
+        "service": "api"
+      }
+    },
+    {
+      "source": "/.well-known/(.*)",
+      "destination": {
+        "service": "api"
+      }
+    },
+    {
+      "source": "/internal/(.*)",
+      "destination": {
+        "service": "api"
+      }
+    },
+    {
+      "source": "/healthz",
+      "destination": {
+        "service": "api"
+      }
+    },
+    {
+      "source": "/readyz",
+      "destination": {
+        "service": "api"
+      }
+    },
+    {
+      "source": "/(.*)",
+      "destination": {
+        "service": "web"
+      }
+    }
+  ],
+  "crons": [
+    {
+      "path": "/internal/cron/tick",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wicky Lite</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='7' fill='%235865f2'/%3E%3Cpath d='M6 8h12v7H11l-3 3v-3H6z' fill='white'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="auth" class="auth hidden">
+    <form id="authForm" class="auth-card">
+      <div class="auth-logo"></div>
+      <h1 id="authTitle">Welcome back!</h1>
+      <p id="authSub" class="muted"></p>
+      <label class="reg-only">Display Name<input name="name" maxlength="32" autocomplete="nickname"></label>
+      <label>Username<input name="username" required maxlength="20" autocomplete="username" autocapitalize="off" spellcheck="false"></label>
+      <label>Password<input name="password" type="password" required autocomplete="current-password"></label>
+      <div id="authError" class="auth-error"></div>
+      <button class="btn primary big" type="submit" id="authBtn">Log In</button>
+      <p class="muted small"><span id="authSwitchText"></span> <a href="#" id="authSwitch"></a></p>
+    </form>
+  </div>
+
+  <div id="loading" class="loading hidden">
+    <div class="spinner"></div>
+    <div class="muted">Connecting...</div>
+  </div>
+
+  <div id="app" class="app hidden">
+    <nav id="rail" class="rail"></nav>
+    <aside id="side" class="side">
+      <div id="sideTop" class="side-top"></div>
+      <div id="sideList" class="side-list"></div>
+      <div id="userbar" class="userbar"></div>
+    </aside>
+    <div id="shade" class="shade"></div>
+    <main id="main" class="main">
+      <header id="head" class="head"></header>
+      <div class="main-row">
+        <section class="center">
+          <div id="friendsView" class="friends hidden"></div>
+          <div id="chatView" class="chat-view hidden">
+            <div id="msgs" class="msgs"></div>
+            <div class="composer-wrap">
+              <div id="ac" class="ac hidden"></div>
+              <div id="replyBar" class="reply-bar hidden"></div>
+              <div id="uploads" class="uploads hidden"></div>
+              <div class="composer">
+                <button id="attachBtn" class="icon-btn round" type="button" title="Upload a file"></button>
+                <textarea id="input" rows="1" maxlength="4000"></textarea>
+                <button id="emojiBtn" class="icon-btn" type="button" title="Emoji"></button>
+              </div>
+              <div id="typing" class="typing"></div>
+            </div>
+          </div>
+        </section>
+        <aside id="right" class="right hidden"></aside>
+      </div>
+    </main>
+  </div>
+
+  <input type="file" id="fileInput" multiple hidden>
+  <div id="layer"></div>
+  <div id="toasts" class="toasts"></div>
+  <div id="dropHint" class="drop-hint hidden"><div>Drop files to upload them</div></div>
+  <div id="banner" class="banner hidden">Lost connection to the server, trying to reconnect...</div>
+
+  <script src="js/util.js"></script>
+  <script src="js/net.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

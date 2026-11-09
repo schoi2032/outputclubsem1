@@ -1,0 +1,17 @@
+{
+  "name": "@quid/e2e",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "e2e": "playwright test",
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@quid/config": "workspace:*",
+    "@quid/db": "workspace:*",
+    "@types/node": "^24",
+    "typescript": "~6.0.3"
+  }
+}

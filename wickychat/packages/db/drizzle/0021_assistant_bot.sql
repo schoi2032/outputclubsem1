@@ -1,0 +1,1 @@
+ALTER TABLE "organizations" ADD COLUMN "assistant_bot_id" uuid;

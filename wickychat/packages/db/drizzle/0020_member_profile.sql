@@ -1,0 +1,1 @@
+ALTER TABLE "org_memberships" ADD COLUMN "profile" jsonb DEFAULT '{}'::jsonb NOT NULL;

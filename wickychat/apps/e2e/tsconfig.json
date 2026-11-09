@@ -1,0 +1,5 @@
+{
+  "extends": "@quid/config/tsconfig.base.json",
+  "compilerOptions": { "types": ["node"], "lib": ["ES2023", "DOM"] },
+  "include": ["tests", "playwright.config.ts"]
+}

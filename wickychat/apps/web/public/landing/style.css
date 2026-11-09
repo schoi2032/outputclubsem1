@@ -1,0 +1,420 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html.lenis, html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+body {
+  background: #000;
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  font-feature-settings: "ss01" on;
+  font-size: 18px;
+  font-weight: 200;
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+h1, h2, h3 {
+  font-weight: 400;
+  letter-spacing: -0.04em;
+}
+
+#world {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+}
+
+.vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,0.75) 100%);
+}
+
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px max(32px, calc(50vw - 608px));
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.links {
+  display: flex;
+  gap: 34px;
+  margin-left: auto;
+  margin-right: 34px;
+}
+
+.links a {
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  color: #9a9a9a;
+  transition: color 0.2s;
+}
+
+.links a:hover {
+  color: #fff;
+}
+
+.pill {
+  display: inline-block;
+  background: #8052ff;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  padding: 14px 18px;
+  border-radius: 24px;
+  transition: background 0.2s, box-shadow 0.3s;
+}
+
+.pill:hover {
+  background: #9370ff;
+  box-shadow: 0 0 40px rgba(128, 82, 255, 0.6);
+}
+
+.pill.big {
+  padding: 18px 28px;
+  font-size: 15px;
+}
+
+.ghost {
+  font-size: 14px;
+  font-weight: 400;
+  color: #9a9a9a;
+  border-bottom: 1px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.ghost:hover {
+  color: #fff;
+  border-color: #fff;
+}
+
+.label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  color: #ffb829;
+  margin-bottom: 18px;
+  min-height: 1.2em;
+}
+
+.dots {
+  position: fixed;
+  right: 28px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.dots button {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 0;
+  background: #444;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.3s;
+}
+
+.dots button.on {
+  background: #8052ff;
+  transform: scale(1.5);
+}
+
+.hud {
+  position: fixed;
+  left: max(32px, calc(50vw - 608px));
+  bottom: 28px;
+  z-index: 10;
+  display: flex;
+  gap: 14px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #9a9a9a;
+}
+
+.hud #hudNum {
+  color: #8052ff;
+}
+
+main {
+  position: relative;
+  z-index: 2;
+}
+
+.scene {
+  height: 220vh;
+}
+
+.scene#top {
+  height: 170vh;
+}
+
+.scene#join {
+  height: 160vh;
+}
+
+.inner {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 90px 32px 60px;
+}
+
+.copy {
+  width: 48%;
+}
+
+.right .copy {
+  margin-left: auto;
+}
+
+.center .copy {
+  width: 100%;
+  text-align: center;
+}
+
+.wide .copy {
+  width: 100%;
+}
+
+.jumble {
+  font-size: clamp(44px, 6vw, 86px);
+  line-height: 1;
+  margin-bottom: 30px;
+}
+
+h1.jumble {
+  font-size: clamp(56px, 8.4vw, 113px);
+  line-height: 0.92;
+  margin-bottom: 36px;
+}
+
+.jumble.big {
+  font-size: clamp(54px, 9vw, 113px);
+  line-height: 0.95;
+  max-width: 1000px;
+  margin: 0 auto 36px;
+}
+
+.jumble .ch {
+  display: inline-block;
+  will-change: transform, opacity;
+}
+
+.copy p {
+  color: #bdbdbd;
+  max-width: 470px;
+}
+
+h1 + p {
+  color: #fff;
+  margin-bottom: 36px;
+}
+
+.center p {
+  margin: 0 auto 42px;
+  max-width: 460px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 28px;
+}
+
+.wide .jumble {
+  max-width: 800px;
+  margin-bottom: 60px;
+}
+
+.list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px 60px;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+}
+
+.num {
+  grid-row: span 2;
+  color: #8052ff;
+  font-size: 14px;
+  font-weight: 600;
+  padding-top: 10px;
+}
+
+.item h3 {
+  font-size: 32px;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  margin-bottom: 8px;
+}
+
+.item p {
+  font-size: 17px;
+  max-width: 420px;
+}
+
+.footer {
+  position: relative;
+  z-index: 2;
+  background: #000;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 18px;
+  padding: 36px max(32px, calc(50vw - 608px)) 48px;
+  font-size: 14px;
+  color: #9a9a9a;
+}
+
+.footer div {
+  display: flex;
+  gap: 28px;
+}
+
+.footer a:hover {
+  color: #fff;
+}
+
+@media (max-width: 900px) {
+  .links {
+    display: none;
+  }
+
+  .copy, .right .copy {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .inner {
+    align-items: flex-end;
+    padding: 90px 24px 80px;
+  }
+
+  .center .inner {
+    align-items: center;
+  }
+
+  .left .copy, .right .copy {
+    background: linear-gradient(transparent, rgba(0,0,0,0.85) 30%);
+    padding-top: 40px;
+  }
+
+  .list {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 22px;
+  }
+
+  .item p {
+    font-size: 15px;
+  }
+
+  .item h3 {
+    font-size: 24px;
+  }
+
+  .wide .jumble {
+    margin-bottom: 30px;
+  }
+
+  .dots {
+    right: 12px;
+  }
+}
+
+@media (max-width: 560px) {
+  .nav {
+    padding: 16px;
+  }
+
+  .inner {
+    padding: 80px 16px 70px;
+  }
+
+  h1.jumble {
+    font-size: 52px;
+  }
+
+  .jumble {
+    font-size: 40px;
+  }
+
+  .copy p {
+    font-size: 16px;
+  }
+
+  .wide .inner {
+    align-items: center;
+  }
+
+  .wide .jumble {
+    font-size: 34px;
+  }
+
+  .item {
+    grid-template-columns: 30px 1fr;
+  }
+
+  .hud {
+    left: 16px;
+    bottom: 20px;
+  }
+
+  .footer {
+    padding: 30px 16px 40px;
+  }
+}

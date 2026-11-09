@@ -1,0 +1,337 @@
+/*
+ * WickyChat design tokens.
+ * Warm, paper-like neutrals carry the interface; a single terracotta accent marks
+ * interaction and focus. Every color is a CSS variable so light and dark share one system.
+ */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --q-bg: #ffffff;
+  --q-bg-subtle: #faf8f5;
+  --q-bg-rail: #f3efe9;
+  --q-bg-muted: #f2eee8;
+  --q-bg-emphasis: #e9e3da;
+  --q-bg-overlay: #ffffff;
+  --q-border: #ebe5dc;
+  --q-border-strong: #d9d1c5;
+  --q-fg: #1c1917;
+  --q-fg-muted: #625c55;
+  --q-fg-subtle: #8f877e;
+  /* Keep in sync with DEFAULT_ACCENT in packages/shared/src/preferences.ts. */
+  --q-accent: #b8492f;
+  --q-accent-hover: #a33f28;
+  --q-accent-subtle: #fbefeb;
+  --q-accent-fg: #ffffff;
+  --q-accent-text: #a33f28;
+  --q-danger: #c0283f;
+  --q-danger-subtle: #fdecef;
+  --q-success: #1d9a57;
+  --q-warning: #c68a0c;
+  --q-mention-bg: #fff6dc;
+  --q-mention-border: #f0d68a;
+  --q-shadow-color: 25 20% 20%;
+  color-scheme: light;
+}
+
+.dark {
+  --q-bg: #181614;
+  --q-bg-subtle: #13110f;
+  --q-bg-rail: #0e0d0b;
+  --q-bg-muted: #201d1a;
+  --q-bg-emphasis: #2a2622;
+  --q-bg-overlay: #1d1a17;
+  --q-border: #2a2622;
+  --q-border-strong: #3a3530;
+  --q-fg: #efebe6;
+  --q-fg-muted: #a8a29a;
+  --q-fg-subtle: #7a746c;
+  --q-accent: #d06248;
+  --q-accent-hover: #da7358;
+  --q-accent-subtle: #3a231b;
+  --q-accent-fg: #ffffff;
+  --q-accent-text: #f0a58f;
+  --q-danger: #ef6070;
+  --q-danger-subtle: #3a1a20;
+  --q-success: #3cc47c;
+  --q-warning: #e5a92e;
+  --q-mention-bg: #3a3218;
+  --q-mention-border: #6b5a22;
+  --q-shadow-color: 0 0% 0%;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--q-bg);
+  --color-bg-subtle: var(--q-bg-subtle);
+  --color-bg-rail: var(--q-bg-rail);
+  --color-bg-muted: var(--q-bg-muted);
+  --color-bg-emphasis: var(--q-bg-emphasis);
+  --color-bg-overlay: var(--q-bg-overlay);
+  --color-border: var(--q-border);
+  --color-border-strong: var(--q-border-strong);
+  --color-fg: var(--q-fg);
+  --color-fg-muted: var(--q-fg-muted);
+  --color-fg-subtle: var(--q-fg-subtle);
+  --color-accent: var(--q-accent);
+  --color-accent-hover: var(--q-accent-hover);
+  --color-accent-subtle: var(--q-accent-subtle);
+  --color-accent-fg: var(--q-accent-fg);
+  --color-accent-text: var(--q-accent-text);
+  --color-danger: var(--q-danger);
+  --color-danger-subtle: var(--q-danger-subtle);
+  --color-success: var(--q-success);
+  --color-warning: var(--q-warning);
+  --color-mention: var(--q-mention-bg);
+  --color-mention-border: var(--q-mention-border);
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+
+  --shadow-pop:
+    0 1px 2px hsl(var(--q-shadow-color) / 0.06), 0 8px 24px -4px hsl(var(--q-shadow-color) / 0.14);
+  --shadow-dialog:
+    0 2px 4px hsl(var(--q-shadow-color) / 0.06), 0 24px 48px -8px hsl(var(--q-shadow-color) / 0.24);
+
+  --animate-in: q-in 140ms cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-overlay: q-fade 160ms ease-out;
+}
+
+/* Not inline: utilities read these variables, so the radius preference can change them. */
+@theme {
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+}
+
+/*
+ * Personal preferences, set as attributes on <html> (see apps/web lib/preferences.ts).
+ */
+
+/* Accent: every accent token is derived from one base color. */
+:root[data-accent] {
+  --q-accent: var(--q-accent-base);
+  --q-accent-hover: color-mix(in oklab, var(--q-accent-base) 85%, black);
+  --q-accent-subtle: color-mix(in oklab, var(--q-accent-base) 10%, white);
+  --q-accent-text: color-mix(in oklab, var(--q-accent-base) 88%, black);
+}
+:root.dark[data-accent] {
+  --q-accent: color-mix(in oklab, var(--q-accent-base) 82%, white);
+  --q-accent-hover: color-mix(in oklab, var(--q-accent-base) 70%, white);
+  --q-accent-subtle: color-mix(in oklab, var(--q-accent-base) 22%, #181614);
+  --q-accent-text: color-mix(in oklab, var(--q-accent-base) 55%, white);
+}
+
+:root[data-contrast="high"] {
+  --q-border: #c2b9ad;
+  --q-border-strong: #948a7e;
+  --q-fg: #000000;
+  --q-fg-muted: #3d3833;
+  --q-fg-subtle: #5d5751;
+}
+:root.dark[data-contrast="high"] {
+  --q-border: #4a443e;
+  --q-border-strong: #635c55;
+  --q-fg: #ffffff;
+  --q-fg-muted: #d9d4ce;
+  --q-fg-subtle: #b0aaa2;
+}
+
+/* Fonts: override the Geist variable that everything resolves through. */
+:root[data-font="system"] {
+  --font-geist-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+:root[data-font="serif"] {
+  --font-geist-sans: ui-serif, Charter, Georgia, Cambria, serif;
+}
+:root[data-font="mono"] {
+  --font-geist-sans: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+/* Message text size (messages and the composer). */
+:root {
+  --q-msg-size: 14.5px;
+}
+:root[data-text-size="sm"] {
+  --q-msg-size: 13px;
+}
+:root[data-text-size="lg"] {
+  --q-msg-size: 16px;
+}
+:root[data-text-size="xl"] {
+  --q-msg-size: 18px;
+}
+
+:root[data-radius="square"] {
+  --radius-xs: 2px;
+  --radius-sm: 3px;
+  --radius-md: 4px;
+  --radius-lg: 5px;
+  --radius-xl: 6px;
+}
+:root[data-radius="round"] {
+  --radius-xs: 6px;
+  --radius-sm: 9px;
+  --radius-md: 12px;
+  --radius-lg: 15px;
+  --radius-xl: 20px;
+}
+
+@keyframes q-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes q-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes q-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+@keyframes q-twinkle {
+  0%,
+  100% {
+    opacity: 1;
+    scale: 1;
+  }
+  50% {
+    opacity: 0.45;
+    scale: 0.7;
+  }
+}
+@keyframes q-wiggle {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-8deg);
+  }
+  75% {
+    transform: rotate(8deg);
+  }
+}
+@keyframes q-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/*
+ * Hand-drawn touches, used sparingly to soften the grid.
+ * .q-squiggle: wavy underline under a heading. .q-sketch: wobbly, hand-drawn outline.
+ */
+@layer components {
+  .q-squiggle {
+    position: relative;
+  }
+  .q-squiggle::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -5px;
+    height: 5px;
+    background: var(--q-accent);
+    opacity: 0.5;
+    pointer-events: none;
+    --q-wave: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 5'%3E%3Cpath d='M0 2.5Q2.5 0.5 5 2.5T10 2.5' fill='none' stroke='black' stroke-width='1.3' stroke-linecap='round'/%3E%3C/svg%3E");
+    -webkit-mask: var(--q-wave) repeat-x 0 0 / 10px 5px;
+    mask: var(--q-wave) repeat-x 0 0 / 10px 5px;
+  }
+  .q-sketch {
+    border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  }
+
+  /* Clickable cards: lift a little on hover, settle back when pressed. */
+  .q-lift {
+    transition:
+      background-color 150ms ease-out,
+      border-color 150ms ease-out,
+      box-shadow 200ms ease-out,
+      transform 200ms cubic-bezier(0.34, 1.3, 0.64, 1);
+  }
+  .q-lift:hover {
+    transform: translateY(-1px) scale(1.02);
+    box-shadow:
+      0 1px 2px hsl(var(--q-shadow-color) / 0.05),
+      0 8px 20px -6px hsl(var(--q-shadow-color) / 0.18);
+  }
+  .q-lift:active {
+    transform: scale(0.99);
+  }
+}
+
+@layer base {
+  html,
+  body {
+    height: 100%;
+  }
+  body {
+    background: var(--q-bg);
+    color: var(--q-fg);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "cv11", "ss01";
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--q-accent) 25%, transparent);
+  }
+  :focus-visible {
+    outline: 2px solid var(--q-accent);
+    outline-offset: 2px;
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--q-border-strong) transparent;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :root:not([data-motion="full"]) *,
+    :root:not([data-motion="full"]) *::before,
+    :root:not([data-motion="full"]) *::after {
+      animation-duration: 1ms !important;
+      transition-duration: 1ms !important;
+    }
+  }
+  :root[data-motion="reduced"] *,
+  :root[data-motion="reduced"] *::before,
+  :root[data-motion="reduced"] *::after {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Animated avatars: hidden (so not even downloaded) until they should play. */
+.q-ava-anim {
+  display: none;
+}
+:root[data-animate-avatars="always"] .q-ava-anim,
+:root:not([data-animate-avatars="never"]) .q-ava:hover > .q-ava-anim,
+:root:not([data-animate-avatars="never"]) .group:hover .q-ava > .q-ava-anim {
+  display: block;
+}
