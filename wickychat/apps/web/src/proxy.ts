@@ -16,6 +16,7 @@ const PUBLIC = [
   '/terms',
   '/privacy',
   '/developers',
+  '/help',
   '/changelog',
 ]
 

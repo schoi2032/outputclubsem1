@@ -68,6 +68,9 @@ export function LegalLinks({ className }: { className?: string }) {
       aria-label="Legal"
       className={`flex flex-wrap justify-center gap-x-4 gap-y-2 ${className ?? ''}`}
     >
+      <Link href="/help" className="hover:text-fg">
+        Help
+      </Link>
       <Link href="/terms" className="hover:text-fg">
         Rules
       </Link>
