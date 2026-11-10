@@ -898,6 +898,36 @@ export const auditLogs = pgTable(
   (t) => [index('audit_logs_org_idx').on(t.orgId, t.id.desc())],
 )
 
+/**
+ * WickyChat: every time the swear filter hides words in something a person posts.
+ * Only org admins (teachers) can read these, in Settings → Rule breakers.
+ */
+export const moderationEvents = pgTable(
+  'moderation_events',
+  {
+    id: pk(),
+    orgId: orgRef(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    channelId: uuid('channel_id').references(() => channels.id, { onDelete: 'set null' }),
+    messageId: uuid('message_id').references(() => messages.id, { onDelete: 'set null' }),
+    /** What was caught. Only `swear` today. */
+    kind: text('kind').notNull().default('swear'),
+    /** Where it was caught: a new message, an edit, or a scheduled message. */
+    source: text('source').notNull(),
+    /** The words the filter hid, as typed. */
+    words: text('words').array().notNull().default(sql`'{}'::text[]`),
+    /** The text before censoring (capped), so teachers can see context. */
+    original: text('original').notNull().default(''),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index('moderation_events_org_idx').on(t.orgId, t.id.desc()),
+    index('moderation_events_user_idx').on(t.orgId, t.userId, t.id.desc()),
+  ],
+)
+
 /** Minimal durable job queue, drained by `/internal/cron/tick` and an in-process poller. */
 export const jobs = pgTable(
   'jobs',

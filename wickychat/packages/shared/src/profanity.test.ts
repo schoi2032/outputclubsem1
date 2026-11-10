@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { censorDoc, censorText, isSwear } from './profanity'
+import { censorDoc, censorDocReport, censorText, isSwear } from './profanity'
 
 describe('swear filter', () => {
   it('censors plain and disguised swears', () => {
@@ -50,5 +50,22 @@ describe('swear filter', () => {
       content: [{ type: 'paragraph', content: [{ type: 'text', text: 'oh shit' }] }],
     }
     expect(JSON.stringify(censorDoc(doc))).toContain('oh ****')
+  })
+
+  it('reports the words it hid, as typed', () => {
+    expect(censorText('wtf this is SH1T and f.u.c.k').words).toEqual(
+      expect.arrayContaining(['SH1T', 'f.u.c.k']),
+    )
+    expect(censorText('see you in class at 3').words).toEqual([])
+    const doc = {
+      type: 'doc',
+      content: [
+        { type: 'paragraph', content: [{ type: 'text', text: 'oh shit' }] },
+        { type: 'paragraph', content: [{ type: 'text', text: 'what a bitch' }] },
+      ],
+    }
+    const r = censorDocReport(doc)
+    expect(r.words).toEqual(['shit', 'bitch'])
+    expect(JSON.stringify(r.doc)).not.toContain('shit')
   })
 })

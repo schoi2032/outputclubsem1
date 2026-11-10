@@ -26,8 +26,10 @@ import {
   history,
   markRead,
   parseBody,
+  parseBodyReport,
   publishThreadUpdated,
   reactionGroups,
+  recordSwears,
   serializeMessage,
   serializeMessages,
   threadMessages,
@@ -110,7 +112,7 @@ export async function messageRoutes(app: App, ctx: AppContext) {
         throw forbidden('You can only edit your own messages.')
       if (row.deletedAt) throw notFound('Message')
       if (a.channel.archivedAt) throw forbidden('This channel is archived.')
-      const body = parseBody(req.body.body)
+      const { body, swears } = parseBodyReport(req.body.body)
       const text = docToText(body)
       if (!text && !JSON.stringify(body).includes('mention')) {
         const hasFiles = await ctx.db.query.files.findFirst({
@@ -123,6 +125,17 @@ export async function messageRoutes(app: App, ctx: AppContext) {
         .set({ bodyJson: body, bodyText: text, editedAt: new Date() })
         .where(eq(messages.id, row.id))
         .returning()
+      await recordSwears(
+        ctx,
+        {
+          orgId: scope.orgId,
+          userId: scope.userId,
+          channelId: row.channelId,
+          messageId: row.id,
+          source: 'edit',
+        },
+        swears,
+      )
       const message = await serializeMessage(ctx, scope.userId, updated!)
       await ctx.bus.publish(topics.channel(row.channelId), {
         type: 'message.updated',
@@ -478,7 +491,7 @@ export async function messageRoutes(app: App, ctx: AppContext) {
         throw badRequest('Choose a time at least a minute from now.')
       if (sendAt.getTime() > Date.now() + 120 * 86_400_000)
         throw badRequest('Messages can be scheduled up to 120 days ahead.')
-      const body = parseBody(req.body.body)
+      const { body, swears } = parseBodyReport(req.body.body)
       if (!docToText(body)) throw badRequest('Message is empty.')
       if (req.body.parentId) {
         const p = await ctx.db.query.messages.findFirst({
@@ -501,6 +514,18 @@ export async function messageRoutes(app: App, ctx: AppContext) {
           sendAt,
         })
         .returning()
+      // Logged now: the saved body is already censored, so sending it later catches nothing.
+      await recordSwears(
+        ctx,
+        {
+          orgId: scope.orgId,
+          userId: scope.userId,
+          channelId: channel.id,
+          messageId: null,
+          source: 'scheduled',
+        },
+        swears,
+      )
       return reply.code(201).send(toScheduled(row!))
     },
   )

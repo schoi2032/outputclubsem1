@@ -6,13 +6,14 @@ import {
   files,
   mentions,
   messages,
+  moderationEvents,
   pins,
   reactions,
   users,
 } from '@quid/db'
 import type { DocNode, Message, ReactionGroup, UserSummary } from '@quid/shared'
 import {
-  censorDoc,
+  censorDocReport,
   docToText,
   extractMentions,
   isDocError,
@@ -37,13 +38,58 @@ import { deletedUser, toUserSummary, userCols } from '../users/serialize'
 
 export type MessageRow = typeof messages.$inferSelect
 
-export function parseBody(input: unknown): DocNode {
+/** A message body after the swear filter, plus what it caught (for the rule-breakers log). */
+export interface ParsedBody {
+  body: DocNode
+  swears: { words: string[]; original: string } | null
+}
+
+export function parseBodyReport(input: unknown): ParsedBody {
+  let clean: DocNode
   try {
-    // WickyChat: swears are replaced with asterisks before anything is saved or sent.
-    return censorDoc(sanitizeDoc(input))
+    clean = sanitizeDoc(input)
   } catch (e) {
     if (isDocError(e)) throw badRequest(e.message)
     throw e
+  }
+  // WickyChat: swears are replaced with asterisks before anything is saved or sent.
+  const { doc, words } = censorDocReport(clean)
+  return {
+    body: doc,
+    swears: words.length ? { words, original: docToText(clean).slice(0, 2000) } : null,
+  }
+}
+
+export function parseBody(input: unknown): DocNode {
+  return parseBodyReport(input).body
+}
+
+/**
+ * Logs that the swear filter caught something, so teachers can see it in Settings → Rule
+ * breakers. Never fails the message: a logging problem must not stop someone posting.
+ */
+export async function recordSwears(
+  ctx: AppContext,
+  where: {
+    orgId: string
+    userId: string
+    channelId: string | null
+    messageId: string | null
+    source: 'message' | 'edit' | 'scheduled'
+  },
+  swears: ParsedBody['swears'],
+) {
+  if (!swears) return
+  try {
+    await ctx.db.insert(moderationEvents).values({
+      id: uuidv7(),
+      ...where,
+      kind: 'swear',
+      words: swears.words.slice(0, 50).map((w) => w.slice(0, 60)),
+      original: swears.original,
+    })
+  } catch (err) {
+    ctx.log.warn({ err }, 'could not record moderation event')
   }
 }
 
@@ -287,7 +333,7 @@ export async function createMessage(
   channel: ChannelRow,
   input: SendInput,
 ): Promise<Message> {
-  const body = parseBody(input.body)
+  const { body, swears } = parseBodyReport(input.body)
   const fileIds = [...new Set(input.fileIds ?? [])]
   if (isEmptyDoc(body) && fileIds.length === 0 && !input.forward)
     throw badRequest('Message is empty.')
@@ -403,6 +449,20 @@ export async function createMessage(
       )
     return m!
   })
+
+  if (input.kind !== 'bot') {
+    await recordSwears(
+      ctx,
+      {
+        orgId: scope.orgId,
+        userId: scope.userId,
+        channelId: channel.id,
+        messageId: row.id,
+        source: 'message',
+      },
+      swears,
+    )
+  }
 
   // DMs and groups that people had hidden reappear when someone writes.
   if (channel.kind === 'dm' || channel.kind === 'group') {

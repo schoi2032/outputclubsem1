@@ -38,6 +38,23 @@ Code: `packages/shared/src/profanity.ts` (tests in `profanity.test.ts`)
 
   Then run the tests: `cd packages/shared && pnpm exec vitest run`.
 
+## Rule breakers log
+
+Code:
+- `recordSwears` in `apps/api/src/modules/messages/service.ts`
+- `apps/api/src/modules/moderation/routes.ts`
+- `apps/web/src/app/(app)/[orgSlug]/settings/moderation/page.tsx`
+
+- **What gets logged.** Whenever the swear filter hides words in a new message, an edit or a scheduled message, a `moderation_events` row is saved. It records who wrote it, the chat, the message, the words as typed, and the original text (up to 2000 characters). Drafts and bot messages aren't logged. Logging never blocks a message: if it fails, the message still posts and a warning is logged.
+- **Who can see it.** Org admins and owners (`audit.read`), which is how teachers are set up. Members get `403`.
+- **Where.** In the app at **Settings → Rule breakers**:
+  - a "most caught" ranking (last 7 days, last 30 days, or all time) with each person's top words;
+  - every incident, newest first, with the caught words highlighted. Click a person to filter.
+- **The API:**
+  - `GET /api/orgs/:orgId/moderation/offenders?range=7d|30d|all`
+  - `GET /api/orgs/:orgId/moderation/events?userId=&before=&limit=`
+- **Privacy.** DMs and private chats are logged too, and the Help page tells students that. Deleting a user deletes their incidents. Deleting a message keeps the incident, but its link is removed.
+
 ## Email check switch (temporary)
 
 `SKIP_EMAIL_VERIFICATION=true` is **on in production right now**, because there's no email service yet.

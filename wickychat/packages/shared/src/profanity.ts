@@ -247,12 +247,14 @@ const PHRASE_RES = PHRASES.map(
  * Replaces swears in plain text with asterisks, keeping punctuation around them.
  * Returns the cleaned text and how many words were hidden.
  */
-export function censorText(text: string): { text: string; hits: number } {
+export function censorText(text: string): { text: string; hits: number; words: string[] } {
   let hits = 0
+  const words: string[] = []
   let out = text
   for (const re of PHRASE_RES) {
     out = out.replace(re, (m) => {
       hits++
+      words.push(m)
       return stars(m)
     })
   }
@@ -260,6 +262,7 @@ export function censorText(text: string): { text: string; hits: number } {
   out = out.replace(/\b(?:[a-z0-9@$!][\s.*_-]){2,}[a-z0-9@$!]\b/gi, (m) => {
     if (!isSwear(m)) return m
     hits++
+    words.push(m)
     return stars(m)
   })
   out = out.replace(/[^\s]+/g, (token) => {
@@ -267,20 +270,34 @@ export function censorText(text: string): { text: string; hits: number } {
     const [, before = '', core = token, after = ''] = match ?? []
     if (!core || !isSwear(core)) return token
     hits++
+    words.push(core)
     return before + '*'.repeat(Math.max(core.length, 3)) + after
   })
-  return { text: out, hits }
+  return { text: out, hits, words }
 }
 
 type AnyNode = { type?: string; text?: string; content?: AnyNode[]; [k: string]: unknown }
 
-/** Censors every text node inside a rich-text document (code blocks included). */
-export function censorDoc<T>(doc: T): T {
+/**
+ * Censors every text node inside a rich-text document (code blocks included), and reports
+ * which words were hidden so they can be logged for teachers.
+ */
+export function censorDocReport<T>(doc: T): { doc: T; words: string[] } {
+  const words: string[] = []
   const walk = (n: AnyNode): AnyNode => {
     const next: AnyNode = { ...n }
-    if (typeof n.text === 'string') next.text = censorText(n.text).text
+    if (typeof n.text === 'string') {
+      const r = censorText(n.text)
+      next.text = r.text
+      words.push(...r.words)
+    }
     if (Array.isArray(n.content)) next.content = n.content.map(walk)
     return next
   }
-  return walk(doc as AnyNode) as T
+  return { doc: walk(doc as AnyNode) as T, words }
+}
+
+/** Censors every text node inside a rich-text document (code blocks included). */
+export function censorDoc<T>(doc: T): T {
+  return censorDocReport(doc).doc
 }

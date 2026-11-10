@@ -279,6 +279,28 @@ export interface AuditEntry {
   createdAt: string
 }
 
+/** WickyChat: one time the swear filter caught someone (Settings → Rule breakers). */
+export interface ModerationEvent {
+  id: string
+  user: UserSummary & { email: string }
+  channel: { id: string; name: string; kind: string } | null
+  messageId: string | null
+  kind: 'swear'
+  source: 'message' | 'edit' | 'scheduled'
+  words: string[]
+  original: string
+  createdAt: string
+}
+
+/** WickyChat: one person's rule-breaking totals. */
+export interface ModerationOffender {
+  user: UserSummary & { email: string }
+  incidents: number
+  words: number
+  topWords: string[]
+  lastAt: string
+}
+
 export interface Integration {
   id: string
   kind: 'incoming_webhook' | 'outgoing_webhook' | 'github' | 'bot' | 'plugin'

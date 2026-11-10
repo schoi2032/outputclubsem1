@@ -161,7 +161,9 @@ export default function HelpPage() {
             </li>
             <li>
               Swear words are automatically replaced with <strong>***</strong> for everyone, even
-              disguised ones like "sh1t" or "f.u.c.k".
+              disguised ones like "sh1t" or "f.u.c.k".{' '}
+              <strong>Teachers can see every time this happens</strong>, including who said it and
+              what they wrote, even in direct messages.
             </li>
             <li>
               Everything you post is tied to your school account, and teachers can remove messages
@@ -251,7 +253,13 @@ export default function HelpPage() {
               <strong>See what happened:</strong> <strong>Settings → Audit</strong> lists important
               actions such as role changes and removals.
             </li>
-            <li>Swear words are filtered automatically before anyone sees them.</li>
+            <li>
+              <strong>See who's been swearing:</strong> <strong>Settings → Rule breakers</strong>{' '}
+              ranks students by how often the swear filter caught them. Click a name to see each
+              time: where it happened, what they actually typed (caught words highlighted) and when.
+              Swears are hidden from everyone else as *** but always logged here, even in direct
+              messages.
+            </li>
           </ul>
 
           <h3>5. Handy tools</h3>
