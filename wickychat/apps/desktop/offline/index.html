@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WickyChat</title>
+<style>
+  :root { color-scheme: light dark; --bg: #faf9fc; --fg: #1b1726; --muted: #635d72; --accent: #6b3ff0; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #16131d; --fg: #eeeaf5; --muted: #a59fb3; --accent: #9471ff; } }
+  html, body { margin: 0; height: 100%; }
+  body { display: grid; place-items: center; background: var(--bg); color: var(--fg);
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-align: center; -webkit-user-select: none; user-select: none; }
+  h1 { font-size: 18px; margin: 14px 0 0; }
+  p { color: var(--muted); max-width: 320px; margin: 6px auto 20px; }
+  button { font: inherit; font-weight: 500; padding: 9px 18px; border: 0; border-radius: 8px; background: var(--accent); color: #fff; cursor: pointer; }
+  .kite { animation: bob 1.6s ease-in-out infinite; }
+  .offline .kite { animation: none; opacity: .75; }
+  @keyframes bob { 50% { transform: translateY(-6px); } }
+  #offline { display: none; }
+  .offline #offline { display: block; }
+  .offline #loading { display: none; }
+</style>
+</head>
+<body>
+<div>
+  <svg class="kite" viewBox="0 0 32 32" width="84" height="84" aria-hidden="true">
+    <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8052ff"/><stop offset="1" stop-color="#15846e"/></linearGradient></defs>
+    <path d="M3 5 L29 9 L12 28 Z" fill="url(#g)"/><path d="M17 3 L28 4 L22 11 Z" fill="#ffb829"/>
+  </svg>
+  <div id="loading"><h1>WickyChat</h1><p>Connecting…</p></div>
+  <div id="offline">
+    <h1>Can't reach WickyChat</h1>
+    <p>Check your internet connection. We'll be right here when you're back.</p>
+    <button type="button" id="retry">Try again</button>
+  </div>
+</div>
+<script>
+  // window.__WICKY_URL__ is set by the Rust side before this page runs.
+  var target = window.__WICKY_URL__ || 'https://wickychat.vercel.app/';
+  function connect() {
+    document.body.classList.remove('offline');
+    var done = false;
+    var timer = setTimeout(function () { if (!done) { done = true; document.body.classList.add('offline'); } }, 8000);
+    fetch(new URL('/api/auth/providers', target).href, { mode: 'no-cors', cache: 'no-store' })
+      .then(function () { if (!done) { done = true; clearTimeout(timer); location.replace(target); } })
+      .catch(function () { if (!done) { done = true; clearTimeout(timer); document.body.classList.add('offline'); } });
+  }
+  document.getElementById('retry').addEventListener('click', connect);
+  window.addEventListener('online', function () { if (document.body.classList.contains('offline')) connect(); });
+  connect();
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "@quid/desktop",
+  "productName": "WickyChat",
+  "version": "0.1.0",
+  "private": true,
+  "description": "WickyChat desktop app (Rust + Tauri) for macOS, Windows and Linux",
+  "scripts": {
+    "dev": "tauri dev",
+    "start": "tauri dev",
+    "build": "tauri build",
+    "icons": "tauri icon icons/app-icon.svg -o src-tauri/icons"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "2.12.4"
+  }
+}
