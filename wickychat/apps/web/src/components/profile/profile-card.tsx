@@ -11,6 +11,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { Coins, ExternalLink, Gift, Link2, MessageSquare } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { TimeoutMenu } from '@/components/moderation/timeout-menu'
 import { useOrgContext } from '@/components/org-context'
 import { errorMessage, post } from '@/lib/api'
 import { displayName } from '@/lib/format'
@@ -280,6 +281,26 @@ export function ProfileCard({ user, panel }: { user: UserSummary; panel?: boolea
             >
               <Gift /> {panel && 'Gift a decoration'}
             </Button>
+          </div>
+        )}
+        {canGift && !isTeacher(m?.role) && (
+          <div className="mt-2 flex items-center gap-2">
+            {m?.timeoutUntil && (
+              <span className="flex-1 text-xs text-warning">
+                ⏳ Timed out until{' '}
+                {new Date(m.timeoutUntil).toLocaleString(undefined, {
+                  weekday: 'short',
+                  hour: 'numeric',
+                  minute: '2-digit',
+                })}
+              </span>
+            )}
+            <TimeoutMenu
+              userId={user.id}
+              name={displayName(user)}
+              timedOut={!!m?.timeoutUntil}
+              className={m?.timeoutUntil ? undefined : 'w-full'}
+            />
           </div>
         )}
         {canGift && (

@@ -24,6 +24,7 @@ import {
   Bookmark,
   BookmarkCheck,
   CornerUpRight,
+  Flag,
   Link2,
   ListTodo,
   MessageSquareText,
@@ -51,6 +52,7 @@ import { Attachments } from './attachments'
 import { Composer } from './composer'
 import { EmojiValue, isEmojiOnly } from './custom-emoji'
 import { EmojiPicker } from './emoji-picker'
+import { ReportDialog } from './report-dialog'
 import { RichText } from './rich-text'
 
 export interface MessageItemProps {
@@ -144,6 +146,7 @@ export const MessageItem = memo(function MessageItem({
   const actions = useMessageActions()
   const [editing, setEditing] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [reporting, setReporting] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
   const [taskOpen, setTaskOpen] = useState(false)
@@ -410,6 +413,11 @@ export const MessageItem = memo(function MessageItem({
               <MenuItem icon={<Link2 />} onSelect={copyLink}>
                 Copy link
               </MenuItem>
+              {!mine && !local && m.kind === 'user' && !m.author.isBot && (
+                <MenuItem icon={<Flag />} onSelect={() => setReporting(true)}>
+                  Report message
+                </MenuItem>
+              )}
               {(mine || canModerate) && (
                 <>
                   <MenuSeparator />
@@ -431,6 +439,7 @@ export const MessageItem = memo(function MessageItem({
           initial={{ title: m.text.split('\n')[0], messageId: m.id }}
         />
       )}
+      {reporting && <ReportDialog message={m} onClose={() => setReporting(false)} />}
       <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <DialogContent
           title="Delete message?"

@@ -51,6 +51,7 @@ import { leaveAllMeetings } from './modules/meetings/service'
 import { messageRoutes } from './modules/messages/routes'
 import { sendDueScheduled } from './modules/messages/scheduled'
 import { moderationRoutes } from './modules/moderation/routes'
+import { schoolModerationRoutes } from './modules/moderation/school'
 import { installEmailNotifications } from './modules/notifications/email'
 import { notificationRoutes } from './modules/notifications/routes'
 import { customizationRoutes } from './modules/orgs/customization'
@@ -295,6 +296,7 @@ export async function buildApp(config: Config, opts: BuildOptions = {}) {
   await connectedAppRoutes(app, ctx)
   await adminRoutes(app, ctx)
   await moderationRoutes(app, ctx)
+  await schoolModerationRoutes(app, ctx)
   await coinRoutes(app, ctx)
   await complianceRoutes(app, ctx)
   await pluginRoutes(app, ctx)

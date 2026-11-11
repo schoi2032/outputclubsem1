@@ -83,6 +83,9 @@ export interface Member extends UserSummary, ProfileExtras {
   lastActiveAt: string | null
   /** Answers to the org's custom profile fields, keyed by field id. */
   profile: Record<string, string>
+  /** WickyChat: in a teacher's timeout (can't post) until then. */
+  timeoutUntil?: string | null
+  timeoutReason?: string | null
 }
 
 export interface Invitation {
@@ -308,6 +311,27 @@ export interface ModerationEvent {
   words: string[]
   original: string
   createdAt: string
+}
+
+export const REPORT_REASONS = ['bullying', 'swearing', 'inappropriate', 'spam', 'other'] as const
+export type ReportReason = (typeof REPORT_REASONS)[number]
+
+/** WickyChat: a message a student reported to the teachers. */
+export interface MessageReport {
+  id: string
+  reason: ReportReason
+  note: string
+  excerpt: string
+  status: 'open' | 'resolved' | 'dismissed'
+  reporter: UserSummary
+  author: UserSummary | null
+  channel: { id: string; name: string; kind: string } | null
+  messageId: string | null
+  messageDeleted: boolean
+  /** How many people reported the same message. */
+  reportCount: number
+  createdAt: string
+  resolvedAt: string | null
 }
 
 /** WickyChat: one person's rule-breaking totals. */

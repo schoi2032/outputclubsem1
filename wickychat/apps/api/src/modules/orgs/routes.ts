@@ -199,6 +199,8 @@ export async function orgRoutes(app: App, ctx: AppContext) {
           profile: orgMemberships.profile,
           joinedAt: orgMemberships.joinedAt,
           deactivatedAt: orgMemberships.deactivatedAt,
+          timeoutUntil: orgMemberships.timeoutUntil,
+          timeoutReason: orgMemberships.timeoutReason,
         })
         .from(orgMemberships)
         .innerJoin(users, eq(users.id, orgMemberships.userId))
@@ -254,6 +256,11 @@ export async function orgRoutes(app: App, ctx: AppContext) {
           bannerColor: r.bannerColor,
           bannerUrl: avatarUrl(r.bannerKey, r.bannerAnimated),
           profileStyle: cleanProfileStyle(r.profileStyle),
+          ...(r.timeoutUntil &&
+            r.timeoutUntil > new Date() && {
+              timeoutUntil: r.timeoutUntil.toISOString(),
+              timeoutReason: isAdmin ? r.timeoutReason : null,
+            }),
         }
       })
     },

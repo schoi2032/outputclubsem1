@@ -5,6 +5,7 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { ShieldAlert, X } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
+import { ReportsSection } from '@/components/moderation/reports-section'
 import { useOrgContext } from '@/components/org-context'
 import { SettingsTitle } from '@/components/settings-ui'
 import { errorMessage, get } from '@/lib/api'
@@ -84,6 +85,8 @@ export default function ModerationSettings() {
         title="Rule breakers"
         description="Everyone the swear filter caught. Students never see their swears, since they're replaced with *** for everyone, but every attempt is logged here so teachers can follow up."
       />
+
+      <ReportsSection />
 
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-[15px] font-semibold">Most caught</h2>

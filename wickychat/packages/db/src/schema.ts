@@ -74,6 +74,12 @@ export const users = pgTable(
     decoration: text('decoration'),
     /** Equipped app theme: a built-in theme id (THEMES in @quid/shared) or `u:<cosmetic id>`. */
     appTheme: text('app_theme'),
+    /** Equipped profile card effect and name plate (built-in id or `u:<cosmetic id>`). */
+    profileEffect: text('profile_effect'),
+    namePlate: text('name_plate'),
+    /** Days in a row the daily bonus was claimed, and the best run. */
+    dailyStreak: integer('daily_streak').notNull().default(0),
+    bestStreak: integer('best_streak').notNull().default(0),
     /** Wicky Coins balance. Every change is also written to `coin_transactions`. */
     coins: integer('coins').notNull().default(0),
     /** Last time the daily coin bonus was claimed. */
@@ -182,6 +188,9 @@ export const orgMemberships = pgTable(
     profile: jsonb('profile').$type<Record<string, string>>().notNull().default({}),
     joinedAt: ts('joined_at').notNull().defaultNow(),
     deactivatedAt: ts('deactivated_at'),
+    /** WickyChat: a teacher put them in a timeout (can't post) until this time. */
+    timeoutUntil: ts('timeout_until'),
+    timeoutReason: text('timeout_reason'),
   },
   (t) => [
     uniqueIndex('org_memberships_org_user_uq').on(t.orgId, t.userId),
@@ -1339,4 +1348,119 @@ export const workflows = pgTable(
     lastScheduledDate: text('last_scheduled_date'),
   },
   (t) => [index('workflows_org_idx').on(t.orgId)],
+)
+
+/** WickyChat: a student reports a message to the teachers. */
+export const messageReports = pgTable(
+  'message_reports',
+  {
+    id: pk(),
+    orgId: orgRef(),
+    messageId: uuid('message_id').references(() => messages.id, { onDelete: 'set null' }),
+    channelId: uuid('channel_id').references(() => channels.id, { onDelete: 'set null' }),
+    reporterId: uuid('reporter_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    authorId: uuid('author_id').references(() => users.id, { onDelete: 'set null' }),
+    reason: text('reason').notNull(),
+    note: text('note').notNull().default(''),
+    /** Copy of the message text when it was reported (it may be edited or deleted later). */
+    excerpt: text('excerpt').notNull().default(''),
+    /** open | resolved | dismissed */
+    status: text('status').notNull().default('open'),
+    resolvedBy: uuid('resolved_by').references(() => users.id, { onDelete: 'set null' }),
+    resolvedAt: ts('resolved_at'),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index('message_reports_org_idx').on(t.orgId, t.status, t.id.desc()),
+    uniqueIndex('message_reports_once_uq').on(t.messageId, t.reporterId),
+  ],
+)
+
+/** WickyChat: badges a teacher gives by hand ("Teacher's pick"). Others are worked out live. */
+export const userBadges = pgTable(
+  'user_badges',
+  {
+    id: pk(),
+    orgId: orgRef(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    badge: text('badge').notNull(),
+    note: text('note').notNull().default(''),
+    awardedBy: uuid('awarded_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex('user_badges_uq').on(t.orgId, t.userId, t.badge)],
+)
+
+/** WickyChat: items people put up for resale in the Marketplace. */
+export const marketListings = pgTable(
+  'market_listings',
+  {
+    id: pk(),
+    orgId: orgRef(),
+    sellerId: uuid('seller_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    itemId: text('item_id').notNull(),
+    price: integer('price').notNull(),
+    /** open | sold | cancelled */
+    status: text('status').notNull().default('open'),
+    buyerId: uuid('buyer_id').references(() => users.id, { onDelete: 'set null' }),
+    soldAt: ts('sold_at'),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index('market_listings_org_idx').on(t.orgId, t.status, t.id.desc()),
+    uniqueIndex('market_listings_open_uq')
+      .on(t.sellerId, t.itemId)
+      .where(sql`${t.status} = 'open'`),
+  ],
+)
+
+/** WickyChat: a poll or quiz posted as a message. */
+export const polls = pgTable(
+  'polls',
+  {
+    id: pk(),
+    orgId: orgRef(),
+    channelId: uuid('channel_id')
+      .notNull()
+      .references(() => channels.id, { onDelete: 'cascade' }),
+    messageId: uuid('message_id')
+      .notNull()
+      .references(() => messages.id, { onDelete: 'cascade' }),
+    creatorId: uuid('creator_id').references(() => users.id, { onDelete: 'set null' }),
+    /** poll | quiz */
+    kind: text('kind').notNull().default('poll'),
+    question: text('question').notNull(),
+    options: jsonb('options').$type<{ id: string; text: string }[]>().notNull(),
+    /** Quizzes: the right answer. Hidden from students until they answer. */
+    correctOptionId: text('correct_option_id'),
+    multiple: boolean('multiple').notNull().default(false),
+    anonymous: boolean('anonymous').notNull().default(false),
+    /** Coins for taking part (polls) or for the right answer (quizzes). */
+    reward: integer('reward').notNull().default(0),
+    closesAt: ts('closes_at'),
+    closedAt: ts('closed_at'),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex('polls_message_uq').on(t.messageId)],
+)
+
+export const pollVotes = pgTable(
+  'poll_votes',
+  {
+    pollId: uuid('poll_id')
+      .notNull()
+      .references(() => polls.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    optionId: text('option_id').notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.pollId, t.userId, t.optionId] })],
 )

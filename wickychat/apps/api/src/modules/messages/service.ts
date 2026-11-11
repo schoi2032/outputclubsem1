@@ -33,6 +33,7 @@ import type { ChannelRow } from '../channels/service'
 import { coinsForMessage } from '../coins/service'
 import { serializeFiles } from '../files/serialize'
 import { enqueueOutgoingWebhooks } from '../integrations/outgoing'
+import { assertNotTimedOut } from '../moderation/school'
 import { notifyForMessage } from '../notifications/service'
 import { enqueuePluginEvents } from '../plugins/events'
 import { deletedUser, toUserSummary, userCols } from '../users/serialize'
@@ -334,6 +335,7 @@ export async function createMessage(
   channel: ChannelRow,
   input: SendInput,
 ): Promise<Message> {
+  await assertNotTimedOut(ctx, scope.orgId, scope.userId)
   const { body, swears } = parseBodyReport(input.body)
   const fileIds = [...new Set(input.fileIds ?? [])]
   if (isEmptyDoc(body) && fileIds.length === 0 && !input.forward)
