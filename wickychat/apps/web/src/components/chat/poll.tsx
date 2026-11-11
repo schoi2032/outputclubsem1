@@ -33,7 +33,8 @@ export function PollCard({ pollId }: { pollId: string }) {
     queryKey: key,
     queryFn: ({ signal }) => get<Poll>(`${api}/polls/${pollId}`, signal),
     // Live-ish results while it's open.
-    refetchInterval: (query) => (query.state.data?.closed ? false : 5000),
+    refetchInterval: (query) => (query.state.data?.closed ? false : 15_000),
+    staleTime: 10_000,
   })
   const [picked, setPicked] = useState<string[] | null>(null)
   const [busy, setBusy] = useState(false)

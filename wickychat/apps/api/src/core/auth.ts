@@ -82,11 +82,38 @@ export function clearSessionCookie(ctx: AppContext, reply: FastifyReply) {
 }
 
 /** Resolves a session token to a user, sliding the expiry forward on use. */
+/**
+ * Tiny per-instance caches for the lookups every request does (session and org membership).
+ * Server instances are reused between requests, so this saves 1–2 database round trips per
+ * request. Entries live a few seconds, so logouts and role changes apply almost at once.
+ */
+const CACHE_MS = 10_000
+const sessionCache = new Map<string, { at: number; user: SessionUser | null }>()
+const scopeCache = new Map<string, { at: number; scope: OrgScope | null }>()
+function remember<V>(map: Map<string, { at: number } & V>, key: string, value: V) {
+  if (map.size > 5000) map.clear()
+  map.set(key, { at: Date.now(), ...value })
+}
+
+/** Forget cached sessions (on logout) or memberships (on role/timeout changes). */
+export function forgetCachedAuth() {
+  sessionCache.clear()
+  scopeCache.clear()
+}
+
 export async function resolveSession(
   ctx: AppContext,
   token: string | undefined,
 ): Promise<SessionUser | null> {
   if (!token || token.length > 100) return null
+  const hit = sessionCache.get(token)
+  if (hit && Date.now() - hit.at < CACHE_MS) return hit.user
+  const user = await loadSession(ctx, token)
+  remember(sessionCache, token, { user })
+  return user
+}
+
+async function loadSession(ctx: AppContext, token: string): Promise<SessionUser | null> {
   const rows = await ctx.db
     .select({
       sessionId: sessions.id,
@@ -163,6 +190,15 @@ export async function scopeFor(
   orgId: string,
   userId: string,
 ): Promise<OrgScope | null> {
+  const key = `${orgId}:${userId}`
+  const hit = scopeCache.get(key)
+  if (hit && Date.now() - hit.at < CACHE_MS) return hit.scope
+  const scope = await loadScope(ctx, orgId, userId)
+  remember(scopeCache, key, { scope })
+  return scope
+}
+
+async function loadScope(ctx: AppContext, orgId: string, userId: string): Promise<OrgScope | null> {
   const [m] = await ctx.db
     .select({
       role: orgMemberships.role,

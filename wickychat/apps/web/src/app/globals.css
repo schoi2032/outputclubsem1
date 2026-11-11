@@ -441,3 +441,19 @@
 .q-plate-mint {
   background-image: linear-gradient(110deg, #b8f2e6, #5ec9a5, #d8f3dc, #b8f2e6);
 }
+
+/* Performance: in the app, avatar decorations and name plates hold still until you hover
+   the message or row (like Discord). Profile cards, the Shop and previews (.q-anim-on)
+   keep animating. Pop-up cards render outside .q-still, so they animate too. */
+.q-still .q-deco,
+.q-still .q-deco::before,
+.q-still .q-deco::after,
+.q-still .q-plate {
+  animation-play-state: paused;
+}
+.q-still :is(.q-anim-on, .q-anim-row:hover) .q-deco,
+.q-still :is(.q-anim-on, .q-anim-row:hover) .q-deco::before,
+.q-still :is(.q-anim-on, .q-anim-row:hover) .q-deco::after,
+.q-still :is(.q-anim-on, .q-anim-row:hover) .q-plate {
+  animation-play-state: running;
+}

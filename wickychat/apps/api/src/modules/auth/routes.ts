@@ -27,7 +27,13 @@ import {
 import { and, eq, gt, isNull, ne, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { renderEmail } from '../../adapters/email'
-import { clearSessionCookie, createSession, requireUser, SESSION_COOKIE } from '../../core/auth'
+import {
+  clearSessionCookie,
+  createSession,
+  forgetCachedAuth,
+  requireUser,
+  SESSION_COOKIE,
+} from '../../core/auth'
 import type { AppContext } from '../../core/context'
 import { randomToken, sha256 } from '../../core/crypto'
 import { badRequest, conflict, forbidden, notFound, unauthorized } from '../../core/errors'
@@ -270,6 +276,7 @@ export async function authRoutes(app: App, ctx: AppContext) {
   app.post('/api/auth/logout', async (req, reply) => {
     const token = req.cookies[SESSION_COOKIE]
     if (token) await ctx.db.delete(sessions).where(eq(sessions.tokenHash, sha256(token)))
+    forgetCachedAuth()
     clearSessionCookie(ctx, reply)
     return { ok: true }
   })
@@ -349,6 +356,7 @@ export async function authRoutes(app: App, ctx: AppContext) {
         .where(eq(users.id, userId))
       // Sign out everywhere: a reset usually means the old password is compromised.
       await ctx.db.delete(sessions).where(eq(sessions.userId, userId))
+      forgetCachedAuth()
       await createSession(ctx, req, reply, userId)
       return loadMe(ctx, userId)
     },
@@ -450,6 +458,7 @@ export async function authRoutes(app: App, ctx: AppContext) {
       await ctx.db
         .delete(sessions)
         .where(and(eq(sessions.userId, me.id), ne(sessions.id, me.sessionId)))
+      forgetCachedAuth()
       return { ok: true }
     },
   )
@@ -475,6 +484,7 @@ export async function authRoutes(app: App, ctx: AppContext) {
     await ctx.db
       .delete(sessions)
       .where(and(eq(sessions.id, req.params.id), eq(sessions.userId, me.id)))
+    forgetCachedAuth()
     return { ok: true }
   })
 }

@@ -90,6 +90,8 @@ const REDACT = [
   '*.apiKey',
 ]
 
+const timings = new WeakMap<object, { t0: number; session: number }>()
+
 export async function buildApp(config: Config, opts: BuildOptions = {}) {
   const log = pino({
     level: config.LOG_LEVEL,
@@ -188,7 +190,19 @@ export async function buildApp(config: Config, opts: BuildOptions = {}) {
 
   app.decorateRequest('user', null)
   app.addHook('onRequest', async (req) => {
+    const t0 = performance.now()
     req.user = await resolveSession(ctx, req.cookies[SESSION_COOKIE])
+    timings.set(req, { t0, session: performance.now() - t0 })
+  })
+  // Server-Timing shows in the browser's Network tab: how long the server itself took.
+  app.addHook('onSend', async (req, reply, payload) => {
+    const t = timings.get(req)
+    if (t)
+      reply.header(
+        'Server-Timing',
+        `session;dur=${t.session.toFixed(1)}, app;dur=${(performance.now() - t.t0).toFixed(1)}`,
+      )
+    return payload
   })
 
   // CSRF defence: cookie-authenticated, state-changing requests must come from our own origin.

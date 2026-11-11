@@ -98,7 +98,7 @@ export async function marketRoutes(app: App, ctx: AppContext) {
     const l = await ctx.db.query.marketListings.findFirst({
       where: and(eq(marketListings.id, req.params.id), eq(marketListings.orgId, scope.orgId)),
     })
-    if (!l || l.status !== 'open') throw notFound('Listing')
+    if (l?.status !== 'open') throw notFound('Listing')
     if (l.sellerId !== scope.userId) throw forbidden()
     await ctx.db
       .update(marketListings)
@@ -116,7 +116,7 @@ export async function marketRoutes(app: App, ctx: AppContext) {
         .from(marketListings)
         .where(and(eq(marketListings.id, req.params.id), eq(marketListings.orgId, scope.orgId)))
         .for('update')
-      if (!l || l.status !== 'open') throw conflict('Someone else got it first.')
+      if (l?.status !== 'open') throw conflict('Someone else got it first.')
       if (l.sellerId === me) throw badRequest("That's your own listing.")
       const sellerHas = await tx.query.userItems.findFirst({
         where: and(eq(userItems.userId, l.sellerId), eq(userItems.itemId, l.itemId)),

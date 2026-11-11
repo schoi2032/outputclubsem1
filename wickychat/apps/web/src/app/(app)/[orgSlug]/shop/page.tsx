@@ -466,7 +466,7 @@ function ShopInner() {
   ].filter((it) => w?.owned.includes(it.itemId))
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="q-anim-on flex min-h-0 flex-1 flex-col">
       <PageHeader title="Wicky Shop" icon={<Store />} />
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto max-w-5xl p-4 md:p-6">

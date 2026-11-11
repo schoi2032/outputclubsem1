@@ -212,7 +212,7 @@ export const MessageItem = memo(function MessageItem({
     <div
       id={inThread ? `t-${m.id}` : `m-${m.id}`}
       className={cn(
-        'group relative flex gap-3 px-4 transition-colors hover:bg-bg-subtle md:px-5',
+        'q-anim-row group relative flex gap-3 px-4 transition-colors hover:bg-bg-subtle md:px-5',
         grouped ? (compact ? 'py-0' : 'py-0.5') : compact ? 'pt-1 pb-0' : 'pt-2 pb-0.5',
         highlighted && 'bg-mention/60 hover:bg-mention/60',
         editing && 'bg-accent-subtle/40 hover:bg-accent-subtle/40',

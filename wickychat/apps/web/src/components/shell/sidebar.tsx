@@ -175,7 +175,7 @@ function ChannelRow({ c }: { c: Channel }) {
         href={`${base}/c/${c.id}`}
         aria-current={active ? 'page' : undefined}
         className={cn(
-          'q-nav relative isolate flex items-center gap-2 overflow-hidden rounded-md px-2 text-[13.5px] text-fg-muted hover:bg-bg-muted',
+          'q-nav q-anim-row relative isolate flex items-center gap-2 overflow-hidden rounded-md px-2 text-[13.5px] text-fg-muted hover:bg-bg-muted',
           compact ? 'h-[26px]' : 'h-[30px]',
           active && 'bg-bg-emphasis text-fg hover:bg-bg-emphasis',
           (unread || mentions > 0) && 'font-semibold text-fg',

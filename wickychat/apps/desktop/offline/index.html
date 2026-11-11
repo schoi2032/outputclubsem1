@@ -40,13 +40,13 @@
   function connect() {
     document.body.classList.remove('offline');
     var done = false;
-    var timer = setTimeout(function () { if (!done) { done = true; document.body.classList.add('offline'); } }, 8000);
+    var timer = setTimeout(() => { if (!done) { done = true; document.body.classList.add('offline'); } }, 8000);
     fetch(new URL('/api/auth/providers', target).href, { mode: 'no-cors', cache: 'no-store' })
-      .then(function () { if (!done) { done = true; clearTimeout(timer); location.replace(target); } })
-      .catch(function () { if (!done) { done = true; clearTimeout(timer); document.body.classList.add('offline'); } });
+      .then(() => { if (!done) { done = true; clearTimeout(timer); location.replace(target); } })
+      .catch(() => { if (!done) { done = true; clearTimeout(timer); document.body.classList.add('offline'); } });
   }
   document.getElementById('retry').addEventListener('click', connect);
-  window.addEventListener('online', function () { if (document.body.classList.contains('offline')) connect(); });
+  window.addEventListener('online', () => { if (document.body.classList.contains('offline')) connect(); });
   connect();
 </script>
 </body>

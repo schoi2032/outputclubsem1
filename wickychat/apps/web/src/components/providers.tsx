@@ -11,6 +11,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
         defaultOptions: {
           queries: {
             refetchOnWindowFocus: false,
+            // Live updates (realtime.ts) keep the cache fresh, so don't refetch on every
+            // screen change. Each round trip to the server is slow from Korea.
+            staleTime: 60_000,
+            gcTime: 30 * 60_000,
             retry: (count, err) =>
               !(err instanceof ApiError && err.status >= 400 && err.status < 500) && count < 2,
           },

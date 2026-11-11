@@ -180,4 +180,3 @@ export class FakeGoogle {
     return { ...p, nonce: this.nonces.get(p.state) }
   }
 }
-

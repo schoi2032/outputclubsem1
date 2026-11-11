@@ -31,7 +31,9 @@ async function loadPoll(ctx: AppContext, scope: OrgScope, p: PollRow): Promise<P
   const teacher = isTeacher(scope)
   const voters: Record<string, UserSummary[]> = {}
   if (!p.anonymous || teacher)
-    for (const v of votes) (voters[v.optionId] ??= []).push(toUserSummary(v.user))
+    for (const v of votes) {
+      voters[v.optionId] = [...(voters[v.optionId] ?? []), toUserSummary(v.user)]
+    }
   return {
     id: p.id,
     messageId: p.messageId,

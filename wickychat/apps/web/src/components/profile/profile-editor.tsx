@@ -357,7 +357,7 @@ export function ProfileCardEditor() {
           </div>
         </form>
 
-        <div className="w-full shrink-0 lg:w-[320px]">
+        <div className="q-anim-on w-full shrink-0 lg:w-[320px]">
           <p className="mb-1.5 text-2xs font-semibold text-fg-subtle uppercase">Preview</p>
           <div className="sticky top-4 rounded-lg border border-border bg-bg-overlay shadow-pop">
             <CardFace

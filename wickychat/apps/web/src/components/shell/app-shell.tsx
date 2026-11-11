@@ -93,7 +93,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <CallProvider>
       <VoiceRoomProvider>
-        <div className="flex h-dvh flex-col overflow-hidden">
+        <div className="q-still flex h-dvh flex-col overflow-hidden">
           {status === 'offline' && (
             <div
               role="status"

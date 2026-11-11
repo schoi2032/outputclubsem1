@@ -4,7 +4,8 @@
   padding: 0;
 }
 
-html.lenis, html.lenis body {
+html.lenis,
+html.lenis body {
   height: auto;
 }
 
@@ -15,7 +16,7 @@ html.lenis, html.lenis body {
 body {
   background: #000;
   color: #fff;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-feature-settings: "ss01" on;
   font-size: 18px;
   font-weight: 200;
@@ -28,7 +29,9 @@ a {
   text-decoration: none;
 }
 
-h1, h2, h3 {
+h1,
+h2,
+h3 {
   font-weight: 400;
   letter-spacing: -0.04em;
 }
@@ -46,7 +49,7 @@ h1, h2, h3 {
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  background: radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,0.75) 100%);
+  background: radial-gradient(ellipse at center, transparent 45%, rgba(0, 0, 0, 0.75) 100%);
 }
 
 .nav {
@@ -100,7 +103,9 @@ h1, h2, h3 {
   letter-spacing: 0.025em;
   padding: 14px 18px;
   border-radius: 24px;
-  transition: background 0.2s, box-shadow 0.3s;
+  transition:
+    background 0.2s,
+    box-shadow 0.3s;
 }
 
 .pill:hover {
@@ -118,7 +123,9 @@ h1, h2, h3 {
   font-weight: 400;
   color: #9a9a9a;
   border-bottom: 1px solid transparent;
-  transition: color 0.2s, border-color 0.2s;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
 }
 
 .ghost:hover {
@@ -155,7 +162,9 @@ h1, h2, h3 {
   border: 0;
   background: #444;
   cursor: pointer;
-  transition: background 0.3s, transform 0.3s;
+  transition:
+    background 0.3s,
+    transform 0.3s;
 }
 
 .dots button.on {
@@ -335,7 +344,8 @@ h1 + p {
     display: none;
   }
 
-  .copy, .right .copy {
+  .copy,
+  .right .copy {
     width: 100%;
     margin-left: 0;
   }
@@ -349,8 +359,9 @@ h1 + p {
     align-items: center;
   }
 
-  .left .copy, .right .copy {
-    background: linear-gradient(transparent, rgba(0,0,0,0.85) 30%);
+  .left .copy,
+  .right .copy {
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.85) 30%);
     padding-top: 40px;
   }
 

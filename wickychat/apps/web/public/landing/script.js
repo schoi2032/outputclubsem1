@@ -8,14 +8,14 @@ let lenis = null
 if (!still) {
   lenis = new Lenis({ lerp: 0.075, smoothWheel: true })
   lenis.on('scroll', ScrollTrigger.update)
-  gsap.ticker.add(t => lenis.raf(t * 1000))
+  gsap.ticker.add((t) => lenis.raf(t * 1000))
   gsap.ticker.lagSmoothing(0)
 }
 
 let keys = []
 
 function measure() {
-  keys = scenes.map(s => s.offsetTop + (s.offsetHeight - window.innerHeight) / 2)
+  keys = scenes.map((s) => s.offsetTop + (s.offsetHeight - window.innerHeight) / 2)
   keys[0] = 0
 }
 
@@ -38,11 +38,11 @@ function goTo(i) {
   else window.scrollTo(0, y)
 }
 
-document.querySelectorAll('a[href^="#"]').forEach(a => {
-  a.addEventListener('click', e => {
+document.querySelectorAll('a[href^="#"]').forEach((a) => {
+  a.addEventListener('click', (e) => {
     const id = a.getAttribute('href')
     if (id.length < 2) return
-    const i = scenes.findIndex(s => '#' + s.id === id)
+    const i = scenes.findIndex((s) => '#' + s.id === id)
     if (i < 0) return
     e.preventDefault()
     goTo(i)
@@ -66,14 +66,23 @@ function setActive(i) {
   if (i === active) return
   active = i
   dots.forEach((d, k) => d.classList.toggle('on', k === i))
-  gsap.to(hudNum, { duration: 0.6, scrambleText: { text: String(i).padStart(2, '0'), chars: '0123456789' } })
-  gsap.to(hudName, { duration: 0.9, scrambleText: { text: scenes[i].dataset.name, chars: glyphs, speed: 0.6 } })
+  gsap.to(hudNum, {
+    duration: 0.6,
+    scrambleText: { text: String(i).padStart(2, '0'), chars: '0123456789' },
+  })
+  gsap.to(hudName, {
+    duration: 0.9,
+    scrambleText: { text: scenes[i].dataset.name, chars: glyphs, speed: 0.6 },
+  })
 }
 
 function scramble(el, duration) {
   if (!el) return
   if (!el.dataset.text) el.dataset.text = el.textContent
-  gsap.to(el, { duration: duration, scrambleText: { text: el.dataset.text, chars: glyphs, speed: 0.5, revealDelay: 0.2 } })
+  gsap.to(el, {
+    duration: duration,
+    scrambleText: { text: el.dataset.text, chars: glyphs, speed: 0.5, revealDelay: 0.2 },
+  })
 }
 
 function buildText() {
@@ -82,7 +91,10 @@ function buildText() {
     const last = i === scenes.length - 1
     const label = scene.querySelector('.label')
     const fades = scene.querySelectorAll('.fade')
-    const split = new SplitText(scene.querySelector('.jumble'), { type: 'words,chars', charsClass: 'ch' })
+    const split = new SplitText(scene.querySelector('.jumble'), {
+      type: 'words,chars',
+      charsClass: 'ch',
+    })
     const chars = split.chars
 
     if (still) return
@@ -93,7 +105,7 @@ function buildText() {
       rotation: 'random(-140, 140)',
       scale: 'random(0.2, 2.4)',
       opacity: 0,
-      filter: 'blur(10px)'
+      filter: 'blur(10px)',
     }
 
     const tl = gsap.timeline({
@@ -101,25 +113,53 @@ function buildText() {
         trigger: scene,
         start: first ? 'top top' : 'top 85%',
         end: last ? 'bottom bottom' : 'bottom 15%',
-        scrub: 1.2
-      }
+        scrub: 1.2,
+      },
     })
 
     if (!first) {
-      tl.from(chars, { ...jumbled, duration: 1, ease: 'power3.out', stagger: { each: 0.015, from: 'random' } })
-      tl.from(fades, { opacity: 0, y: 50, filter: 'blur(12px)', duration: 0.7, stagger: 0.08 }, '<0.35')
+      tl.from(chars, {
+        ...jumbled,
+        duration: 1,
+        ease: 'power3.out',
+        stagger: { each: 0.015, from: 'random' },
+      })
+      tl.from(
+        fades,
+        { opacity: 0, y: 50, filter: 'blur(12px)', duration: 0.7, stagger: 0.08 },
+        '<0.35',
+      )
     }
 
     tl.to({}, { duration: first ? 0.5 : 1.1 })
 
     if (!last) {
-      tl.to(chars, { ...jumbled, duration: 1, ease: 'power2.in', stagger: { each: 0.015, from: 'random' } })
+      tl.to(chars, {
+        ...jumbled,
+        duration: 1,
+        ease: 'power2.in',
+        stagger: { each: 0.015, from: 'random' },
+      })
       tl.to(fades, { opacity: 0, y: -50, filter: 'blur(12px)', duration: 0.6, stagger: 0.05 }, '<')
     }
 
     if (first) {
-      gsap.from(chars, { ...jumbled, duration: 1.8, delay: 0.2, ease: 'expo.out', stagger: { each: 0.025, from: 'random' }, immediateRender: true })
-      gsap.from(fades, { opacity: 0, y: 30, filter: 'blur(12px)', duration: 1.2, delay: 0.9, stagger: 0.12 })
+      gsap.from(chars, {
+        ...jumbled,
+        duration: 1.8,
+        delay: 0.2,
+        ease: 'expo.out',
+        stagger: { each: 0.025, from: 'random' },
+        immediateRender: true,
+      })
+      gsap.from(fades, {
+        opacity: 0,
+        y: 30,
+        filter: 'blur(12px)',
+        duration: 1.2,
+        delay: 0.9,
+        stagger: 0.12,
+      })
       scramble(label, 1.4)
     }
 
@@ -128,7 +168,7 @@ function buildText() {
       start: 'top 70%',
       end: 'bottom 30%',
       onEnter: () => scramble(label, 1.2),
-      onEnterBack: () => scramble(label, 1.2)
+      onEnterBack: () => scramble(label, 1.2),
     })
   })
 }
@@ -186,12 +226,12 @@ const shapes = {
     const s = w / 36
     c.beginPath()
     for (let t = 0; t < Math.PI * 2; t += 0.02) {
-      const px = 16 * Math.pow(Math.sin(t), 3)
+      const px = 16 * Math.sin(t) ** 3
       const py = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)
       c.lineTo(w / 2 + px * s, h / 2 - py * s - s * 2)
     }
     c.fill()
-  }
+  },
 }
 
 function glyph(c, w, h, ch) {
@@ -248,8 +288,8 @@ function galaxy(n) {
   const out = new Float32Array(n * 3)
   const tilt = -1.05
   for (let j = 0; j < n; j++) {
-    const r = Math.pow(Math.random(), 0.7) * 2.4 + 0.15
-    const arm = Math.floor(Math.random() * 3) * Math.PI * 2 / 3
+    const r = Math.random() ** 0.7 * 2.4 + 0.15
+    const arm = (Math.floor(Math.random() * 3) * Math.PI * 2) / 3
     const a = arm + r * 2.2 + (Math.random() - 0.5) * 0.7
     const x = Math.cos(a) * r
     const z = Math.sin(a) * r
@@ -274,16 +314,21 @@ function tunnel(n) {
 }
 
 async function buildWorld() {
-  const [THREE, { EffectComposer }, { RenderPass }, { UnrealBloomPass }, { OutputPass }] = await Promise.all([
-    import('three'),
-    import('three/addons/postprocessing/EffectComposer.js'),
-    import('three/addons/postprocessing/RenderPass.js'),
-    import('three/addons/postprocessing/UnrealBloomPass.js'),
-    import('three/addons/postprocessing/OutputPass.js')
-  ])
+  const [THREE, { EffectComposer }, { RenderPass }, { UnrealBloomPass }, { OutputPass }] =
+    await Promise.all([
+      import('three'),
+      import('three/addons/postprocessing/EffectComposer.js'),
+      import('three/addons/postprocessing/RenderPass.js'),
+      import('three/addons/postprocessing/UnrealBloomPass.js'),
+      import('three/addons/postprocessing/OutputPass.js'),
+    ])
 
   const canvas = document.getElementById('world')
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' })
+  const renderer = new THREE.WebGLRenderer({
+    canvas,
+    antialias: true,
+    powerPreference: 'high-performance',
+  })
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75))
   renderer.setClearColor(0x000000, 1)
 
@@ -304,12 +349,27 @@ async function buildWorld() {
   const small = window.innerWidth < 700
   const n = small ? 1500 : 3200
   const geo = new THREE.TetrahedronGeometry(0.075)
-  const mat = new THREE.MeshStandardMaterial({ flatShading: true, roughness: 0.3, metalness: 0.25, emissive: 0x0c0720 })
+  const mat = new THREE.MeshStandardMaterial({
+    flatShading: true,
+    roughness: 0.3,
+    metalness: 0.25,
+    emissive: 0x0c0720,
+  })
   const mesh = new THREE.InstancedMesh(geo, mat, n)
   mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage)
   scene.add(mesh)
 
-  const palette = ['#8052ff', '#8052ff', '#a98bff', '#ffb829', '#15846e', '#3ad1b0', '#e255ff', '#4d7cff', '#ff5c8a']
+  const palette = [
+    '#8052ff',
+    '#8052ff',
+    '#a98bff',
+    '#ffb829',
+    '#15846e',
+    '#3ad1b0',
+    '#e255ff',
+    '#4d7cff',
+    '#ff5c8a',
+  ]
   const color = new THREE.Color()
   for (let j = 0; j < n; j++) {
     mesh.setColorAt(j, color.set(palette[Math.floor(Math.random() * palette.length)]))
@@ -323,7 +383,7 @@ async function buildWorld() {
     fromMask(shapes.question, n),
     fromMask(shapes.heart, n),
     galaxy(n),
-    tunnel(n)
+    tunnel(n),
   ]
 
   const pos = new Float32Array(n * 3)
@@ -355,17 +415,23 @@ async function buildWorld() {
     const halfH = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.position.z
     const halfW = halfH * camera.aspect
     const narrow = camera.aspect < 0.9
-    const side = (dir, extra = 1) => narrow
-      ? { x: 0, y: halfH * 0.36, z: 0, s: Math.min(halfW * 0.78, halfH * 0.42) * extra }
-      : { x: dir * halfW * 0.47, y: 0, z: 0, s: Math.min(halfW * 0.38, halfH * 0.68) * extra }
+    const side = (dir, extra = 1) =>
+      narrow
+        ? { x: 0, y: halfH * 0.36, z: 0, s: Math.min(halfW * 0.78, halfH * 0.42) * extra }
+        : { x: dir * halfW * 0.47, y: 0, z: 0, s: Math.min(halfW * 0.38, halfH * 0.68) * extra }
     places = [
       side(1),
       side(-1),
       side(1),
       side(-1),
       side(1),
-      { x: 0, y: narrow ? 0 : -halfH * 0.1, z: narrow ? -9 : -3, s: narrow ? halfW * 1.5 : halfW * 0.62 },
-      { x: 0, y: 0, z: 0, s: narrow ? halfW * 0.8 : halfH * 0.62 }
+      {
+        x: 0,
+        y: narrow ? 0 : -halfH * 0.1,
+        z: narrow ? -9 : -3,
+        s: narrow ? halfW * 1.5 : halfW * 0.62,
+      },
+      { x: 0, y: 0, z: 0, s: narrow ? halfW * 0.8 : halfH * 0.62 },
     ]
     measure()
   }
@@ -389,12 +455,14 @@ async function buildWorld() {
   const hit = new THREE.Vector3(999, 999, 0)
   let pointer = false
 
-  window.addEventListener('pointermove', e => {
+  window.addEventListener('pointermove', (e) => {
     mouse.x = (e.clientX / window.innerWidth) * 2 - 1
     mouse.y = -(e.clientY / window.innerHeight) * 2 + 1
     pointer = true
   })
-  document.addEventListener('pointerleave', () => { pointer = false })
+  document.addEventListener('pointerleave', () => {
+    pointer = false
+  })
 
   const dummy = new THREE.Object3D()
   const clock = new THREE.Clock()
@@ -411,7 +479,7 @@ async function buildWorld() {
       const cx = x * Math.cos(a) - y * Math.sin(a)
       y = x * Math.sin(a) + y * Math.cos(a)
       x = cx
-      z = ((z + t * 0.6) % 6.8 + 6.8) % 6.8 - 6
+      z = ((((z + t * 0.6) % 6.8) + 6.8) % 6.8) - 6
       ay = angY * 0.3
     } else if (i === 5) {
       const a = t * 0.06
@@ -464,7 +532,7 @@ async function buildWorld() {
 
     const angY = Math.sin(t * 0.25) * 0.45 + smooth.x * 0.5
     const angX = Math.cos(t * 0.2) * 0.12 - smooth.y * 0.3
-    const ease = still ? 1 : 1 - Math.pow(0.93, dt * 60)
+    const ease = still ? 1 : 1 - 0.93 ** (dt * 60)
 
     for (let j = 0; j < n; j++) {
       const m = Math.min(1, Math.max(0, mix * 1.5 - lag[j] * 0.5))
@@ -486,8 +554,8 @@ async function buildWorld() {
       if (d2 < 3.2) {
         const d = Math.sqrt(d2) || 0.001
         const push = (1 - d / 1.79) * 0.35
-        px += dx / d * push
-        py += dy / d * push
+        px += (dx / d) * push
+        py += (dy / d) * push
         pz += push * 1.5
       }
 

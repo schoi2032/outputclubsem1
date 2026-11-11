@@ -267,7 +267,7 @@ export function ChannelDetails({
                 {members.data?.map((m) => (
                   <li
                     key={m.id}
-                    className="relative isolate flex items-center gap-3 overflow-hidden rounded-md px-1 py-1.5 hover:bg-bg-subtle"
+                    className="q-anim-row relative isolate flex items-center gap-3 overflow-hidden rounded-md px-1 py-1.5 hover:bg-bg-subtle"
                   >
                     <NamePlate value={m.namePlate} />
                     <Avatar

@@ -400,7 +400,7 @@ export function ProfilePanel({ user }: { user: UserSummary }) {
   return (
     <aside
       aria-label={`${displayName(user)}'s profile`}
-      className="hidden w-[340px] shrink-0 flex-col overflow-y-auto border-l border-border bg-bg-overlay lg:flex"
+      className="q-anim-on hidden w-[340px] shrink-0 flex-col overflow-y-auto border-l border-border bg-bg-overlay lg:flex"
     >
       <ProfileCard user={user} panel />
     </aside>
