@@ -326,6 +326,8 @@ function handle(e: ServerEvent) {
     case 'wicky.updated':
       void qc.invalidateQueries({ queryKey: ['wallet'] })
       void qc.invalidateQueries({ queryKey: ['trades', e.orgId] })
+      void qc.invalidateQueries({ queryKey: ['auctions', e.orgId] })
+      void qc.invalidateQueries({ queryKey: ['achievements'] })
       if (e.text) toast.info(e.text)
       return
     case 'expressions.updated':

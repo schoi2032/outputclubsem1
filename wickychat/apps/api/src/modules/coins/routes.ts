@@ -49,6 +49,7 @@ import type { AppContext } from '../../core/context'
 import { badRequest, conflict, forbidden, notFound } from '../../core/errors'
 import { type App, orgIdParams, orgParams } from '../../core/http'
 import { avatarUrl } from '../users/serialize'
+import { settleAuctions } from './auctions'
 import { changeCoins, currentStreak, earnedFromMessagesToday, startOfSchoolDay } from './service'
 
 const CUSTOM = /^u:([0-9a-f-]{36})$/
@@ -236,7 +237,12 @@ export async function sameOrg(ctx: AppContext, a: string, b: string) {
 }
 
 export async function coinRoutes(app: App, ctx: AppContext) {
-  app.get('/api/me/wallet', async (req) => loadWallet(ctx, requireUser(req).id))
+  app.get('/api/me/wallet', async (req) => {
+    const me = requireUser(req)
+    // Auctions that ended give out their items and coins the next time anyone looks.
+    await settleAuctions(ctx).catch((err) => ctx.log.warn({ err }, 'auction settle failed'))
+    return loadWallet(ctx, me.id)
+  })
 
   /** Once per school day (midnight in Korea). */
   app.post('/api/me/wallet/daily', async (req) => {

@@ -1593,3 +1593,32 @@ export const customBundles = pgTable(
   },
   (t) => [index('custom_bundles_org_idx').on(t.orgId, t.status)],
 )
+
+/**
+ * WickyChat: an item up for auction. It's taken out of the seller's things while it runs;
+ * the top bid's coins are held, and the previous bidder gets theirs back when outbid.
+ */
+export const auctions = pgTable(
+  'auctions',
+  {
+    id: pk(),
+    orgId: orgRef(),
+    sellerId: uuid('seller_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    itemId: text('item_id').notNull(),
+    serial: integer('serial'),
+    startPrice: integer('start_price').notNull(),
+    topBid: integer('top_bid'),
+    topBidderId: uuid('top_bidder_id').references(() => users.id, { onDelete: 'set null' }),
+    bids: integer('bids').notNull().default(0),
+    endsAt: ts('ends_at').notNull(),
+    /** open | sold | unsold | cancelled */
+    status: text('status').notNull().default('open'),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index('auctions_org_idx').on(t.orgId, t.status),
+    index('auctions_due_idx').on(t.status, t.endsAt),
+  ],
+)

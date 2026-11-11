@@ -71,6 +71,7 @@ import { PageHeader } from '@/components/page-header'
 import { NamePlate } from '@/components/profile/cosmetics-fx'
 import { useMyShelf } from '@/components/profile/shelf'
 import { AchievementsView, useAchievements } from '@/components/shop/achievements'
+import { AuctionsView } from '@/components/shop/auctions'
 import { BundlesView, CreateBundle, MyBundles, useBundleDefs } from '@/components/shop/bundles'
 import { CrateArt, CratesView, CreateCrate, MyCrates, useCrateDefs } from '@/components/shop/crates'
 import {
@@ -119,6 +120,9 @@ const REASON: Record<CoinTransaction['reason'], string> = {
   bundle_sale: 'Someone bought your',
   achievement: 'Achievement:',
   trade_up: 'Trade-up gave you',
+  auction_bid: 'Bid on',
+  auction_refund: 'Outbid, coins back for',
+  auction_sale: 'Auction sold:',
 }
 
 const POSITION_LABEL: Record<StickerPosition, string> = {
@@ -152,6 +156,7 @@ type Tab =
   | 'themes'
   | 'create'
   | 'market'
+  | 'auctions'
   | 'trades'
   | 'leaderboard'
   | 'achievements'
@@ -167,6 +172,7 @@ const TABS: Tab[] = [
   'themes',
   'create',
   'market',
+  'auctions',
   'trades',
   'leaderboard',
   'achievements',
@@ -742,6 +748,7 @@ function ShopInner() {
               <TabsTrigger value="themes">Themes</TabsTrigger>
               <TabsTrigger value="create">Create</TabsTrigger>
               <TabsTrigger value="market">Market</TabsTrigger>
+              <TabsTrigger value="auctions">Auctions</TabsTrigger>
               <TabsTrigger value="trades">
                 Trades
                 {!!incomingTrades && (
@@ -963,6 +970,9 @@ function ShopInner() {
                 onChange={() => refresh()}
               />
             </TabsContent>
+            <TabsContent value="auctions" className="pt-4">
+              <AuctionsView wallet={w} />
+            </TabsContent>
             <TabsContent value="trades" className="pt-4">
               <TradesView wallet={w} catalog={catalog} presetTo={presetTrade} />
             </TabsContent>
@@ -1016,7 +1026,12 @@ function ShopInner() {
                               return ` ${m ? displayName(m) : 'someone'}${note ? ` · “${note}”` : ''}`
                             })()}
                           {h.reason === 'gift' && h.ref && ` · “${h.ref}”`}
-                          {h.reason === 'trade_up' && h.ref && ` ${itemName(h.ref, communityList)}`}
+                          {(h.reason === 'trade_up' ||
+                            h.reason === 'auction_bid' ||
+                            h.reason === 'auction_refund' ||
+                            h.reason === 'auction_sale') &&
+                            h.ref &&
+                            ` ${itemName(h.ref, communityList)}`}
                           {h.reason === 'achievement' &&
                             h.ref &&
                             ` ${ACHIEVEMENTS.find((x) => x.id === h.ref)?.name ?? ''}`}

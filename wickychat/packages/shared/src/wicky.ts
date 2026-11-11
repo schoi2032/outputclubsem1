@@ -373,6 +373,9 @@ export interface CoinTransaction {
     | 'bundle_sale'
     | 'achievement'
     | 'trade_up'
+    | 'auction_bid'
+    | 'auction_refund'
+    | 'auction_sale'
   ref: string | null
   createdAt: string
 }
@@ -1255,6 +1258,7 @@ export type AchievementStat =
   | 'serialOne'
   | 'coinsSent'
   | 'tradeUps'
+  | 'auctionsWon'
 
 export interface AchievementDef {
   id: string
@@ -1296,6 +1300,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   ach('serial-1', '🥇', 'Number one', 'Own copy #001 of a limited item', 'serialOne', 1, 50),
   ach('tradeup-1', '🧪', 'Alchemist', 'Do a trade-up contract', 'tradeUps', 1, 15),
   ach('tradeup-10', '⚗️', 'Trade-up master', 'Do 10 trade-up contracts', 'tradeUps', 10, 100),
+  ach('auction-1', '🔨', 'Going, going, gone', 'Win an auction', 'auctionsWon', 1, 20),
   ach('send-500', '💸', 'Generous', 'Send 500 coins to friends in total', 'coinsSent', 500, 25),
 ]
 export const achievementById = (id: string) => ACHIEVEMENTS.find((a) => a.id === id)
@@ -1305,4 +1310,36 @@ export interface AchievementProgress {
   progress: number
   done: boolean
   claimed: boolean
+}
+
+// --- Auctions ----------------------------------------------------------------------------
+
+export const AUCTION = {
+  /** How long an auction can run, in hours. */
+  hours: [1, 6, 24] as const,
+  start: { min: 5, max: 20000 },
+  /** Each bid must beat the top bid by this much (5%, at least 1 coin). */
+  step: 0.05,
+  /** The seller gets this share of the winning bid. */
+  share: 0.95,
+  /** A bid in the last 2 minutes pushes the end back to 2 minutes from now. */
+  snipeMs: 120_000,
+  maxOpen: 5,
+}
+
+export const minBid = (start: number, top: number | null) =>
+  top == null ? start : Math.max(top + 1, Math.ceil(top * (1 + AUCTION.step)))
+
+export interface Auction {
+  id: string
+  itemId: string
+  serial: number | null
+  seller: import('./types').UserSummary
+  startPrice: number
+  topBid: number | null
+  topBidder: { id: string; name: string; displayName: string | null } | null
+  bids: number
+  endsAt: string
+  status: 'open' | 'sold' | 'unsold' | 'cancelled'
+  cosmetic: Cosmetic | null
 }

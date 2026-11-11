@@ -18,6 +18,7 @@ import {
   THEMES,
   themeById,
   themeCss,
+  tierOfPrice,
 } from '@quid/shared'
 import { Avatar, cn, Input, Select } from '@quid/ui'
 import { useQuery } from '@tanstack/react-query'
@@ -95,7 +96,7 @@ export const BUILTIN_ITEMS: ShopItem[] = [
       name: e.name,
       description: e.description,
       price: e.price,
-      rarity: e.price >= 200 ? 'epic' : 'rare',
+      rarity: tierOfPrice(e.price),
       ...evFields(e.event),
     }),
   ),
@@ -108,7 +109,7 @@ export const BUILTIN_ITEMS: ShopItem[] = [
       name: pl.name,
       description: pl.description,
       price: pl.price,
-      rarity: pl.price >= 180 ? 'epic' : pl.price >= 120 ? 'rare' : 'common',
+      rarity: tierOfPrice(pl.price),
       ...evFields(pl.event),
     }),
   ),
@@ -122,7 +123,7 @@ export const BUILTIN_ITEMS: ShopItem[] = [
       name: t.name,
       description: `${t.dark ? 'Dark' : 'Light'} theme · palette by ${t.credit}`,
       price: t.price,
-      rarity: t.price >= 200 ? 'epic' : 'rare',
+      rarity: tierOfPrice(t.price),
       ...evFields(t.event),
     }),
   ),

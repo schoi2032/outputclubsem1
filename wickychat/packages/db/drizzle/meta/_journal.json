@@ -232,6 +232,13 @@
       "when": 1794401616007,
       "tag": "0032_achievements",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1794401976845,
+      "tag": "0033_auctions",
+      "breakpoints": true
     }
   ]
 }

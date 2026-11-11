@@ -4,6 +4,7 @@
  */
 import {
   achievementClaims,
+  auctions,
   coinTransactions,
   cosmetics,
   messages,
@@ -34,60 +35,68 @@ const num = (rows: { n: unknown }[]) => Number(rows[0]?.n ?? 0)
 
 export async function achievementStats(ctx: AppContext, userId: string): Promise<Stats> {
   const db = ctx.db
-  const [u, msgs, crates, trd, gifts, items, sold, quiz, serial, sent, ups] = await Promise.all([
-    db.query.users.findFirst({ where: eq(users.id, userId), columns: { bestStreak: true } }),
-    db
-      .select({ n: count() })
-      .from(messages)
-      .where(and(eq(messages.authorId, userId), isNull(messages.deletedAt))),
-    db
-      .select({ n: count() })
-      .from(userCrates)
-      .where(and(eq(userCrates.userId, userId), isNotNull(userCrates.openedAt))),
-    db
-      .select({ n: count() })
-      .from(trades)
-      .where(
-        and(eq(trades.status, 'accepted'), or(eq(trades.fromId, userId), eq(trades.toId, userId))),
-      ),
-    db
-      .select({ n: count() })
-      .from(coinTransactions)
-      .where(
-        and(
-          eq(coinTransactions.userId, userId),
-          inArray(coinTransactions.reason, ['gift_item', 'crate_gift', 'bundle_gift']),
+  const [u, msgs, crates, trd, gifts, items, sold, quiz, serial, sent, ups, won] =
+    await Promise.all([
+      db.query.users.findFirst({ where: eq(users.id, userId), columns: { bestStreak: true } }),
+      db
+        .select({ n: count() })
+        .from(messages)
+        .where(and(eq(messages.authorId, userId), isNull(messages.deletedAt))),
+      db
+        .select({ n: count() })
+        .from(userCrates)
+        .where(and(eq(userCrates.userId, userId), isNotNull(userCrates.openedAt))),
+      db
+        .select({ n: count() })
+        .from(trades)
+        .where(
+          and(
+            eq(trades.status, 'accepted'),
+            or(eq(trades.fromId, userId), eq(trades.toId, userId)),
+          ),
         ),
-      ),
-    db.select({ n: count() }).from(userItems).where(eq(userItems.userId, userId)),
-    db
-      .select({ n: sum(cosmetics.sales) })
-      .from(cosmetics)
-      .where(and(eq(cosmetics.creatorId, userId), eq(cosmetics.status, 'approved'))),
-    db
-      .select({ n: count() })
-      .from(pollVotes)
-      .innerJoin(polls, eq(polls.id, pollVotes.pollId))
-      .where(
-        and(
-          eq(pollVotes.userId, userId),
-          eq(polls.kind, 'quiz'),
-          eq(pollVotes.optionId, sql`${polls.correctOptionId}`),
+      db
+        .select({ n: count() })
+        .from(coinTransactions)
+        .where(
+          and(
+            eq(coinTransactions.userId, userId),
+            inArray(coinTransactions.reason, ['gift_item', 'crate_gift', 'bundle_gift']),
+          ),
         ),
-      ),
-    db
-      .select({ n: count() })
-      .from(userItems)
-      .where(and(eq(userItems.userId, userId), eq(userItems.serial, 1))),
-    db
-      .select({ n: sql<number>`coalesce(-sum(${coinTransactions.amount}), 0)::int` })
-      .from(coinTransactions)
-      .where(and(eq(coinTransactions.userId, userId), eq(coinTransactions.reason, 'coins_sent'))),
-    db
-      .select({ n: count() })
-      .from(coinTransactions)
-      .where(and(eq(coinTransactions.userId, userId), eq(coinTransactions.reason, 'trade_up'))),
-  ])
+      db.select({ n: count() }).from(userItems).where(eq(userItems.userId, userId)),
+      db
+        .select({ n: sum(cosmetics.sales) })
+        .from(cosmetics)
+        .where(and(eq(cosmetics.creatorId, userId), eq(cosmetics.status, 'approved'))),
+      db
+        .select({ n: count() })
+        .from(pollVotes)
+        .innerJoin(polls, eq(polls.id, pollVotes.pollId))
+        .where(
+          and(
+            eq(pollVotes.userId, userId),
+            eq(polls.kind, 'quiz'),
+            eq(pollVotes.optionId, sql`${polls.correctOptionId}`),
+          ),
+        ),
+      db
+        .select({ n: count() })
+        .from(userItems)
+        .where(and(eq(userItems.userId, userId), eq(userItems.serial, 1))),
+      db
+        .select({ n: sql<number>`coalesce(-sum(${coinTransactions.amount}), 0)::int` })
+        .from(coinTransactions)
+        .where(and(eq(coinTransactions.userId, userId), eq(coinTransactions.reason, 'coins_sent'))),
+      db
+        .select({ n: count() })
+        .from(coinTransactions)
+        .where(and(eq(coinTransactions.userId, userId), eq(coinTransactions.reason, 'trade_up'))),
+      db
+        .select({ n: count() })
+        .from(auctions)
+        .where(and(eq(auctions.topBidderId, userId), eq(auctions.status, 'sold'))),
+    ])
   return {
     messages: num(msgs),
     crates: num(crates),
@@ -100,6 +109,7 @@ export async function achievementStats(ctx: AppContext, userId: string): Promise
     serialOne: num(serial),
     coinsSent: num(sent),
     tradeUps: num(ups),
+    auctionsWon: num(won),
   }
 }
 
