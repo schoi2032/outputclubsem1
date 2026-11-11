@@ -205,3 +205,40 @@
     pointer-events: none;
   }
 }
+
+/* WickyChat profile fonts (names and "About me"). See src/lib/profile-fonts.ts. */
+.q-font-rounded {
+  font-family: var(--pf-rounded), sans-serif;
+}
+.q-font-serif {
+  font-family: var(--pf-serif), serif;
+}
+.q-font-mono {
+  font-family: var(--pf-mono), monospace;
+}
+.q-font-hand {
+  font-family: var(--pf-hand), cursive;
+  font-size: 1.2em;
+  line-height: 1.25;
+}
+.q-font-pixel {
+  font-family: var(--pf-pixel), monospace;
+  font-size: 0.72em;
+  line-height: 1.7;
+}
+.q-font-display {
+  font-family: var(--pf-display), sans-serif;
+  letter-spacing: 0.01em;
+}
+.q-font-future {
+  font-family: var(--pf-future), sans-serif;
+  letter-spacing: 0.02em;
+}
+
+/* Gradient names */
+.q-name-gradient {
+  background: linear-gradient(90deg, var(--q-n1), var(--q-n2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}

@@ -177,9 +177,43 @@ export default function HelpPage() {
             <li>
               Swearing <strong>costs you 5 coins</strong> each time the filter catches it.
             </li>
+            <li>
+              <strong>Gift</strong> any decoration to a friend with the 🎁 button, or from the 🎁 on
+              their profile card. You pay, they get it.
+            </li>
           </ul>
 
-          <h3>8. The rules</h3>
+          <h3>8. Make your own cosmetics 🎨</h3>
+          <ul>
+            <li>
+              In <strong>Shop → Create</strong>, upload a <strong>frame</strong> (a square image
+              that goes around your picture, transparent in the middle) and/or a{' '}
+              <strong>sticker</strong> (a small image on the edge). GIFs animate.
+            </li>
+            <li>
+              Or upload a pack: a <code>cosmetic.json</code> plus its images. There's an example
+              file to download on the Create tab.
+            </li>
+            <li>
+              Set your price. A teacher checks it, and once it's approved it goes on sale in{' '}
+              <strong>Community</strong>. You get <strong>90% of every sale</strong>.
+            </li>
+            <li>
+              Only use art you made yourself. Anything copied from Discord, games or other apps will
+              be rejected.
+            </li>
+          </ul>
+
+          <h3>9. Style your profile ✨</h3>
+          <ul>
+            <li>
+              In <strong>Settings → Profile</strong>, upload a <strong>banner</strong> image (GIFs
+              animate), pick fonts for your name and "About me", colour your name (or make it a
+              gradient), and give your card a two-colour theme.
+            </li>
+          </ul>
+
+          <h3>10. The rules</h3>
           <ul>
             <li>
               WickyChat is a school space. Treat it like a classroom: be kind, no bullying, no spam.
@@ -287,7 +321,20 @@ export default function HelpPage() {
             </li>
           </ul>
 
-          <h3>5. Reward students with coins</h3>
+          <h3>5. Review student-made cosmetics</h3>
+          <ul>
+            <li>
+              Students can design their own avatar decorations and sell them. New ones wait in{' '}
+              <strong>Settings → Cosmetics review</strong> until a teacher approves them.
+            </li>
+            <li>
+              Approve only appropriate art that the student made themselves (no art copied from
+              Discord, games or other apps). Add a note to explain a rejection. You can also take
+              down anything already on sale; people who bought it keep it.
+            </li>
+          </ul>
+
+          <h3>6. Reward students with coins</h3>
           <ul>
             <li>
               Click a student's name, type an amount and press <strong>Reward</strong> to give them
@@ -296,7 +343,7 @@ export default function HelpPage() {
             </li>
           </ul>
 
-          <h3>6. Handy tools</h3>
+          <h3>7. Handy tools</h3>
           <ul>
             <li>
               <strong>Tasks:</strong> turn a message into a task with a due date and assign it.

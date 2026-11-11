@@ -22,6 +22,7 @@ import type {
 import {
   assignableRoles,
   canActOnMember,
+  cleanProfileStyle,
   departmentSchema,
   inviteSchema,
   ROLE_LABEL,
@@ -189,6 +190,9 @@ export async function orgRoutes(app: App, ctx: AppContext) {
           bio: users.bio,
           pronouns: users.pronouns,
           bannerColor: users.bannerColor,
+          bannerKey: users.bannerKey,
+          bannerAnimated: users.bannerAnimated,
+          profileStyle: users.profileStyle,
           role: orgMemberships.role,
           title: orgMemberships.title,
           departmentId: orgMemberships.departmentId,
@@ -248,6 +252,8 @@ export async function orgRoutes(app: App, ctx: AppContext) {
           bio: r.bio,
           pronouns: r.pronouns,
           bannerColor: r.bannerColor,
+          bannerUrl: avatarUrl(r.bannerKey, r.bannerAnimated),
+          profileStyle: cleanProfileStyle(r.profileStyle),
         }
       })
     },

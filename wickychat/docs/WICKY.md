@@ -64,34 +64,101 @@ Code:
 ## Profiles, Wicky Coins and the Shop
 
 Code:
-- `packages/shared/src/wicky.ts`: coin rules, the decoration catalog and banner colours
-- `apps/api/src/modules/coins/`: the server side
-- `packages/ui/src/styles.css`: the `.q-deco-*` animations
-- `apps/web/src/components/profile/profile-card.tsx`: the profile card
-- `apps/web/src/app/(app)/[orgSlug]/shop/page.tsx`: the shop page
+- `packages/shared/src/wicky.ts`: coin rules, the catalog, cosmetic and profile-style types
+- `apps/api/src/modules/coins/`: wallet, shop, gifting, cosmetics and review
+- `packages/ui/src/avatar.tsx` and `.q-deco-*` in `packages/ui/src/styles.css`: decorations on avatars
+- `apps/web/src/components/profile/`: the profile card, its editor and styled names
+- `apps/web/src/app/(app)/[orgSlug]/shop/page.tsx`: the Shop
+- `apps/web/src/app/(app)/[orgSlug]/settings/cosmetics/page.tsx`: the teacher review page
 
-- **Profile card.** Click a name or avatar in chat to open it. It shows a banner colour, the avatar with its decoration, display name, pronouns, role (🍎 Teacher for admins and owners), status, "About me" (190 characters, swear-filtered) and join date, plus a Message button. Edit it in Settings → Profile; the page has a live preview.
-- **Wicky Coins.** The balance is in `users.coins`. Every change is written to `coin_transactions` with a reason (`daily`, `message`, `swear`, `purchase` or `gift`). The rules are in `COINS`:
+### Profiles
 
-  | How | Coins |
-  |---|---|
-  | Daily bonus | +25 |
-  | Each message | +2 |
-  | Message cap | 50 a day |
-  | Each swear | −5 |
+People's avatars are round, Discord-style. Organization logos stay square (`shape="square"`). Click a name or avatar in chat to open the profile card. It shows:
+- a banner: an uploaded image (GIFs animate) or a colour
+- the avatar with its decoration
+- the name in its chosen font and colour, or a two-colour gradient
+- pronouns, role (🍎 Teacher for admins and owners), status, "About me" in its chosen font, and join date
+- an optional two-colour card theme
+- buttons: **Message**, **🎁 gift a decoration**, and for teachers **Reward** with coins
 
-  "Today" means midnight to midnight Korea time. The balance never goes below 0. Edits never earn coins, but editing a swear in still costs 5.
-- **Teacher rewards.** Admins and owners can gift 1–1000 coins from someone's profile card (`POST /api/orgs/:orgId/members/:id/coins`). Each gift is written to the audit log.
-- **Shop.** In the left menu. It has eight animated decorations, from Neon Pulse (60) to Royal Crown (800). Buying one equips it straight away. Owned items are in `user_items`, and the equipped one is in `users.decoration`, which travels with every `UserSummary`, so the `Avatar` component draws it everywhere. Decorations are hidden at the smallest avatar size. They stop animating for people who have "reduce motion" turned on.
-- **Adding a decoration.**
-  1. Add an entry to `DECORATIONS` in `wicky.ts`.
-  2. Add `.q-deco-<id>` CSS in `styles.css`. `::before` is the ring and `::after` is the extra.
-- **The API:**
-  - `GET /api/me/wallet`
-  - `POST /api/me/wallet/daily`
-  - `POST /api/me/shop/:itemId/buy`
-  - `PUT /api/me/decoration` with `{ itemId | null }`
-  - `PATCH /api/me` with `bio`, `pronouns` and `bannerColor`
+Styles live in `users.profile_style` and are cleaned by `cleanProfileStyle`, so only known fonts and `#rrggbb` colours are stored. The name font and colour also show next to the name in chat (`UserSummary.nameStyle`). The fonts are Google Fonts under the SIL Open Font License, loaded with `next/font` in `src/lib/profile-fonts.ts`:
+
+| Option | Font |
+|---|---|
+| Rounded | Nunito |
+| Serif | Playfair Display |
+| Typewriter | Space Mono |
+| Handwritten | Caveat |
+| Pixel | Press Start 2P |
+| Bold Display | Bungee |
+| Futuristic | Orbitron |
+
+### Wicky Coins
+
+| How | Coins |
+|---|---|
+| Daily bonus | +25 |
+| Each message | +2 (up to 50 a day) |
+| Each swear | −5 |
+| Teacher reward | 1–1000, written to the audit log |
+| Someone buys your cosmetic | 90% of the price |
+
+Every change goes in `coin_transactions`. The reasons are `daily`, `message`, `swear`, `purchase`, `gift`, `sale` and `gift_item`.
+
+### Built-in decorations
+
+There are 24, from Neon Pulse (60) to Royal Crown (800). Each is a CSS ring (`.q-deco-<id>`) plus an animated sticker at `apps/web/public/decorations/<id>.webp`. The stickers are [Noto Animated Emoji](https://googlefonts.github.io/noto-emoji-animation/) by Google under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), resized to 128px. The credit is at the bottom of the Shop, and it must stay there.
+
+To add a built-in decoration:
+1. Add it to `DECORATIONS`.
+2. Put a `<id>.webp` in `public/decorations`.
+3. Optionally add a ring colour or sticker position in `styles.css`.
+
+### Student-made cosmetics
+
+Anyone can create one in **Shop → Create**, with:
+- a **frame**: a square PNG, GIF or WebP covering the decoration area, transparent in the middle;
+- and/or a **sticker**: a small image placed at one of 8 positions.
+
+Images are up to 2 MB each (`purpose=cosmetic` uploads). Or upload a pack, which is a `cosmetic.json` plus the images it names:
+
+```json
+{
+  "name": "Galaxy Ring",
+  "description": "Stars all around you",
+  "price": 150,
+  "frame": "frame.gif",
+  "sticker": "star.png",
+  "stickerPosition": "tr"
+}
+```
+
+The rules:
+- **Price:** 10 to 2000 coins.
+- **Name and description:** must pass the swear filter.
+- **Limit:** at most 5 waiting for review at a time.
+- **Review:** new cosmetics are `pending` until a teacher approves them in **Settings → Cosmetics review**. Approving gives the creator their own copy.
+- **Take-downs:** a teacher can take one off sale later, and buyers keep it.
+- **Approved cosmetics** can't be edited or deleted.
+
+On avatars they're stored as `u:<id>|f:<frame file>|s:<sticker file>:<pos>`, and `Avatar` draws that.
+
+### Gifting
+
+Buy any decoration (built-in or student-made) for someone else in the same school. Use the 🎁 button in the Shop, or the 🎁 on their profile card, which opens the Shop in gift mode (`?gift=<userId>`). It shows up in their collection as "🎁 from <name>". You can't gift something they already own, or gift to yourself.
+
+### API
+
+- `GET /api/me/wallet`
+- `POST /api/me/wallet/daily`
+- `POST /api/me/shop/:itemId/buy` with `{ giftTo? }`
+- `PUT /api/me/decoration` with `{ itemId | null }`
+- `GET /api/orgs/:orgId/cosmetics?view=shop|mine|review`
+- `POST /api/orgs/:orgId/cosmetics`
+- `POST /api/orgs/:orgId/cosmetics/:id/review` with `{ approve, note? }`
+- `DELETE /api/orgs/:orgId/cosmetics/:id`
+- `POST /api/orgs/:orgId/members/:id/coins`
+- `PATCH /api/me` with `bio`, `pronouns`, `bannerColor`, `bannerFileId` and `profileStyle`
 
 ## Email check switch (temporary)
 

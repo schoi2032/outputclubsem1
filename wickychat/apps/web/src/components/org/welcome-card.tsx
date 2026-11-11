@@ -46,7 +46,7 @@ export function WelcomeCard({
   return (
     <section className="relative rounded-2xl border border-accent/25 bg-bg p-5 shadow-[0_1px_2px_rgb(0_0_0/0.04)]">
       <div className="mb-2 flex items-center gap-2.5">
-        <Avatar name={name} id={orgId} src={logoUrl} size="md" />
+        <Avatar name={name} id={orgId} src={logoUrl} shape="square" size="md" />
         <h3 className="text-[15px] font-semibold tracking-[-0.01em]">Welcome to {name} 👋</h3>
       </div>
       <WelcomeText text={message} />

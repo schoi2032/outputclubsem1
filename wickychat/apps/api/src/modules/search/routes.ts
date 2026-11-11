@@ -1,6 +1,6 @@
 import { orgMemberships, users } from '@quid/db'
 import type { SearchResults } from '@quid/shared'
-import { searchQuerySchema } from '@quid/shared'
+import { cleanProfileStyle, searchQuerySchema } from '@quid/shared'
 import { and, eq, inArray } from 'drizzle-orm'
 import { requireOrg } from '../../core/auth'
 import type { AppContext } from '../../core/context'
@@ -9,7 +9,7 @@ import { serializeChannels } from '../channels/service'
 import { serializeFile } from '../files/serialize'
 import { serializeMessages } from '../messages/service'
 import { presenceFor } from '../presence/service'
-import { toUserSummary, userCols } from '../users/serialize'
+import { avatarUrl, toUserSummary, userCols } from '../users/serialize'
 import { PostgresSearch, parseQuery, type SearchService } from './service'
 
 export async function searchRoutes(
@@ -84,6 +84,9 @@ export async function searchRoutes(
               bio: users.bio,
               pronouns: users.pronouns,
               bannerColor: users.bannerColor,
+              bannerKey: users.bannerKey,
+              bannerAnimated: users.bannerAnimated,
+              profileStyle: users.profileStyle,
               role: orgMemberships.role,
               title: orgMemberships.title,
               departmentId: orgMemberships.departmentId,
@@ -119,6 +122,8 @@ export async function searchRoutes(
             bio: r.bio,
             pronouns: r.pronouns,
             bannerColor: r.bannerColor,
+            bannerUrl: avatarUrl(r.bannerKey, r.bannerAnimated),
+            profileStyle: cleanProfileStyle(r.profileStyle),
           }
         })
 

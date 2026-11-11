@@ -45,6 +45,8 @@ export const updateProfileSchema = z.object({
     .regex(/^#[0-9a-fA-F]{6}$/)
     .nullable()
     .optional(),
+  bannerFileId: id.nullable().optional(),
+  profileStyle: z.record(z.string(), z.unknown()).optional(),
 })
 
 // --- Organizations ----------------------------------------------------------

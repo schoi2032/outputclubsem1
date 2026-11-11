@@ -52,7 +52,13 @@ export default function OrgSettings() {
       />
       <SettingsCard title="Organization">
         <div className="mb-5 flex items-center gap-4">
-          <Avatar name={full.data.name} id={org.id} src={full.data.logoUrl} size="xl" />
+          <Avatar
+            name={full.data.name}
+            id={org.id}
+            src={full.data.logoUrl}
+            shape="square"
+            size="xl"
+          />
           <Button size="sm" onClick={() => logoRef.current?.click()}>
             Upload logo
           </Button>

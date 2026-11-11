@@ -337,10 +337,13 @@
 }
 
 /* ---------------------------------------------------------------------------
- * WickyChat avatar decorations (bought with Wicky Coins).
- * .q-deco sits just outside the avatar. ::before draws the ring, ::after the
- * little extra (moon, star, heart, flame, kite, crown).
+ * WickyChat avatar decorations (Wicky Shop).
+ * .q-deco sits just outside the round avatar. ::before draws the ring; the
+ * <img class="q-deco-art"> is an animated sticker (Google Noto Animated Emoji,
+ * CC BY 4.0) perched on the edge. Student-made ones use .q-deco-custom with
+ * their own frame and sticker images.
  * ------------------------------------------------------------------------- */
+/* biome-ignore-start lint/style/noDescendingSpecificity: per-decoration sticker spots intentionally override the generic positions */
 @property --q-deco-angle {
   syntax: "<angle>";
   initial-value: 0deg;
@@ -348,49 +351,222 @@
 }
 
 .q-deco {
+  --q-deco-w: 2px;
+  --q-ring: transparent;
   position: absolute;
-  inset: -14%;
-  border-radius: 34%;
+  inset: -12%;
+  border-radius: 9999px;
   pointer-events: none;
   z-index: 1;
-  --q-deco-w: 2px;
 }
 .q-ava[data-size="lg"] .q-deco,
 .q-ava[data-size="xl"] .q-deco {
-  --q-deco-w: 3px;
+  --q-deco-w: 2.5px;
 }
 .q-ava[data-size="xl"] .q-deco {
   inset: -9%;
 }
-.q-ava[data-size="sm"] .q-deco {
-  font-size: 12px;
-}
-.q-ava[data-size="md"] .q-deco {
-  font-size: 15px;
-}
-.q-ava[data-size="lg"] .q-deco {
-  font-size: 18px;
-}
-.q-ava[data-size="xl"] .q-deco {
-  font-size: 28px;
-}
-.q-deco::before,
-.q-deco::after {
+.q-deco::before {
   content: "";
   position: absolute;
-  pointer-events: none;
-  line-height: 1;
-}
-.q-deco::before {
   inset: 0;
   border-radius: inherit;
+  border: var(--q-deco-w) solid var(--q-ring);
+  box-shadow:
+    0 0 8px color-mix(in oklab, var(--q-ring) 70%, transparent),
+    inset 0 0 6px color-mix(in oklab, var(--q-ring) 45%, transparent);
 }
 
-/* Gradient rings: a conic gradient masked down to a thin border, turning slowly. */
+/* The animated sticker. Default spot: top-right, overlapping the ring. */
+.q-deco-art {
+  position: absolute;
+  width: 52%;
+  height: 52%;
+  object-fit: contain;
+  top: -14%;
+  right: -16%;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.25));
+  user-select: none;
+}
+.q-ava[data-size="sm"] .q-deco-art {
+  width: 62%;
+  height: 62%;
+}
+.q-deco-at-tl,
+.q-deco-sakura .q-deco-art,
+.q-deco-orbit .q-deco-art,
+.q-deco-butterfly .q-deco-art,
+.q-deco-ghost .q-deco-art,
+.q-deco-snow .q-deco-art {
+  top: -14%;
+  right: auto;
+  left: -16%;
+}
+.q-deco-at-t,
+.q-deco-crown .q-deco-art {
+  top: -36%;
+  right: auto;
+  left: 50%;
+  translate: -50% 0;
+}
+.q-deco-crown .q-deco-art {
+  width: 60%;
+  height: 60%;
+  rotate: -8deg;
+}
+.q-deco-at-r {
+  top: 50%;
+  right: -26%;
+  translate: 0 -50%;
+}
+.q-deco-at-l {
+  top: 50%;
+  left: -26%;
+  right: auto;
+  translate: 0 -50%;
+}
+.q-deco-at-br,
+.q-deco-fire .q-deco-art,
+.q-deco-pumpkin .q-deco-art,
+.q-deco-guitar .q-deco-art,
+.q-deco-cool .q-deco-art {
+  top: auto;
+  bottom: -14%;
+  right: -16%;
+}
+.q-deco-at-b,
+.q-deco-rainbow .q-deco-art,
+.q-deco-wave .q-deco-art {
+  top: auto;
+  bottom: -30%;
+  right: auto;
+  left: 50%;
+  translate: -50% 0;
+}
+.q-deco-at-bl,
+.q-deco-clover .q-deco-art,
+.q-deco-cat .q-deco-art {
+  top: auto;
+  bottom: -14%;
+  right: auto;
+  left: -16%;
+}
+
+/* Student-made frames cover the whole decoration area (transparent in the middle). */
+.q-deco-custom::before {
+  display: none;
+}
+.q-deco-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+}
+
+/* Ring colours */
+.q-deco-party {
+  --q-ring: #ff5c9a;
+}
+.q-deco-ghost {
+  --q-ring: #b9b4ff;
+}
+.q-deco-pumpkin {
+  --q-ring: #ff8a1f;
+}
+.q-deco-clover {
+  --q-ring: #3ddc84;
+}
+.q-deco-wave {
+  --q-ring: #2fa6ff;
+}
+.q-deco-sparkle {
+  --q-ring: #ffd36b;
+}
+.q-deco-cat {
+  --q-ring: #ffb26b;
+}
+.q-deco-cool {
+  --q-ring: #3b8fc9;
+}
+.q-deco-sakura {
+  --q-ring: #ffb3cf;
+}
+.q-deco-rocket {
+  --q-ring: #6aa8ff;
+}
+.q-deco-boom {
+  --q-ring: #ff6a3d;
+}
+.q-deco-robot {
+  --q-ring: #8fa3b8;
+}
+.q-deco-butterfly {
+  --q-ring: #5fd0ff;
+}
+.q-deco-hearts {
+  --q-ring: #ff5c9a;
+}
+.q-deco-guitar {
+  --q-ring: #c4483e;
+}
+.q-deco-unicorn {
+  --q-ring: #d39bff;
+}
+.q-deco-star {
+  --q-ring: #ffcc33;
+}
+.q-deco-orbit {
+  --q-ring: #8052ff;
+}
+
+/* Animated rings */
+.q-deco-pulse {
+  --q-ring: #9471ff;
+}
+.q-deco-pulse::before {
+  animation: q-deco-pulse 2.2s ease-in-out infinite;
+}
+@keyframes q-deco-pulse {
+  50% {
+    border-color: #15c39a;
+    box-shadow:
+      0 0 14px #15c39a,
+      inset 0 0 8px #15c39a;
+    scale: 1.04;
+  }
+}
+.q-deco-orbit::before {
+  border-style: dashed;
+  animation: q-deco-spin 6s linear infinite;
+}
+.q-deco-star::before,
+.q-deco-sparkle::before,
+.q-deco-hearts::before {
+  animation: q-deco-glow 1.8s ease-in-out infinite;
+}
+@keyframes q-deco-glow {
+  50% {
+    box-shadow:
+      0 0 16px var(--q-ring),
+      inset 0 0 8px color-mix(in oklab, var(--q-ring) 60%, transparent);
+  }
+}
+.q-deco-snow::before {
+  border: var(--q-deco-w) solid #bfe9ff;
+  box-shadow:
+    0 0 10px #8fd6ff,
+    inset 0 0 10px rgb(191 233 255 / 0.7);
+}
+
+/* Gradient rings: a conic gradient masked down to a thin border, turning. */
 .q-deco-rainbow::before,
 .q-deco-fire::before,
 .q-deco-crown::before,
-.q-deco-kite::before {
+.q-deco-kite::before,
+.q-deco-unicorn::before {
+  border: 0;
   padding: var(--q-deco-w);
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
@@ -399,78 +575,9 @@
   mask:
     linear-gradient(#000 0 0) content-box exclude,
     linear-gradient(#000 0 0);
+  box-shadow: none;
   animation: q-deco-angle 2.5s linear infinite;
 }
-
-/* Neon Pulse */
-.q-deco-pulse::before {
-  border: var(--q-deco-w) solid #9471ff;
-  box-shadow:
-    0 0 6px #8052ff,
-    inset 0 0 4px #8052ff;
-  animation: q-deco-pulse 2.2s ease-in-out infinite;
-}
-@keyframes q-deco-pulse {
-  50% {
-    border-color: #15c39a;
-    box-shadow:
-      0 0 12px #15c39a,
-      inset 0 0 6px #15c39a;
-    transform: scale(1.04);
-  }
-}
-
-/* Orbit: a little moon circling the avatar */
-.q-deco-orbit {
-  border-radius: 50%;
-  animation: q-deco-spin 4s linear infinite;
-}
-.q-deco-orbit::before {
-  border: 1.5px dashed color-mix(in oklab, #8052ff 60%, transparent);
-}
-.q-deco-orbit::after {
-  width: 24%;
-  height: 24%;
-  top: -8%;
-  left: 38%;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #fff6d6, #ffb829 60%, #c27a00);
-  box-shadow: 0 0 6px #ffb829;
-}
-
-/* Sparkles: a golden ring with a twinkling star */
-.q-deco-sparkle::before {
-  border: 1.5px solid color-mix(in oklab, #ffd36b 75%, transparent);
-  box-shadow: 0 0 8px color-mix(in oklab, #ffd36b 60%, transparent);
-  animation: q-deco-glow 1.6s ease-in-out infinite;
-}
-.q-deco-sparkle::after {
-  content: "✦";
-  color: #ffd36b;
-  font-size: 0.85em;
-  top: -18%;
-  right: -14%;
-  text-shadow: 0 0 6px #ffb829;
-  animation: q-deco-twinkle 1.6s ease-in-out infinite;
-}
-@keyframes q-deco-twinkle {
-  0%,
-  100% {
-    opacity: 0.25;
-    transform: scale(0.6) rotate(0deg);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.2) rotate(45deg);
-  }
-}
-@keyframes q-deco-glow {
-  50% {
-    box-shadow: 0 0 14px #ffd36b;
-  }
-}
-
-/* Rainbow Spin */
 .q-deco-rainbow::before {
   background: conic-gradient(
     from var(--q-deco-angle),
@@ -483,112 +590,44 @@
     #ff4d6d
   );
 }
-
-/* Floating Hearts */
-.q-deco-hearts::before {
-  border: 1.5px solid color-mix(in oklab, #ff5c9a 65%, transparent);
-  box-shadow: 0 0 6px color-mix(in oklab, #ff5c9a 50%, transparent);
+.q-deco-unicorn::before {
+  background: conic-gradient(from var(--q-deco-angle), #ffb3e6, #d39bff, #9fd8ff, #ffe7a3, #ffb3e6);
 }
-.q-deco-hearts::after {
-  content: "♥";
-  color: #ff5c9a;
-  font-size: 0.8em;
-  bottom: 0;
-  right: -10%;
-  animation: q-deco-float 2.2s ease-in infinite;
-}
-@keyframes q-deco-float {
-  0% {
-    opacity: 0;
-    transform: translateY(0) scale(0.6);
-  }
-  20% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-160%) scale(1.15);
-  }
-}
-
-/* On Fire */
 .q-deco-fire::before {
   background: conic-gradient(from var(--q-deco-angle), #ff3d00, #ffb800, #ff6a00, #ffe066, #ff3d00);
-  animation: q-deco-angle 1.2s linear infinite;
+  animation-duration: 1.2s;
 }
 .q-deco-fire {
-  filter: drop-shadow(0 0 4px #ff6a00);
-  animation: q-deco-flicker 0.35s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 5px #ff6a00);
 }
-.q-deco-fire::after {
-  content: "🔥";
-  font-size: 0.8em;
-  bottom: -16%;
-  right: -16%;
-}
-@keyframes q-deco-flicker {
-  from {
-    opacity: 0.85;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-/* Wicky Kite: the Output Club kite soaring by */
 .q-deco-kite::before {
   background: conic-gradient(from var(--q-deco-angle), #8052ff, #15846e, #ffb829, #8052ff);
   animation-duration: 3s;
 }
-.q-deco-kite::after {
-  width: 40%;
-  height: 40%;
-  top: -22%;
-  right: -22%;
-  background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%238052ff'/%3E%3Cstop offset='1' stop-color='%2315846e'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M3 5 L29 9 L12 28 Z' fill='url(%23g)'/%3E%3Cpath d='M17 3 L28 4 L22 11 Z' fill='%23ffb829'/%3E%3C/svg%3E")
-    center / contain no-repeat;
-  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.35));
+.q-deco-kite .q-deco-art {
   animation: q-deco-soar 2.6s ease-in-out infinite;
 }
-@keyframes q-deco-soar {
-  0%,
-  100% {
-    transform: translate(0, 0) rotate(-8deg);
-  }
-  50% {
-    transform: translate(-12%, -20%) rotate(12deg);
-  }
-}
-
-/* Royal Crown */
 .q-deco-crown::before {
   background: conic-gradient(from var(--q-deco-angle), #b8860b, #ffe27a, #fff6c9, #d4a017, #b8860b);
   animation-duration: 3s;
 }
 .q-deco-crown {
-  filter: drop-shadow(0 0 3px #ffcf3f);
+  filter: drop-shadow(0 0 4px #ffcf3f);
 }
-.q-deco-crown::after {
-  content: "👑";
-  font-size: 0.95em;
-  top: -38%;
-  left: 50%;
-  animation: q-deco-bob 2s ease-in-out infinite;
-}
-@keyframes q-deco-bob {
+@keyframes q-deco-soar {
   0%,
   100% {
-    transform: translateX(-50%) translateY(0) rotate(-12deg);
+    translate: 0 0;
+    rotate: -6deg;
   }
   50% {
-    transform: translateX(-50%) translateY(-14%) rotate(-4deg);
+    translate: -8% -14%;
+    rotate: 8deg;
   }
 }
-
 @keyframes q-deco-spin {
   to {
-    transform: rotate(360deg);
+    rotate: 360deg;
   }
 }
 @keyframes q-deco-angle {
@@ -597,10 +636,12 @@
   }
 }
 
+/* biome-ignore-end lint/style/noDescendingSpecificity: end of decoration rules */
+
 @media (prefers-reduced-motion: reduce) {
   .q-deco,
   .q-deco::before,
-  .q-deco::after {
+  .q-deco-art {
     animation: none !important;
   }
 }

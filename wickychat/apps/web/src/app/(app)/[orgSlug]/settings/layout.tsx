@@ -60,6 +60,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
         ...(admin ? [{ href: 'plugins', label: 'Plugins', icon: Puzzle }] : []),
         ...(admin ? [{ href: 'ai', label: 'AI providers', icon: Sparkles }] : []),
         ...(admin ? [{ href: 'moderation', label: 'Rule breakers', icon: ShieldAlert }] : []),
+        ...(admin ? [{ href: 'cosmetics', label: 'Cosmetics review', icon: Palette }] : []),
         ...(admin ? [{ href: 'audit', label: 'Audit log', icon: ScrollText }] : []),
       ],
     },

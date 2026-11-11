@@ -1,21 +1,123 @@
 'use client'
 /**
  * WickyChat: Discord-style profile card. Click someone's name or picture to see their banner,
- * decoration, pronouns, bio and role, and to message them (or, for teachers, reward them).
+ * decoration, styled name, pronouns, bio and role. From here you can message them, gift them a
+ * decoration, and (teachers) reward them with coins.
  */
 import type { Channel, Member, UserSummary } from '@quid/shared'
-import { decorationById, ROLE_LABEL } from '@quid/shared'
+import { cleanProfileStyle, decorationById, ROLE_LABEL } from '@quid/shared'
 import { Avatar, Button, cn, Input, Popover, PopoverContent, PopoverTrigger, toast } from '@quid/ui'
 import { useQueryClient } from '@tanstack/react-query'
-import { Coins, MessageSquare } from 'lucide-react'
+import { Coins, Gift, MessageSquare } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useOrgContext } from '@/components/org-context'
 import { errorMessage, post } from '@/lib/api'
 import { displayName } from '@/lib/format'
 import { keys, useMembers } from '@/lib/queries'
+import { StyledName } from './styled-name'
 
-const DEFAULT_BANNER = 'linear-gradient(135deg, #8052ff, #15846e)'
+export const DEFAULT_BANNER = 'linear-gradient(135deg, #8052ff, #15846e)'
+
+/** Everything the card needs to draw; shared with the live preview in Settings → Profile. */
+export interface CardLook {
+  user: UserSummary
+  bannerUrl: string | null
+  bannerColor: string | null
+  theme?: [string, string]
+  bioFont?: string
+  pronouns: string
+  bio: string
+  decorationName?: string
+}
+
+/** The visual part of the card, without data loading or buttons. */
+export function CardFace({
+  look,
+  children,
+  presence,
+}: {
+  look: CardLook
+  children?: React.ReactNode
+  presence?: Member['presence']
+}) {
+  const themed = !!look.theme
+  return (
+    <div
+      className={cn('w-full overflow-hidden rounded-lg', themed && 'p-[3px]')}
+      style={
+        themed
+          ? { background: `linear-gradient(180deg, ${look.theme![0]}, ${look.theme![1]})` }
+          : undefined
+      }
+    >
+      <div
+        className={cn('overflow-hidden', themed && 'rounded-[6px]')}
+        style={
+          themed
+            ? {
+                background: `linear-gradient(180deg, color-mix(in oklab, ${look.theme![0]} 28%, var(--q-bg-overlay)), color-mix(in oklab, ${look.theme![1]} 28%, var(--q-bg-overlay)))`,
+              }
+            : undefined
+        }
+      >
+        <div
+          className="h-[96px] bg-cover bg-center"
+          style={{
+            backgroundColor: look.bannerColor ?? undefined,
+            backgroundImage: look.bannerUrl
+              ? `url("${look.bannerUrl}")`
+              : look.bannerColor
+                ? undefined
+                : DEFAULT_BANNER,
+          }}
+          aria-hidden="true"
+        />
+        <div className="px-4 pb-4">
+          <div className="-mt-10 mb-2 flex items-end justify-between">
+            <span className="rounded-full bg-bg-overlay p-1.5">
+              <Avatar
+                name={look.user.name}
+                id={look.user.id}
+                src={look.user.avatarUrl}
+                decoration={look.user.decoration}
+                presence={presence}
+                size="xl"
+              />
+            </span>
+            {look.decorationName && (
+              <span className="mb-1 rounded-full bg-bg-muted/80 px-2 py-0.5 text-2xs text-fg-muted">
+                ✨ {look.decorationName}
+              </span>
+            )}
+          </div>
+          <StyledName user={look.user} className="block text-[19px] leading-tight font-bold" />
+          <p className="text-[13px] text-fg-muted">
+            {look.user.name}
+            {look.pronouns ? ` · ${look.pronouns}` : ''}
+          </p>
+          {children}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export function BioBlock({ bio, font }: { bio: string; font?: string }) {
+  return (
+    <>
+      <p className="mb-1 text-2xs font-semibold text-fg-subtle uppercase">About me</p>
+      <p
+        className={cn(
+          'text-[13px] break-words whitespace-pre-wrap text-fg',
+          font && font !== 'default' && `q-font-${font}`,
+        )}
+      >
+        {bio || <span className="text-fg-subtle">Nothing here yet.</span>}
+      </p>
+    </>
+  )
+}
 
 export function ProfileCard({ user }: { user: UserSummary }) {
   const { org, api, base, me } = useOrgContext()
@@ -27,7 +129,15 @@ export function ProfileCard({ user }: { user: UserSummary }) {
   const [gift, setGift] = useState('')
   const isTeacher = (r?: string) => r === 'owner' || r === 'admin'
   const canGift = isTeacher(org.role) && user.id !== me.id && !user.isBot
-  const decoration = decorationById(m?.decoration ?? user.decoration)
+  const style = cleanProfileStyle(m?.profileStyle)
+  const merged: UserSummary = {
+    ...user,
+    decoration: m?.decoration ?? user.decoration,
+    nameStyle: m?.nameStyle ?? user.nameStyle,
+  }
+  const decoration = merged.decoration?.startsWith('u:')
+    ? 'Made by a student'
+    : decorationById(merged.decoration)?.name
 
   const message = async () => {
     setBusy(true)
@@ -57,35 +167,20 @@ export function ProfileCard({ user }: { user: UserSummary }) {
   }
 
   return (
-    <div className="w-[300px] overflow-hidden rounded-lg">
-      <div
-        className="h-[72px]"
-        style={{ background: m?.bannerColor ?? DEFAULT_BANNER }}
-        aria-hidden="true"
-      />
-      <div className="px-4 pb-4">
-        <div className="-mt-9 mb-2 flex items-end justify-between">
-          <span className="rounded-2xl bg-bg-overlay p-1">
-            <Avatar
-              name={user.name}
-              id={user.id}
-              src={user.avatarUrl}
-              decoration={m?.decoration ?? user.decoration}
-              presence={m?.presence}
-              size="xl"
-            />
-          </span>
-          {decoration && (
-            <span className="mb-1 rounded-full bg-bg-muted px-2 py-0.5 text-2xs text-fg-muted">
-              ✨ {decoration.name}
-            </span>
-          )}
-        </div>
-        <p className="text-[17px] leading-tight font-semibold">{displayName(user)}</p>
-        <p className="text-[13px] text-fg-muted">
-          {user.name}
-          {m?.pronouns ? ` · ${m.pronouns}` : ''}
-        </p>
+    <div className="w-[320px]">
+      <CardFace
+        presence={m?.presence}
+        look={{
+          user: merged,
+          bannerUrl: m?.bannerUrl ?? null,
+          bannerColor: m?.bannerColor ?? null,
+          theme: style.theme,
+          bioFont: style.bioFont,
+          pronouns: m?.pronouns ?? '',
+          bio: m?.bio ?? '',
+          decorationName: decoration,
+        }}
+      >
         {m && (
           <div className="mt-2 flex flex-wrap gap-1.5">
             <span
@@ -111,10 +206,7 @@ export function ProfileCard({ user }: { user: UserSummary }) {
           </p>
         )}
         <div className="my-3 h-px bg-border" />
-        <p className="mb-1 text-2xs font-semibold text-fg-subtle uppercase">About me</p>
-        <p className="text-[13px] break-words whitespace-pre-wrap text-fg">
-          {m?.bio || <span className="text-fg-subtle">Nothing here yet.</span>}
-        </p>
+        <BioBlock bio={m?.bio ?? ''} font={style.bioFont} />
         {m && (
           <>
             <p className="mt-3 mb-0.5 text-2xs font-semibold text-fg-subtle uppercase">
@@ -130,9 +222,17 @@ export function ProfileCard({ user }: { user: UserSummary }) {
           </>
         )}
         {user.id !== me.id && !user.isBot && (
-          <Button className="mt-4 w-full" variant="primary" loading={busy} onClick={message}>
-            <MessageSquare /> Message
-          </Button>
+          <div className="mt-4 flex gap-2">
+            <Button className="flex-1" variant="primary" loading={busy} onClick={message}>
+              <MessageSquare /> Message
+            </Button>
+            <Button
+              title="Gift a decoration"
+              onClick={() => router.push(`${base}/shop?gift=${user.id}`)}
+            >
+              <Gift />
+            </Button>
+          </div>
         )}
         {canGift && (
           <form
@@ -157,7 +257,7 @@ export function ProfileCard({ user }: { user: UserSummary }) {
             </Button>
           </form>
         )}
-      </div>
+      </CardFace>
     </div>
   )
 }

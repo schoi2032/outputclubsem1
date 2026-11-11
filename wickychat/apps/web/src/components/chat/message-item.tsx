@@ -46,6 +46,7 @@ import { useMembers } from '@/lib/queries'
 import { useOrgContext } from '../org-context'
 import { TaskDialog } from '../productivity/tasks'
 import { ProfilePopover } from '../profile/profile-card'
+import { StyledName } from '../profile/styled-name'
 import { Attachments } from './attachments'
 import { Composer } from './composer'
 import { EmojiValue, isEmojiOnly } from './custom-emoji'
@@ -237,7 +238,7 @@ export const MessageItem = memo(function MessageItem({
         {!grouped && (
           <div className="flex items-baseline gap-2">
             <ProfilePopover user={m.author}>
-              <span className="text-[14px] font-semibold">{author}</span>
+              <StyledName user={m.author} className="text-[14px] font-semibold" />
             </ProfilePopover>
             {m.author.isBot && (
               <span className="rounded bg-bg-emphasis px-1 text-2xs font-semibold text-fg-muted">

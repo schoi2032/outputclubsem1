@@ -176,6 +176,13 @@
       "when": 1794365053217,
       "tag": "0024_profiles_and_coins",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1794376064768,
+      "tag": "0025_cosmetics_banners_styles",
+      "breakpoints": true
     }
   ]
 }

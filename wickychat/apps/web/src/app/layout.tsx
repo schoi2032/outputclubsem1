@@ -3,6 +3,7 @@ import { GeistMono } from 'geist/font/mono'
 import { GeistSans } from 'geist/font/sans'
 import type { Metadata, Viewport } from 'next'
 import { Providers } from '@/components/providers'
+import { profileFontVariables } from '@/lib/profile-fonts'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -26,7 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${GeistSans.variable} ${GeistMono.variable}`}
+      className={`${GeistSans.variable} ${GeistMono.variable} ${profileFontVariables}`}
       suppressHydrationWarning
     >
       <head>

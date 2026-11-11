@@ -13,6 +13,7 @@ import type { Me, OrgSummary } from '@quid/shared'
 import {
   censorText,
   changePasswordSchema,
+  cleanProfileStyle,
   forgotPasswordSchema,
   loginSchema,
   registerSchema,
@@ -34,7 +35,7 @@ import { type App, authRateLimit, idParams } from '../../core/http'
 import { isPlatformAdmin } from '../../core/platform'
 import { assertSchoolEmail } from '../../core/school'
 import { acceptInvitation } from '../orgs/invitations'
-import { avatarUrl } from '../users/serialize'
+import { avatarUrl, nameStyle } from '../users/serialize'
 
 const VERIFY_TTL_MS = 48 * 3600_000
 const RESET_TTL_MS = 60 * 60_000
@@ -133,6 +134,9 @@ export async function loadMe(
       bio: u.bio,
       pronouns: u.pronouns,
       bannerColor: u.bannerColor,
+      bannerUrl: avatarUrl(u.bannerKey, u.bannerAnimated),
+      profileStyle: cleanProfileStyle(u.profileStyle),
+      nameStyle: nameStyle(u.profileStyle),
       coins: u.coins,
       emailVerified: u.emailVerifiedAt !== null,
       timezone: u.timezone,
@@ -353,7 +357,29 @@ export async function authRoutes(app: App, ctx: AppContext) {
 
   app.patch('/api/me', { schema: { body: updateProfileSchema } }, async (req) => {
     const me = requireUser(req)
-    const { name, displayName, timezone, avatarFileId, bio, pronouns, bannerColor } = req.body
+    const {
+      name,
+      displayName,
+      timezone,
+      avatarFileId,
+      bio,
+      pronouns,
+      bannerColor,
+      bannerFileId,
+      profileStyle,
+    } = req.body
+    let bannerAnimated = false
+    if (bannerFileId) {
+      const f = await ctx.db.query.files.findFirst({
+        where: and(
+          eq(files.id, bannerFileId),
+          eq(files.uploaderId, me.id),
+          eq(files.purpose, 'banner'),
+        ),
+      })
+      if (!f) throw notFound('File')
+      bannerAnimated = f.animated
+    }
     let avatarAnimated = false
     if (avatarFileId) {
       const f = await ctx.db.query.files.findFirst({
@@ -377,6 +403,10 @@ export async function authRoutes(app: App, ctx: AppContext) {
         ...(bio !== undefined && { bio: censorText(bio).text }),
         ...(pronouns !== undefined && { pronouns: censorText(pronouns).text }),
         ...(bannerColor !== undefined && { bannerColor }),
+        ...(bannerFileId !== undefined && { bannerKey: bannerFileId, bannerAnimated }),
+        ...(profileStyle !== undefined && {
+          profileStyle: cleanProfileStyle(profileStyle) as Record<string, unknown>,
+        }),
         updatedAt: new Date(),
       })
       .where(eq(users.id, me.id))

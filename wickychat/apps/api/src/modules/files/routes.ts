@@ -30,7 +30,17 @@ const AUDIO_ALIASES: Record<string, string> = {
   'audio/wave': 'audio/wav',
   'audio/opus': 'audio/ogg',
 }
-const THUMB_SIZE = { attachment: THUMB_WIDTH, avatar: 256, logo: 256, emoji: 128, sound: 0 }
+const THUMB_SIZE = {
+  attachment: THUMB_WIDTH,
+  avatar: 256,
+  logo: 256,
+  emoji: 128,
+  sound: 0,
+  banner: 600,
+  cosmetic: 256,
+}
+/** WickyChat: student-made avatar decorations. */
+const MAX_COSMETIC_BYTES = 2 * 1024 * 1024
 
 /**
  * Determines the real type of an upload from its bytes. The client-declared
@@ -83,7 +93,9 @@ export async function fileRoutes(app: App, ctx: AppContext) {
       schema: {
         params: orgParams,
         querystring: z.object({
-          purpose: z.enum(['attachment', 'avatar', 'logo', 'emoji', 'sound']).default('attachment'),
+          purpose: z
+            .enum(['attachment', 'avatar', 'logo', 'emoji', 'sound', 'banner', 'cosmetic'])
+            .default('attachment'),
           channelId: z.uuid().optional(),
         }),
       },
@@ -117,6 +129,8 @@ export async function fileRoutes(app: App, ctx: AppContext) {
         if (!isImage) throw badRequest('Choose a PNG, JPEG, GIF or WebP image.')
         if (purpose === 'emoji' && buf.length > MAX_EMOJI_BYTES)
           throw tooLarge('Emoji can be up to 512 KB.')
+        if (purpose === 'cosmetic' && buf.length > MAX_COSMETIC_BYTES)
+          throw tooLarge('Cosmetic images can be up to 2 MB.')
         if (buf.length > MAX_AVATAR_BYTES) throw tooLarge('Images can be up to 5 MB.')
       }
 

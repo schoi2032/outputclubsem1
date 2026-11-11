@@ -65,6 +65,11 @@ export const users = pgTable(
     bio: text('bio').notNull().default(''),
     pronouns: text('pronouns').notNull().default(''),
     bannerColor: text('banner_color'),
+    /** Uploaded banner image (a file id); shown instead of the colour. GIFs animate. */
+    bannerKey: text('banner_key'),
+    bannerAnimated: boolean('banner_animated').notNull().default(false),
+    /** Fonts and colours for the profile card and name (see ProfileStyle in @quid/shared). */
+    profileStyle: jsonb('profile_style').$type<Record<string, unknown>>().notNull().default({}),
     /** Equipped avatar decoration (an id from DECORATIONS in @quid/shared), if any. */
     decoration: text('decoration'),
     /** Wicky Coins balance. Every change is also written to `coin_transactions`. */
@@ -421,7 +426,7 @@ export const files = pgTable(
     animated: boolean('animated').notNull().default(false),
     channelId: uuid('channel_id').references(() => channels.id, { onDelete: 'cascade' }),
     messageId: uuid('message_id').references(() => messages.id, { onDelete: 'set null' }),
-    purpose: text('purpose', { enum: ['attachment', 'avatar', 'logo', 'emoji', 'sound'] })
+    purpose: text('purpose', { enum: ['attachment', 'avatar', 'logo', 'emoji', 'sound', 'banner', 'cosmetic'] })
       .notNull()
       .default('attachment'),
     createdAt: createdAt(),
@@ -933,10 +938,48 @@ export const userItems = pgTable(
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
+    /** A built-in decoration id, or `u:<cosmetic id>` for one a student made. */
     itemId: text('item_id').notNull(),
+    /** Who bought it for them, if it was a gift. */
+    giftedBy: uuid('gifted_by').references(() => users.id, { onDelete: 'set null' }),
     createdAt: createdAt(),
   },
   (t) => [primaryKey({ columns: [t.userId, t.itemId] })],
+)
+
+/**
+ * WickyChat: avatar decorations made by students. A teacher approves each one before it
+ * can be sold in the Shop. Approved cosmetics can't be changed, so what people bought stays
+ * the same.
+ */
+export const cosmetics = pgTable(
+  'cosmetics',
+  {
+    id: pk(),
+    orgId: orgRef(),
+    creatorId: uuid('creator_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    description: text('description').notNull().default(''),
+    price: integer('price').notNull(),
+    /** Image drawn around the whole avatar (transparent in the middle). */
+    frameFileId: uuid('frame_file_id').references(() => files.id, { onDelete: 'set null' }),
+    /** Small image perched on the avatar, at `stickerPosition`. */
+    stickerFileId: uuid('sticker_file_id').references(() => files.id, { onDelete: 'set null' }),
+    stickerPosition: text('sticker_position').notNull().default('tr'),
+    /** pending | approved | rejected */
+    status: text('status').notNull().default('pending'),
+    reviewNote: text('review_note'),
+    reviewedBy: uuid('reviewed_by').references(() => users.id, { onDelete: 'set null' }),
+    reviewedAt: ts('reviewed_at'),
+    sales: integer('sales').notNull().default(0),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index('cosmetics_org_status_idx').on(t.orgId, t.status, t.id.desc()),
+    index('cosmetics_creator_idx').on(t.creatorId),
+  ],
 )
 
 /**

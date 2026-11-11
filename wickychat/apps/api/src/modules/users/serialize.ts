@@ -1,10 +1,10 @@
 import { users } from '@quid/db'
-import type { UserSummary } from '@quid/shared'
+import { cleanProfileStyle, type UserSummary } from '@quid/shared'
 
 type UserRow = Pick<
   typeof users.$inferSelect,
   'id' | 'name' | 'displayName' | 'avatarKey' | 'avatarAnimated' | 'isBot'
-> & { decoration?: string | null }
+> & { decoration?: string | null; profileStyle?: Record<string, unknown> | null }
 
 /** Columns needed for `toUserSummary`, for use in `select()`. */
 export const userCols = {
@@ -15,6 +15,7 @@ export const userCols = {
   avatarAnimated: users.avatarAnimated,
   isBot: users.isBot,
   decoration: users.decoration,
+  profileStyle: users.profileStyle,
 }
 
 /**
@@ -33,7 +34,15 @@ export function toUserSummary(u: UserRow): UserSummary {
     avatarUrl: avatarUrl(u.avatarKey, u.avatarAnimated),
     isBot: u.isBot,
     decoration: u.decoration ?? null,
+    nameStyle: nameStyle(u.profileStyle),
   }
+}
+
+/** The part of someone's profile style that shows next to their name everywhere. */
+export function nameStyle(raw: unknown): UserSummary['nameStyle'] {
+  const s = cleanProfileStyle(raw)
+  if (!s.nameFont && !s.nameColors) return null
+  return { font: s.nameFont, colors: s.nameColors }
 }
 
 export const deletedUser: UserSummary = {

@@ -71,6 +71,7 @@ export function Rail() {
                 name={o.name}
                 id={o.id}
                 src={o.logoUrl}
+                shape="square"
                 size="md"
                 className="[&>span]:rounded-[7px]"
               />

@@ -13,8 +13,10 @@ export interface UserSummary {
   displayName: string | null
   avatarUrl: string | null
   isBot: boolean
-  /** WickyChat: equipped animated avatar decoration (an id from DECORATIONS), if any. */
+  /** WickyChat: equipped avatar decoration (a DECORATIONS id, or `u:…` for a student-made one). */
   decoration?: string | null
+  /** WickyChat: font and colour(s) for this person's name. */
+  nameStyle?: { font?: string; colors?: string[] } | null
 }
 
 /** WickyChat profile card details. */
@@ -22,6 +24,9 @@ export interface ProfileExtras {
   bio: string
   pronouns: string
   bannerColor: string | null
+  /** Uploaded banner image, shown instead of the colour. */
+  bannerUrl: string | null
+  profileStyle: import('./wicky').ProfileStyle
 }
 
 export interface Me extends UserSummary, ProfileExtras {
