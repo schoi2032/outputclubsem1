@@ -24,6 +24,7 @@ import { displayName } from '@/lib/format'
 import { keys, useMembers } from '@/lib/queries'
 import { BadgesRow } from './badges'
 import { ProfileEffect } from './cosmetics-fx'
+import { ShelfBlock } from './shelf'
 import { StyledName } from './styled-name'
 
 const STAFF_TAG: Record<StaffTag, { label: string; className: string }> = {
@@ -292,6 +293,7 @@ export function ProfileCard({ user, panel }: { user: UserSummary; panel?: boolea
         <div className="my-3 h-px bg-border" />
         <BioBlock bio={m?.bio ?? ''} font={style.bioFont} />
         <ConnectionsBlock gunslol={style.gunslol} />
+        {m && !user.isBot && <ShelfBlock userId={user.id} name={displayName(user)} />}
         {m && (
           <>
             <p className="mt-3 mb-0.5 text-2xs font-semibold text-fg-subtle uppercase">

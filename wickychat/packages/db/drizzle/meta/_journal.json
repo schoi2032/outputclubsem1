@@ -218,6 +218,13 @@
       "when": 1794398906313,
       "tag": "0030_custom_bundles",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1794401435382,
+      "tag": "0031_shelf_wishlist",
+      "breakpoints": true
     }
   ]
 }

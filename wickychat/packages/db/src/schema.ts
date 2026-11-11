@@ -77,6 +77,8 @@ export const users = pgTable(
     /** Equipped profile card effect and name plate (built-in id or `u:<cosmetic id>`). */
     profileEffect: text('profile_effect'),
     namePlate: text('name_plate'),
+    /** WickyChat: up to 6 owned item ids pinned on their profile shelf. */
+    showcase: text('showcase').array().notNull().default(sql`'{}'::text[]`),
     /** Days in a row the daily bonus was claimed, and the best run. */
     dailyStreak: integer('daily_streak').notNull().default(0),
     bestStreak: integer('best_streak').notNull().default(0),
@@ -942,6 +944,19 @@ export const coinTransactions = pgTable(
     createdAt: createdAt(),
   },
   (t) => [index('coin_transactions_user_idx').on(t.userId, t.id.desc())],
+)
+
+/** WickyChat: items someone wants, shown on their profile so friends can gift them. */
+export const wishlist = pgTable(
+  'wishlist',
+  {
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    itemId: text('item_id').notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.itemId] })],
 )
 
 /** WickyChat: avatar decorations someone owns. */

@@ -50,13 +50,25 @@ import {
   toast,
 } from '@quid/ui'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeftRight, Coins, Eye, EyeOff, Gift, Store, Upload, X } from 'lucide-react'
+import {
+  ArrowLeftRight,
+  Coins,
+  Eye,
+  EyeOff,
+  Gift,
+  Heart,
+  Pin,
+  Store,
+  Upload,
+  X,
+} from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useMemo, useState } from 'react'
 import { PeoplePicker } from '@/components/dialogs/people-picker'
 import { useOrgContext } from '@/components/org-context'
 import { PageHeader } from '@/components/page-header'
 import { NamePlate } from '@/components/profile/cosmetics-fx'
+import { useMyShelf } from '@/components/profile/shelf'
 import { BundlesView, CreateBundle, MyBundles, useBundleDefs } from '@/components/shop/bundles'
 import { CrateArt, CratesView, CreateCrate, MyCrates, useCrateDefs } from '@/components/shop/crates'
 import {
@@ -303,6 +315,7 @@ function ShopInner() {
   }
 
   const equippedKey = w?.equipped?.split('|')[0] ?? null
+  const shelf = useMyShelf()
 
   const card = (it: ShopItem) => {
     const owned = ownedSet.has(it.itemId)
@@ -332,6 +345,45 @@ function ShopInner() {
           wearing ? 'border-accent bg-accent-subtle' : 'border-border hover:border-border-strong',
         )}
       >
+        {!presetGift && (owned || canBuy) && (
+          <button
+            type="button"
+            className={cn(
+              'absolute top-2 right-2 z-10 rounded-full p-1 transition-opacity hover:bg-bg-muted',
+              (owned ? shelf.pinned : shelf.wanted).has(it.itemId)
+                ? 'opacity-100'
+                : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100',
+            )}
+            title={
+              owned
+                ? shelf.pinned.has(it.itemId)
+                  ? 'Unpin from your profile'
+                  : 'Pin to your profile shelf'
+                : shelf.wanted.has(it.itemId)
+                  ? 'Remove from wishlist'
+                  : 'Add to wishlist'
+            }
+            aria-label={`${owned ? 'Pin' : 'Wishlist'} ${it.name}`}
+            aria-pressed={(owned ? shelf.pinned : shelf.wanted).has(it.itemId)}
+            onClick={() => (owned ? shelf.togglePin(it.itemId) : shelf.toggleWant(it.itemId))}
+          >
+            {owned ? (
+              <Pin
+                className={cn(
+                  'size-4',
+                  shelf.pinned.has(it.itemId) ? 'fill-accent text-accent' : 'text-fg-subtle',
+                )}
+              />
+            ) : (
+              <Heart
+                className={cn(
+                  'size-4',
+                  shelf.wanted.has(it.itemId) ? 'fill-[#e0457b] text-[#e0457b]' : 'text-fg-subtle',
+                )}
+              />
+            )}
+          </button>
+        )}
         <ItemPreview it={it} />
         <p className="mt-1 text-[14px] font-semibold">{it.name}</p>
         <span

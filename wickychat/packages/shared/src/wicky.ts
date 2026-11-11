@@ -1225,3 +1225,15 @@ export const builtinMakers = (): Record<string, string> =>
   Object.fromEntries(
     [...EFFECTS, ...PLATES].filter((x) => x.madeBy).map((x) => [x.id, x.madeBy!.toLowerCase()]),
   )
+
+// --- Profile shelf and wishlist ---------------------------------------------------------
+
+/** How many items fit on a profile's showcase shelf, and on a wishlist. */
+export const SHELF = { max: 6, wishlistMax: 30 }
+
+export interface Shelf {
+  /** Pinned items, with their copy number when limited. */
+  showcase: { itemId: string; serial: number | null }[]
+  /** Items they want and don't own yet. */
+  wishlist: string[]
+}
