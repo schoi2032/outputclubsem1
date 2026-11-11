@@ -1,0 +1,31 @@
+// Notify everyone when an AI-generated message is sent
+function notifyGroupOfAIMessage(group, message, sender) {
+  // Only trigger for AI-generated messages
+  if (!message.isAIGenerated) return;
+
+  // Create a notification
+  const notification = {
+    type: "ai_message",
+    text: `@everyone ${sender} generated a message using AI.`,
+    messageId: message.id,
+    timestamp: new Date().toISOString()
+  };
+
+  // Send the notification to every group member
+  group.members.forEach(member => {
+    sendNotification(member.id, notification);
+  });
+
+  // Display the announcement in the group chat
+  group.chatMessages.push({
+    ...notification,
+    sender: "System",
+    isSystemMessage: true
+  });
+}
+
+// Example notification function
+function sendNotification(userId, notification) {
+  // Connect this to your website's notification system
+  console.log(`Notify user ${userId}: ${notification.text}`);
+}

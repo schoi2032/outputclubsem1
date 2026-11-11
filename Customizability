@@ -1,0 +1,1668 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WICKYpedia - Chat Customizer</title>
+
+<style>
+:root {
+    --bg: #101114;
+    --panel: #171821;
+    --chat-bg: #101114;
+    --accent: #8547ff;
+    --accent-soft: #30204e;
+    --text: #f5f3ff;
+    --muted: #a4a0b8;
+    --bubble-user: #7138e8;
+    --bubble-ai: #20212d;
+    --border: #30303e;
+    --radius: 16px;
+    --font: Inter, Arial, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    min-height: 100vh;
+    transition: background .25s, color .25s;
+}
+
+button, select, input {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+/* MAIN LAYOUT */
+
+.app {
+    display: grid;
+    grid-template-columns: 245px minmax(300px, 1fr) 340px;
+    min-height: 100vh;
+}
+
+/* SIDEBAR */
+
+.sidebar {
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    padding: 22px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px;
+}
+
+.logo {
+    width: 43px;
+    height: 43px;
+    border-radius: 13px;
+    background: var(--accent);
+    display: grid;
+    place-items: center;
+    color: white;
+    font-size: 25px;
+    font-weight: 900;
+}
+
+.brand h2 {
+    font-size: 17px;
+}
+
+.brand p {
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.new-chat {
+    padding: 13px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-weight: 700;
+}
+
+.nav-item {
+    padding: 12px;
+    border-radius: 10px;
+    color: var(--muted);
+    margin-bottom: 5px;
+}
+
+.nav-item.active {
+    background: var(--accent-soft);
+    color: var(--text);
+}
+
+.sidebar-bottom {
+    margin-top: auto;
+    padding: 15px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--muted);
+    font-size: 13px;
+}
+
+/* CHAT AREA */
+
+.chat-area {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background: var(--chat-bg);
+    transition: background .25s;
+}
+
+.chat-header {
+    padding: 19px 25px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.chat-header h3 {
+    font-size: 16px;
+}
+
+.online {
+    color: #37d99a;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.chat-content {
+    flex: 1;
+    padding: 30px;
+    overflow-y: auto;
+}
+
+.welcome {
+    text-align: center;
+    padding: 50px 10px 35px;
+}
+
+.welcome-logo {
+    width: 75px;
+    height: 75px;
+    background: var(--accent);
+    display: grid;
+    place-items: center;
+    border-radius: 23px;
+    font-size: 39px;
+    font-weight: 900;
+    margin: auto auto 22px;
+    color: white;
+}
+
+.welcome h1 {
+    font-size: 28px;
+    margin-bottom: 10px;
+}
+
+.welcome p {
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.prompts {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 25px;
+}
+
+.prompt {
+    padding: 13px 16px;
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 12px;
+}
+
+.prompt:hover {
+    border-color: var(--accent);
+}
+
+/* CHAT MESSAGES */
+
+.message {
+    display: flex;
+    gap: 12px;
+    margin: 20px 0;
+    align-items: flex-start;
+}
+
+.message.user {
+    justify-content: flex-end;
+}
+
+.avatar {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--accent);
+    font-weight: bold;
+    color: white;
+}
+
+.bubble {
+    max-width: 75%;
+    padding: 14px 17px;
+    border-radius: var(--radius);
+    background: var(--bubble-ai);
+    color: var(--text);
+    font-size: var(--message-size, 14px);
+    line-height: 1.65;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
+.message.user .bubble {
+    background: var(--bubble-user);
+    color: white;
+}
+
+.message-name {
+    font-size: 11px;
+    font-weight: 700;
+    margin-bottom: 5px;
+    color: var(--muted);
+}
+
+.message.user .message-name {
+    text-align: right;
+}
+
+/* BUBBLE STYLES */
+
+body.style-classic .bubble {
+    border-radius: 5px;
+}
+
+body.style-minimal .bubble {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+body.style-pill .bubble {
+    border-radius: 30px;
+    padding: 15px 20px;
+}
+
+/* INPUT */
+
+.input-area {
+    padding: 15px 25px;
+}
+
+.input-box {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+}
+
+.input-box:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.input-box input {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    padding: 10px;
+}
+
+.input-box input::placeholder {
+    color: var(--muted);
+}
+
+.send-button {
+    width: 40px;
+    height: 40px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 20px;
+}
+
+.disclaimer {
+    color: var(--muted);
+    text-align: center;
+    font-size: 11px;
+    margin-top: 12px;
+}
+
+/* CUSTOMIZATION PANEL */
+
+.customizer {
+    background: var(--panel);
+    border-left: 1px solid var(--border);
+    padding: 22px 18px;
+    overflow-y: auto;
+    max-height: 100vh;
+}
+
+.custom-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 22px;
+}
+
+.custom-header h2 {
+    font-size: 17px;
+}
+
+.custom-header p {
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.close-button {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-size: 23px;
+}
+
+.section {
+    border-top: 1px solid var(--border);
+    padding: 19px 0;
+}
+
+.section h3 {
+    font-size: 13px;
+    margin-bottom: 14px;
+}
+
+.theme-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 9px;
+}
+
+.theme-option {
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+}
+
+.theme-preview {
+    height: 57px;
+    border: 2px solid transparent;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    position: relative;
+}
+
+.theme-option.selected .theme-preview {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.theme-preview.dark {
+    background: #101114;
+}
+
+.theme-preview.light {
+    background: #f2f1f7;
+}
+
+.theme-preview.purple {
+    background: linear-gradient(135deg,#ad00ff,#653cff);
+}
+
+.theme-preview.blue {
+    background: linear-gradient(135deg,#0045d8,#00a9ff);
+}
+
+.theme-option.selected {
+    color: var(--text);
+    font-weight: bold;
+}
+
+/* COLOR PICKER */
+
+.color-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 13px;
+    align-items: center;
+}
+
+.color-choice {
+    width: 31px;
+    height: 31px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    outline: 1px solid transparent;
+}
+
+.color-choice.selected {
+    outline: 2px solid var(--text);
+    outline-offset: 3px;
+}
+
+input[type="color"] {
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+/* BACKGROUNDS */
+
+.background-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 9px;
+}
+
+.bg-option {
+    height: 58px;
+    border: 2px solid transparent;
+    border-radius: 11px;
+}
+
+.bg-option.selected {
+    border-color: var(--accent);
+}
+
+.bg-1 {
+    background: linear-gradient(135deg,#17102b,#392080,#101114);
+}
+
+.bg-2 {
+    background: radial-gradient(circle,#142b78,#070b20);
+}
+
+.bg-3 {
+    background: repeating-linear-gradient(135deg,#101114 0 5px,#24242e 6px 7px);
+}
+
+.bg-4 {
+    background: linear-gradient(135deg,#839bbd,#263a56);
+}
+
+/* STYLE OPTIONS */
+
+.style-grid {
+    display: grid;
+    grid-template-columns: repeat(3,1fr);
+    gap: 9px;
+}
+
+.style-option {
+    background: var(--bg);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 12px 5px;
+    border-radius: 10px;
+    font-size: 11px;
+}
+
+.style-option.selected {
+    border: 2px solid var(--accent);
+    color: var(--text);
+}
+
+.style-icon {
+    display: block;
+    height: 23px;
+    width: 40px;
+    margin: 0 auto 8px;
+    background: var(--accent);
+    border-radius: 8px;
+}
+
+/* SELECT AND SLIDER */
+
+.setting-label {
+    font-size: 12px;
+    margin-bottom: 9px;
+    display: block;
+    font-weight: 600;
+}
+
+select {
+    width: 100%;
+    padding: 11px;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    outline: none;
+}
+
+input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+.range-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.range-value {
+    background: var(--bg);
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    min-width: 42px;
+    text-align: center;
+}
+
+.toggle-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.toggle {
+    width: 42px;
+    height: 23px;
+    appearance: none;
+    background: #454553;
+    border-radius: 20px;
+    position: relative;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.toggle:checked {
+    background: var(--accent);
+}
+
+.toggle::after {
+    content: "";
+    position: absolute;
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    background: white;
+    top: 3px;
+    left: 3px;
+    transition: .2s;
+}
+
+.toggle:checked::after {
+    left: 22px;
+}
+
+/* ACTION BUTTONS */
+
+.actions {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    padding-top: 10px;
+}
+
+.action-button {
+    padding: 12px;
+    border-radius: 10px;
+    font-weight: 700;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text);
+}
+
+.action-button.primary {
+    background: var(--accent);
+    border: none;
+    color: white;
+}
+
+.action-button:hover {
+    opacity: .85;
+}
+
+.save-status {
+    color: #39d99b;
+    text-align: center;
+    font-size: 11px;
+    min-height: 15px;
+}
+
+/* RESPONSIVE */
+
+@media(max-width: 1050px) {
+    .app {
+        grid-template-columns: 190px minmax(250px,1fr);
+    }
+
+    .customizer {
+        grid-column: 1 / -1;
+        border-left: none;
+        border-top: 1px solid var(--border);
+        max-height: none;
+    }
+}
+
+@media(max-width: 650px) {
+    .app {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sidebar {
+        display: none;
+    }
+
+    .customizer {
+        max-height: none;
+    }
+
+    .chat-area {
+        min-height: 650px;
+    }
+
+    .chat-content {
+        padding: 15px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<!-- SIDEBAR -->
+
+<aside class="sidebar">
+
+    <div class="brand">
+        <div class="logo">W</div>
+        <div>
+            <h2>WICKYpedia</h2>
+            <p>Chat. Learn. Create.</p>
+        </div>
+    </div>
+
+    <button class="new-chat" onclick="newChat()">
+        + New Chat
+    </button>
+
+    <div>
+        <div class="nav-item active">⌂ &nbsp; Home</div>
+        <div class="nav-item">◎ &nbsp; Explore</div>
+        <div class="nav-item">⚙ &nbsp; Settings</div>
+        <div class="nav-item">ⓘ &nbsp; About</div>
+    </div>
+
+    <div>
+        <p style="font-size:13px;color:var(--muted);margin:10px">
+            CONVERSATIONS
+        </p>
+        <div class="nav-item">▢ &nbsp; Welcome to WICKYpedia</div>
+    </div>
+
+    <div class="sidebar-bottom">
+        ✨ Customize your experience
+        <br><br>
+        Make WICKYpedia yours.
+    </div>
+
+</aside>
+
+
+<!-- CHAT PREVIEW -->
+
+<main class="chat-area">
+
+    <header class="chat-header">
+        <div>
+            <h3>WICKYpedia AI</h3>
+            <div class="online">● Online</div>
+        </div>
+
+        <button onclick="toggleCustomizer()"
+        style="background:transparent;border:none;color:var(--text);font-size:23px">
+            ⚙
+        </button>
+    </header>
+
+    <div class="chat-content" id="chatContent">
+
+        <div class="welcome" id="welcome">
+
+            <div class="welcome-logo">W</div>
+
+            <h1>Welcome to WICKYpedia!</h1>
+
+            <p>Your customizable AI chat experience.</p>
+
+            <div class="prompts">
+                <button class="prompt"
+                onclick="sendDemo('Explain something complicated')">
+                    💡 Explain something complicated
+                </button>
+
+                <button class="prompt"
+                onclick="sendDemo('Help me write code')">
+                    &lt;/&gt; Help me write code
+                </button>
+
+                <button class="prompt"
+                onclick="sendDemo('Brainstorm ideas')">
+                    🚀 Brainstorm ideas
+                </button>
+            </div>
+
+        </div>
+
+        <div class="message user">
+            <div class="bubble">This is awesome!</div>
+        </div>
+
+        <div class="message">
+            <div class="avatar">W</div>
+            <div>
+                <div class="message-name">WICKYpedia AI</div>
+                <div class="bubble">
+                    Glad you like it! 🎉
+
+                    You can fully customize the look and feel of this chat.
+
+                    Try changing the colors, background, or theme in the settings panel!
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="input-area">
+        <form class="input-box" id="demoForm">
+            <input id="demoInput" placeholder="Message WICKYpedia..." maxlength="2000">
+            <button class="send-button" type="submit">➤</button>
+        </form>
+
+        <p class="disclaimer">
+            WICKYpedia AI can make mistakes. Check important information.
+        </p>
+    </div>
+
+</main>
+
+
+<!-- CUSTOMIZATION PANEL -->
+
+<aside class="customizer" id="customizer">
+
+    <div class="custom-header">
+        <div>
+            <h2>🎨 Customize Your Chat</h2>
+            <p>Make WICKYpedia yours!</p>
+        </div>
+
+        <button class="close-button" onclick="toggleCustomizer()">×</button>
+    </div>
+
+
+    <!-- THEME -->
+
+    <section class="section">
+
+        <h3>Theme</h3>
+
+        <div class="theme-grid">
+
+            <div class="theme-option selected" data-theme="dark"
+            onclick="setTheme('dark',this)">
+                <div class="theme-preview dark"></div>
+                Dark
+            </div>
+
+            <div class="theme-option" data-theme="light"
+            onclick="setTheme('light',this)">
+                <div class="theme-preview light"></div>
+                Light
+            </div>
+
+            <div class="theme-option" data-theme="purple"
+            onclick="setTheme('purple',this)">
+                <div class="theme-preview purple"></div>
+                Purple
+            </div>
+
+            <div class="theme-option" data-theme="blue"
+            onclick="setTheme('blue',this)">
+                <div class="theme-preview blue"></div>
+                Blue
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- ACCENT COLOR -->
+
+    <section class="section">
+
+        <h3>Accent Color</h3>
+
+        <div class="color-grid">
+
+            <button class="color-choice selected"
+            style="background:#8547ff"
+            onclick="setAccent('#8547ff',this)"></button>
+
+            <button class="color-choice"
+            style="background:#168cff"
+            onclick="setAccent('#168cff',this)"></button>
+
+            <button class="color-choice"
+            style="background:#ec168b"
+            onclick="setAccent('#ec168b',this)"></button>
+
+            <button class="color-choice"
+            style="background:#10bd83"
+            onclick="setAccent('#10bd83',this)"></button>
+
+            <button class="color-choice"
+            style="background:#ff9b28"
+            onclick="setAccent('#ff9b28',this)"></button>
+
+            <button class="color-choice"
+            style="background:#f04444"
+            onclick="setAccent('#f04444',this)"></button>
+
+            <input type="color" id="customAccent"
+            value="#8547ff" title="Choose custom color">
+
+        </div>
+
+    </section>
+
+
+    <!-- BACKGROUND -->
+
+    <section class="section">
+
+        <h3>Chat Background</h3>
+
+        <div class="background-grid">
+
+            <button class="bg-option bg-1 selected"
+            onclick="setBackground('bg1',this)"
+            title="Purple gradient"></button>
+
+            <button class="bg-option bg-2"
+            onclick="setBackground('bg2',this)"
+            title="Night sky"></button>
+
+            <button class="bg-option bg-3"
+            onclick="setBackground('bg3',this)"
+            title="Dark lines"></button>
+
+            <button class="bg-option bg-4"
+            onclick="setBackground('bg4',this)"
+            title="Mountain"></button>
+
+        </div>
+
+        <div style="margin-top:12px">
+            <label class="setting-label" for="backgroundColor">
+                Custom background color
+            </label>
+            <input type="color" id="backgroundColor" value="#101114">
+        </div>
+
+    </section>
+
+
+    <!-- MESSAGE STYLE -->
+
+    <section class="section">
+
+        <h3>Chat Bubble Style</h3>
+
+        <div class="style-grid">
+
+            <button class="style-option selected"
+            onclick="setStyle('modern',this)">
+                <span class="style-icon"></span>
+                Modern
+            </button>
+
+            <button class="style-option"
+            onclick="setStyle('classic',this)">
+                <span class="style-icon" style="border-radius:3px"></span>
+                Classic
+            </button>
+
+            <button class="style-option"
+            onclick="setStyle('minimal',this)">
+                <span class="style-icon" style="opacity:.3"></span>
+                Minimal
+            </button>
+
+            <button class="style-option"
+            onclick="setStyle('pill',this)">
+                <span class="style-icon" style="border-radius:30px"></span>
+                Pill
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <!-- FONT -->
+
+    <section class="section">
+
+        <h3>Typography</h3>
+
+        <label class="setting-label" for="fontSelect">Font Family</label>
+
+        <select id="fontSelect">
+            <option value="Inter, Arial, sans-serif">Inter</option>
+            <option value="Arial, sans-serif">Arial</option>
+            <option value="Verdana, sans-serif">Verdana</option>
+            <option value="Georgia, serif">Georgia</option>
+            <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+            <option value="monospace">Monospace</option>
+        </select>
+
+    </section>
+
+
+    <!-- TEXT SIZE -->
+
+    <section class="section">
+
+        <h3>Message Text Size</h3>
+
+        <div class="range-row">
+            <input type="range" id="textSize"
+            min="12" max="22" value="14">
+            <span class="range-value" id="textSizeValue">14px</span>
+        </div>
+
+    </section>
+
+
+    <!-- CORNER RADIUS -->
+
+    <section class="section">
+
+        <h3>Corner Roundness</h3>
+
+        <div class="range-row">
+            <input type="range" id="radius"
+            min="0" max="32" value="16">
+            <span class="range-value" id="radiusValue">16px</span>
+        </div>
+
+    </section>
+
+
+    <!-- MESSAGE COLORS -->
+
+    <section class="section">
+
+        <h3>Message Colors</h3>
+
+        <label class="setting-label" for="userBubbleColor">
+            Your message color
+        </label>
+
+        <input type="color" id="userBubbleColor" value="#7138e8">
+
+        <br><br>
+
+        <label class="setting-label" for="aiBubbleColor">
+            AI message color
+        </label>
+
+        <input type="color" id="aiBubbleColor" value="#20212d">
+
+    </section>
+
+
+    <!-- AUTO SAVE -->
+
+    <section class="section">
+
+        <div class="toggle-row">
+            <div>
+                <h3 style="margin-bottom:5px">Auto Save</h3>
+                <p style="font-size:11px;color:var(--muted)">
+                    Save your preferences automatically.
+                </p>
+            </div>
+
+            <input type="checkbox" class="toggle"
+            id="autoSave" checked>
+        </div>
+
+    </section>
+
+
+    <!-- ACTIONS -->
+
+    <div class="actions">
+
+        <button class="action-button" onclick="resetSettings()">
+            ↻ Reset to Default
+        </button>
+
+        <button class="action-button primary"
+        onclick="saveSettings(true)">
+            ✓ Save Changes
+        </button>
+
+        <div class="save-status" id="saveStatus"></div>
+
+    </div>
+
+</aside>
+
+</div>
+
+
+<script>
+
+// ==========================================
+// WICKYPEDIA CHAT CUSTOMIZER
+// ==========================================
+
+const root = document.documentElement;
+const body = document.body;
+
+const defaults = {
+    theme: "dark",
+    accent: "#8547ff",
+    background: "bg1",
+    customBackground: "#101114",
+    font: "Inter, Arial, sans-serif",
+    textSize: 14,
+    radius: 16,
+    style: "modern",
+    userBubble: "#7138e8",
+    aiBubble: "#20212d",
+    autoSave: true
+};
+
+let settings = {...defaults};
+
+
+// ==========================================
+// THEME COLORS
+// ==========================================
+
+const themes = {
+
+    dark: {
+        bg: "#101114",
+        panel: "#171821",
+        chat: "#101114",
+        text: "#f5f3ff",
+        muted: "#a4a0b8",
+        border: "#30303e"
+    },
+
+    light: {
+        bg: "#f2f3f8",
+        panel: "#ffffff",
+        chat: "#f7f7fb",
+        text: "#20202b",
+        muted: "#77788a",
+        border: "#dedee8"
+    },
+
+    purple: {
+        bg: "#160b28",
+        panel: "#211337",
+        chat: "#130b20",
+        text: "#f8efff",
+        muted: "#b9a3d1",
+        border: "#493260"
+    },
+
+    blue: {
+        bg: "#07182b",
+        panel: "#10243d",
+        chat: "#08182c",
+        text: "#eff7ff",
+        muted: "#a3bdd8",
+        border: "#274767"
+    }
+
+};
+
+
+// ==========================================
+// APPLY SETTINGS
+// ==========================================
+
+function applySettings() {
+
+    const theme = themes[settings.theme];
+
+    root.style.setProperty("--bg", theme.bg);
+    root.style.setProperty("--panel", theme.panel);
+    root.style.setProperty("--chat-bg", theme.chat);
+    root.style.setProperty("--text", theme.text);
+    root.style.setProperty("--muted", theme.muted);
+    root.style.setProperty("--border", theme.border);
+
+    root.style.setProperty("--accent", settings.accent);
+    root.style.setProperty("--font", settings.font);
+
+    root.style.setProperty("--message-size", settings.textSize + "px");
+    root.style.setProperty("--radius", settings.radius + "px");
+
+    root.style.setProperty("--bubble-user", settings.userBubble);
+    root.style.setProperty("--bubble-ai", settings.aiBubble);
+
+    body.classList.remove(
+        "style-modern",
+        "style-classic",
+        "style-minimal",
+        "style-pill"
+    );
+
+    body.classList.add("style-" + settings.style);
+
+    applyBackground();
+
+    updateControls();
+
+}
+
+
+// ==========================================
+// BACKGROUND OPTIONS
+// ==========================================
+
+function applyBackground() {
+
+    const backgrounds = {
+
+        bg1: "linear-gradient(135deg,#17102b,#392080,#101114)",
+
+        bg2: "radial-gradient(circle at center,#142b78,#070b20)",
+
+        bg3: "repeating-linear-gradient(135deg,#101114 0 5px,#24242e 6px 7px)",
+
+        bg4: "linear-gradient(135deg,#839bbd,#263a56)",
+
+        custom: settings.customBackground
+
+    };
+
+    root.style.setProperty(
+        "--chat-bg",
+        backgrounds[settings.background] || backgrounds.bg1
+    );
+
+}
+
+
+// ==========================================
+// THEME SELECTOR
+// ==========================================
+
+function setTheme(theme, element) {
+
+    settings.theme = theme;
+
+    document.querySelectorAll(".theme-option").forEach(option => {
+        option.classList.remove("selected");
+    });
+
+    element.classList.add("selected");
+
+    applySettings();
+    autoSave();
+
+}
+
+
+// ==========================================
+// ACCENT COLOR
+// ==========================================
+
+function setAccent(color, element) {
+
+    settings.accent = color;
+
+    document.querySelectorAll(".color-choice").forEach(button => {
+        button.classList.remove("selected");
+    });
+
+    if (element) element.classList.add("selected");
+
+    document.getElementById("customAccent").value = color;
+
+    applySettings();
+    autoSave();
+
+}
+
+document.getElementById("customAccent").addEventListener("input", event => {
+    setAccent(event.target.value, null);
+});
+
+
+// ==========================================
+// BACKGROUND SELECTOR
+// ==========================================
+
+function setBackground(background, element) {
+
+    settings.background = background;
+
+    document.querySelectorAll(".bg-option").forEach(button => {
+        button.classList.remove("selected");
+    });
+
+    element.classList.add("selected");
+
+    applySettings();
+    autoSave();
+
+}
+
+
+// ==========================================
+// BUBBLE STYLE
+// ==========================================
+
+function setStyle(style, element) {
+
+    settings.style = style;
+
+    document.querySelectorAll(".style-option").forEach(button => {
+        button.classList.remove("selected");
+    });
+
+    element.classList.add("selected");
+
+    applySettings();
+    autoSave();
+
+}
+
+
+// ==========================================
+// FONT
+// ==========================================
+
+document.getElementById("fontSelect").addEventListener("change", event => {
+
+    settings.font = event.target.value;
+
+    applySettings();
+    autoSave();
+
+});
+
+
+// ==========================================
+// TEXT SIZE
+// ==========================================
+
+document.getElementById("textSize").addEventListener("input", event => {
+
+    settings.textSize = Number(event.target.value);
+
+    document.getElementById("textSizeValue").textContent =
+        settings.textSize + "px";
+
+    applySettings();
+    autoSave();
+
+});
+
+
+// ==========================================
+// CORNER RADIUS
+// ==========================================
+
+document.getElementById("radius").addEventListener("input", event => {
+
+    settings.radius = Number(event.target.value);
+
+    document.getElementById("radiusValue").textContent =
+        settings.radius + "px";
+
+    applySettings();
+    autoSave();
+
+});
+
+
+// ==========================================
+// MESSAGE COLORS
+// ==========================================
+
+document.getElementById("userBubbleColor").addEventListener("input", event => {
+
+    settings.userBubble = event.target.value;
+
+    applySettings();
+    autoSave();
+
+});
+
+document.getElementById("aiBubbleColor").addEventListener("input", event => {
+
+    settings.aiBubble = event.target.value;
+
+    applySettings();
+    autoSave();
+
+});
+
+
+// ==========================================
+// CUSTOM BACKGROUND COLOR
+// ==========================================
+
+document.getElementById("backgroundColor").addEventListener("input", event => {
+
+    settings.customBackground = event.target.value;
+    settings.background = "custom";
+
+    document.querySelectorAll(".bg-option").forEach(button => {
+        button.classList.remove("selected");
+    });
+
+    applySettings();
+    autoSave();
+
+});
+
+
+// ==========================================
+// AUTO SAVE
+// ==========================================
+
+document.getElementById("autoSave").addEventListener("change", event => {
+
+    settings.autoSave = event.target.checked;
+
+    if (settings.autoSave) {
+        saveSettings(false);
+    }
+
+});
+
+
+function autoSave() {
+
+    if (settings.autoSave) {
+        localStorage.setItem(
+            "wickypediaCustomization",
+            JSON.stringify(settings)
+        );
+
+        showStatus("Changes saved automatically.");
+    }
+
+}
+
+
+function saveSettings(manual) {
+
+    localStorage.setItem(
+        "wickypediaCustomization",
+        JSON.stringify(settings)
+    );
+
+    showStatus(
+        manual ? "✓ Your changes have been saved!" : "Changes saved."
+    );
+
+}
+
+
+function showStatus(message) {
+
+    const status = document.getElementById("saveStatus");
+
+    status.textContent = message;
+
+    clearTimeout(showStatus.timeout);
+
+    showStatus.timeout = setTimeout(() => {
+        status.textContent = "";
+    }, 2500);
+
+}
+
+
+// ==========================================
+// UPDATE SETTINGS PANEL
+// ==========================================
+
+function updateControls() {
+
+    document.getElementById("fontSelect").value = settings.font;
+
+    document.getElementById("textSize").value = settings.textSize;
+    document.getElementById("textSizeValue").textContent =
+        settings.textSize + "px";
+
+    document.getElementById("radius").value = settings.radius;
+    document.getElementById("radiusValue").textContent =
+        settings.radius + "px";
+
+    document.getElementById("customAccent").value = settings.accent;
+
+    document.getElementById("userBubbleColor").value =
+        settings.userBubble;
+
+    document.getElementById("aiBubbleColor").value =
+        settings.aiBubble;
+
+    document.getElementById("backgroundColor").value =
+        settings.customBackground;
+
+    document.getElementById("autoSave").checked = settings.autoSave;
+
+    document.querySelectorAll(".theme-option").forEach(option => {
+        option.classList.toggle(
+            "selected",
+            option.dataset.theme === settings.theme
+        );
+    });
+
+    document.querySelectorAll(".color-choice").forEach(button => {
+        button.classList.toggle(
+            "selected",
+            button.getAttribute("onclick")?.includes(settings.accent)
+        );
+    });
+
+    document.querySelectorAll(".style-option").forEach(button => {
+        button.classList.toggle(
+            "selected",
+            button.getAttribute("onclick")?.includes(
+                "'" + settings.style + "'"
+            )
+        );
+    });
+
+    document.querySelectorAll(".bg-option").forEach(button => {
+        button.classList.toggle(
+            "selected",
+            button.getAttribute("onclick")?.includes(
+                "'" + settings.background + "'"
+            )
+        );
+    });
+
+}
+
+
+// ==========================================
+// LOAD SAVED SETTINGS
+// ==========================================
+
+function loadSettings() {
+
+    try {
+
+        const saved = localStorage.getItem(
+            "wickypediaCustomization"
+        );
+
+        if (saved) {
+
+            const parsed = JSON.parse(saved);
+
+            settings = {
+                ...defaults,
+                ...parsed
+            };
+
+        }
+
+    } catch (error) {
+
+        console.error("Could not load settings:", error);
+
+        settings = {...defaults};
+
+    }
+
+    applySettings();
+
+}
+
+
+// ==========================================
+// RESET SETTINGS
+// ==========================================
+
+function resetSettings() {
+
+    settings = {...defaults};
+
+    applySettings();
+
+    localStorage.removeItem("wickypediaCustomization");
+
+    showStatus("Settings restored to default.");
+
+}
+
+
+// ==========================================
+// TOGGLE CUSTOMIZER
+// ==========================================
+
+function toggleCustomizer() {
+
+    const panel = document.getElementById("customizer");
+
+    if (panel.style.display === "none") {
+        panel.style.display = "block";
+    } else {
+        panel.style.display = "none";
+    }
+
+}
+
+
+// ==========================================
+// DEMO CHAT
+// ==========================================
+
+function sendDemo(message) {
+
+    const welcome = document.getElementById("welcome");
+
+    if (welcome) welcome.remove();
+
+    const userMessage = document.createElement("div");
+    userMessage.className = "message user";
+
+    const userBubble = document.createElement("div");
+    userBubble.className = "bubble";
+    userBubble.textContent = message;
+
+    userMessage.appendChild(userBubble);
+
+    document.getElementById("chatContent").appendChild(userMessage);
+
+    const aiMessage = document.createElement("div");
+    aiMessage.className = "message";
+
+    const avatar = document.createElement("div");
+    avatar.className = "avatar";
+    avatar.textContent = "W";
+
+    const wrapper = document.createElement("div");
+
+    const name = document.createElement("div");
+    name.className = "message-name";
+    name.textContent = "WICKYpedia AI";
+
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+    bubble.textContent =
+        "This is a design preview! Your customization settings are working. Connect your AI backend to generate real responses.";
+
+    wrapper.append(name, bubble);
+    aiMessage.append(avatar, wrapper);
+
+    document.getElementById("chatContent").appendChild(aiMessage);
+
+    document.getElementById("chatContent").scrollTop =
+        document.getElementById("chatContent").scrollHeight;
+
+}
+
+
+function newChat() {
+
+    const content = document.getElementById("chatContent");
+
+    content.innerHTML = `
+        <div class="welcome" id="welcome">
+            <div class="welcome-logo">W</div>
+            <h1>Welcome to WICKYpedia!</h1>
+            <p>Your customizable AI chat experience.</p>
+        </div>
+    `;
+
+}
+
+
+// ==========================================
+// DEMO INPUT
+// ==========================================
+
+document.getElementById("demoForm").addEventListener("submit", event => {
+
+    event.preventDefault();
+
+    const input = document.getElementById("demoInput");
+
+    if (!input.value.trim()) return;
+
+    sendDemo(input.value.trim());
+
+    input.value = "";
+
+});
+
+
+// ==========================================
+// INITIALIZE
+// ==========================================
+
+loadSettings();
+
+</script>
+
+</body>
+</html>

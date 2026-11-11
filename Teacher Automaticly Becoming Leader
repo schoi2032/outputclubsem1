@@ -1,0 +1,194 @@
+
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  collection,
+  serverTimestamp,
+  runTransaction
+} from "firebase/firestore";
+
+import { getAuth } from "firebase/auth";
+
+const db = getFirestore();
+const auth = getAuth();
+
+// =====================================
+// CREATE GROUP CHAT WITH TEACHER LEADER
+// =====================================
+
+export async function createGroupChat(groupName, memberIds) {
+
+  const currentUser = auth.currentUser;
+
+  if (!currentUser) {
+    throw new Error("You must be logged in.");
+  }
+
+  // Get all user profiles
+  const users = await Promise.all(
+    memberIds.map(async (uid) => {
+      const snap = await getDoc(doc(db, "users", uid));
+
+      if (!snap.exists()) {
+        throw new Error(`User ${uid} does not exist.`);
+      }
+
+      return {
+        uid,
+        ...snap.data()
+      };
+    })
+  );
+
+  // Find teachers in the group
+  const teachers = users.filter(
+    user => user.role === "teacher"
+  );
+
+  // Teacher automatically becomes leader
+  const groupLeader = teachers.length > 0
+    ? teachers[0].uid
+    : currentUser.uid;
+
+  const groupRef = doc(collection(db, "groups"));
+
+  const groupData = {
+    name: groupName,
+
+    members: memberIds,
+
+    leaderId: groupLeader,
+
+    teachers: teachers.map(t => t.uid),
+
+    admins: [groupLeader],
+
+    createdBy: currentUser.uid,
+
+    createdAt: serverTimestamp(),
+
+    settings: {
+      onlyLeaderCanManageMembers: true,
+      onlyLeaderCanChangeSettings: true,
+      studentsCanSendMessages: true,
+      studentsCanReact: true
+    }
+  };
+
+  await setDoc(groupRef, groupData);
+
+  return groupRef.id;
+}
+
+// =====================================
+// CHECK GROUP LEADER PERMISSIONS
+// =====================================
+
+export async function isGroupLeader(groupId) {
+
+  const uid = auth.currentUser?.uid;
+
+  if (!uid) return false;
+
+  const groupSnap = await getDoc(
+    doc(db, "groups", groupId)
+  );
+
+  if (!groupSnap.exists()) return false;
+
+  return groupSnap.data().leaderId === uid;
+}
+
+// =====================================
+// UPDATE GROUP SETTINGS
+// =====================================
+
+export async function updateGroupSettings(groupId, newSettings) {
+
+  if (!await isGroupLeader(groupId)) {
+    throw new Error("Only the group leader can change settings.");
+  }
+
+  await updateDoc(
+    doc(db, "groups", groupId),
+    {
+      settings: newSettings
+    }
+  );
+}
+
+// =====================================
+// REMOVE A MEMBER
+// =====================================
+
+export async function removeGroupMember(groupId, memberId) {
+
+  if (!await isGroupLeader(groupId)) {
+    throw new Error("Only the group leader can remove members.");
+  }
+
+  const groupRef = doc(db, "groups", groupId);
+
+  await runTransaction(db, async (transaction) => {
+
+    const snap = await transaction.get(groupRef);
+
+    if (!snap.exists()) {
+      throw new Error("Group does not exist.");
+    }
+
+    const group = snap.data();
+
+    if (memberId === group.leaderId) {
+      throw new Error("The group leader cannot be removed.");
+    }
+
+    transaction.update(groupRef, {
+      members: group.members.filter(id => id !== memberId)
+    });
+
+  });
+}
+
+// =====================================
+// TRANSFER LEADERSHIP
+// =====================================
+
+export async function transferLeadership(groupId, newLeaderId) {
+
+  const uid = auth.currentUser?.uid;
+
+  if (!await isGroupLeader(groupId)) {
+    throw new Error("Only the current leader can transfer leadership.");
+  }
+
+  const groupRef = doc(db, "groups", groupId);
+
+  await runTransaction(db, async (transaction) => {
+
+    const snap = await transaction.get(groupRef);
+
+    if (!snap.exists()) {
+      throw new Error("Group does not exist.");
+    }
+
+    const group = snap.data();
+
+    if (!group.members.includes(newLeaderId)) {
+      throw new Error("New leader must be a group member.");
+    }
+
+    if (!group.teachers.includes(newLeaderId)) {
+      throw new Error("Leadership can only be transferred to a teacher.");
+    }
+
+    transaction.update(groupRef, {
+      leaderId: newLeaderId,
+      admins: [newLeaderId]
+    });
+
+  });
+}
