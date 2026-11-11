@@ -8,7 +8,7 @@ import { useOrgContext } from '@/components/org-context'
 import { errorMessage, get, post } from '@/lib/api'
 import { QtyPicker } from './qty-picker'
 
-const BETS = [5, 10, 25, 50, 100, 200]
+const BETS = [10, 50, 100, 500, 1000]
 
 export function CoinflipView({ wallet }: { wallet: Wallet | undefined }) {
   const { api, org } = useOrgContext()
@@ -24,7 +24,6 @@ export function CoinflipView({ wallet }: { wallet: Wallet | undefined }) {
   const [history, setHistory] = useState<SoloFlip[]>([])
   const off = org.customization?.duels === false
   const used = last?.flipsToday ?? today.data?.flipsToday ?? 0
-  const left = SOLO_FLIP.dailyMax - used
 
   const flip = async () => {
     setSpinning(true)
@@ -51,8 +50,8 @@ export function CoinflipView({ wallet }: { wallet: Wallet | undefined }) {
       <div>
         <p className="text-[18px] font-bold">🪙 Coinflip</p>
         <p className="mt-1 text-[13px] text-fg-muted">
-          Call it, bet, flip. Win and you get 🪙 {flipPayout(bet)} back on a 🪙 {bet} bet. Up to{' '}
-          {SOLO_FLIP.dailyMax} flips a day ({Math.max(0, left)} left).
+          Call it, bet, flip. Win and you get 🪙 {flipPayout(bet)} back on a 🪙 {bet} bet. No
+          limits: bet as much as you have. {used} flips today.
         </p>
       </div>
 
@@ -106,10 +105,17 @@ export function CoinflipView({ wallet }: { wallet: Wallet | undefined }) {
           </button>
         ))}
       </div>
+      <Button
+        size="sm"
+        disabled={spinning || (wallet?.coins ?? 0) < SOLO_FLIP.min}
+        onClick={() => setBet(Math.max(SOLO_FLIP.min, wallet?.coins ?? 0))}
+      >
+        All in (🪙 {(wallet?.coins ?? 0).toLocaleString()})
+      </Button>
       <QtyPicker
         value={bet}
         onChange={(n) => setBet(Math.max(SOLO_FLIP.min, n))}
-        max={SOLO_FLIP.max}
+        max={Math.max(SOLO_FLIP.min, wallet?.coins ?? SOLO_FLIP.min)}
         label="Custom bet"
       />
 
@@ -117,14 +123,10 @@ export function CoinflipView({ wallet }: { wallet: Wallet | undefined }) {
         variant="primary"
         className="w-full text-[15px]"
         loading={spinning}
-        disabled={off || left <= 0 || (wallet?.coins ?? 0) < bet}
+        disabled={off || (wallet?.coins ?? 0) < bet}
         onClick={flip}
       >
-        {off
-          ? 'Coin games are off at this school'
-          : left <= 0
-            ? 'No flips left today'
-            : `Flip for 🪙 ${bet}`}
+        {off ? 'Coin games are off at this school' : `Flip for 🪙 ${bet.toLocaleString()}`}
       </Button>
 
       {history.length > 0 && (

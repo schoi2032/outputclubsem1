@@ -63,8 +63,6 @@ export async function flipRoutes(app: App, ctx: AppContext) {
           throw badRequest(`You need ${bet - (u?.coins ?? 0)} more Wicky Coins.`)
         // Counted under the lock, so quick double-clicks can't go past the limit.
         const done = await flipsToday(tx, scope.userId)
-        if (done >= SOLO_FLIP.dailyMax)
-          throw badRequest(`That's ${SOLO_FLIP.dailyMax} flips today. Come back tomorrow!`)
         await changeCoins(tx, scope.userId, -bet, 'flip_bet', side)
         const result = randomInt(2) === 0 ? 'heads' : 'tails'
         const won = result === side

@@ -1560,7 +1560,8 @@ export interface ArtistsPage {
 // --- Solo coinflip (against the house) ---------------------------------------------------
 
 /** A win pays the bet back plus 95% of it; the 5% keeps coins from piling up. */
-export const SOLO_FLIP = { min: 5, max: 200, dailyMax: 50, fee: 0.05 }
+/** No daily limit and no top bet: you can bet as much as you have. */
+export const SOLO_FLIP = { min: 5, max: 1_000_000_000, fee: 0.05 }
 export const flipPayout = (bet: number) => bet * 2 - Math.ceil(bet * SOLO_FLIP.fee)
 
 export interface SoloFlip {
