@@ -28,7 +28,7 @@ export function ProfileEffect({ value }: { value?: string | null }) {
   const fx = effectById(value)
   if (!fx) return null
   const name = fx.id.slice(2)
-  const count = name === 'stars' ? 5 : 14
+  const count = name === 'stars' ? 5 : name === 'emorain' ? 25 : 14
   return (
     <div className={`q-fx q-fx-${name}`} aria-hidden="true">
       {Array.from({ length: count }, (_, i) => (
@@ -46,7 +46,7 @@ export function ProfileEffect({ value }: { value?: string | null }) {
             } as React.CSSProperties
           }
         >
-          {fx.particle}
+          {fx.particles ? fx.particles[i % fx.particles.length] : fx.particle}
         </span>
       ))}
     </div>

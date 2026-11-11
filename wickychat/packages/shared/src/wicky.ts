@@ -864,7 +864,7 @@ export interface SimpleItem {
 }
 
 /** Animated overlays on the profile card. Drawn with CSS (`.q-fx-<name>`). */
-export const EFFECTS: (SimpleItem & { particle: string })[] = [
+export const EFFECTS: (SimpleItem & { particle: string; particles?: string[] })[] = [
   {
     id: 'e-snow',
     name: 'Snowfall',
@@ -920,6 +920,15 @@ export const EFFECTS: (SimpleItem & { particle: string })[] = [
     description: 'Glowing dots drifting around',
     price: 200,
     particle: '●',
+  },
+  {
+    id: 'e-emorain',
+    name: 'Emo Rain',
+    description: 'Gray rain, a gloomy sky and the odd black heart',
+    price: 180,
+    particle: '│',
+    // Every 5th drop is a heart (see .q-fx-emorain in globals.css).
+    particles: ['│', '│', '│', '│', '🖤'],
   },
 ]
 

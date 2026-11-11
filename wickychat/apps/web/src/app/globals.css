@@ -457,3 +457,35 @@
 .q-still :is(.q-anim-on, .q-anim-row:hover) .q-plate {
   animation-play-state: running;
 }
+
+/* Emo Rain: a gloomy gray tint, fast straight rain and the odd black heart drifting down. */
+.q-fx-emorain {
+  background: linear-gradient(180deg, rgb(30 30 36 / 0.35), rgb(70 70 80 / 0.15) 60%, transparent);
+}
+.q-fx-emorain > span {
+  color: rgb(185 190 205 / 0.75);
+  font-size: calc(var(--s) + 6px);
+  font-weight: 200;
+  animation-name: q-fx-rain;
+  animation-duration: calc(var(--t) * 0.22);
+  animation-timing-function: linear;
+}
+.q-fx-emorain > span:nth-child(5n) {
+  font-size: var(--s);
+  animation-name: q-fx-fall;
+  animation-duration: calc(var(--t) * 1.4);
+  filter: grayscale(1) brightness(0.6);
+}
+@keyframes q-fx-rain {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(-14px, 560px);
+    opacity: 0.2;
+  }
+}

@@ -70,6 +70,28 @@ async function assertScopeRefs(
   }
 }
 
+/** WickyChat: group chats with more than this many people need a teacher in them. */
+const MAX_GROUP_WITHOUT_TEACHER = 3
+
+/** Students can't make (or grow) a group chat past 3 people unless a teacher is in it. */
+async function assertGroupSupervised(ctx: AppContext, orgId: string, memberIds: string[]) {
+  const ids = [...new Set(memberIds)]
+  if (ids.length <= MAX_GROUP_WITHOUT_TEACHER) return
+  const teacher = await ctx.db.query.orgMemberships.findFirst({
+    where: and(
+      eq(orgMemberships.orgId, orgId),
+      inArray(orgMemberships.userId, ids),
+      inArray(orgMemberships.role, ['owner', 'admin']),
+      isNull(orgMemberships.deactivatedAt),
+    ),
+    columns: { id: true },
+  })
+  if (!teacher)
+    throw forbidden(
+      `Group chats with more than ${MAX_GROUP_WITHOUT_TEACHER} people need a teacher in them. Add a teacher, or keep it to ${MAX_GROUP_WITHOUT_TEACHER}.`,
+    )
+}
+
 /** Guests may only start conversations with people they already share a channel with. */
 async function assertCanMessage(ctx: AppContext, scope: OrgScope, userIds: string[]) {
   await assertOrgMembers(ctx, scope.orgId, userIds)
@@ -500,7 +522,17 @@ export async function channelRoutes(app: App, ctx: AppContext) {
     async (req) => {
       const scope = await requireOrg(ctx, req, req.params.orgId)
       const a = await requireChannel(ctx, scope, req.params.id, 'add_members')
-      if (a.channel.kind === 'group') await assertCanMessage(ctx, scope, req.body.userIds)
+      if (a.channel.kind === 'group') {
+        await assertCanMessage(ctx, scope, req.body.userIds)
+        const current = await ctx.db
+          .select({ userId: channelMembers.userId })
+          .from(channelMembers)
+          .where(eq(channelMembers.channelId, a.channel.id))
+        await assertGroupSupervised(ctx, scope.orgId, [
+          ...current.map((m) => m.userId),
+          ...req.body.userIds,
+        ])
+      }
       const added = await addChannelMembers(ctx, scope, a.channel.id, req.body.userIds, {
         announce: true,
       })
@@ -678,6 +710,7 @@ export async function channelRoutes(app: App, ctx: AppContext) {
         return reply.code(200).send(await serializeChannel(ctx, scope.userId, row))
       }
 
+      await assertGroupSupervised(ctx, scope.orgId, participantIds)
       const row = await ctx.db.transaction(async (tx) => {
         const [c] = await tx
           .insert(channels)
