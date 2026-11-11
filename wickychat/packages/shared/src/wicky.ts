@@ -395,6 +395,8 @@ export interface CoinTransaction {
     | 'commission_hold'
     | 'commission_refund'
     | 'commission_pay'
+    | 'flip_bet'
+    | 'flip_win'
   ref: string | null
   createdAt: string
 }
@@ -1544,4 +1546,19 @@ export interface ArtistsPage {
   pending: Artist[]
   sent: Commission[]
   received: Commission[]
+}
+
+// --- Solo coinflip (against the house) ---------------------------------------------------
+
+/** A win pays the bet back plus 95% of it; the 5% keeps coins from piling up. */
+export const SOLO_FLIP = { min: 5, max: 200, dailyMax: 50, fee: 0.05 }
+export const flipPayout = (bet: number) => bet * 2 - Math.ceil(bet * SOLO_FLIP.fee)
+
+export interface SoloFlip {
+  side: 'heads' | 'tails'
+  result: 'heads' | 'tails'
+  won: boolean
+  bet: number
+  payout: number
+  flipsToday: number
 }

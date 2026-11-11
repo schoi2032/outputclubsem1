@@ -47,6 +47,7 @@ import { classWarRoutes } from './modules/coins/classwar'
 import { crateRoutes } from './modules/coins/crates'
 import { duelRoutes } from './modules/coins/duels'
 import { economyRoutes } from './modules/coins/economy'
+import { flipRoutes } from './modules/coins/flip'
 import { investRoutes } from './modules/coins/invest'
 import { marketRoutes } from './modules/coins/market'
 import { profileRoutes } from './modules/coins/profile'
@@ -346,6 +347,7 @@ export async function buildApp(config: Config, opts: BuildOptions = {}) {
   await classWarRoutes(app, ctx)
   await economyRoutes(app, ctx)
   await artistRoutes(app, ctx)
+  await flipRoutes(app, ctx)
   await complianceRoutes(app, ctx)
   await pluginRoutes(app, ctx)
   await productivityRoutes(app, ctx)

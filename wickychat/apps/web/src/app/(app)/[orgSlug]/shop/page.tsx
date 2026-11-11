@@ -75,6 +75,7 @@ import { ArtistsView } from '@/components/shop/artists'
 import { AuctionsView } from '@/components/shop/auctions'
 import { BundlesView, CreateBundle, MyBundles, useBundleDefs } from '@/components/shop/bundles'
 import { ClassWarView } from '@/components/shop/classwar'
+import { CoinflipView } from '@/components/shop/coinflip'
 import { CrateArt, CratesView, CreateCrate, MyCrates, useCrateDefs } from '@/components/shop/crates'
 import { InvestView, useStocks } from '@/components/shop/invest'
 import {
@@ -145,6 +146,8 @@ const REASON: Record<CoinTransaction['reason'], string> = {
   commission_hold: 'Art request (held)',
   commission_refund: 'Art request refunded',
   commission_pay: 'Paid for your art 🎨',
+  flip_bet: 'Coinflip bet',
+  flip_win: 'Won a coinflip 🎉',
 }
 
 const POSITION_LABEL: Record<StickerPosition, string> = {
@@ -187,6 +190,7 @@ type Tab =
   | 'quests'
   | 'classwar'
   | 'artists'
+  | 'flip'
   | 'mine'
 const TABS: Tab[] = [
   'all',
@@ -208,6 +212,7 @@ const TABS: Tab[] = [
   'quests',
   'classwar',
   'artists',
+  'flip',
   'mine',
 ]
 
@@ -232,7 +237,7 @@ const GROUPS: { id: string; label: string; tabs: Tab[] }[] = [
     ],
   },
   { id: 'trade', label: '🎒 My stuff & trading', tabs: ['mine', 'trades', 'auctions', 'market'] },
-  { id: 'invest', label: '📈 Invest', tabs: ['invest'] },
+  { id: 'invest', label: '📈 Invest & games', tabs: ['invest', 'flip'] },
   { id: 'create', label: '🎨 Create & artists', tabs: ['create', 'artists'] },
   {
     id: 'goals',
@@ -262,6 +267,7 @@ const TAB_LABEL: Record<Tab, string> = {
   quests: 'Daily quests',
   classwar: '⚔️ Class vs Class',
   artists: '🎨 Official Artists',
+  flip: '🪙 Coinflip',
   mine: 'My stuff',
 }
 
@@ -1120,6 +1126,9 @@ function ShopInner() {
             </TabsContent>
             <TabsContent value="quests" className="pt-4">
               <QuestsView />
+            </TabsContent>
+            <TabsContent value="flip" className="pt-4">
+              <CoinflipView wallet={w} />
             </TabsContent>
             <TabsContent value="artists" className="pt-4">
               <ArtistsView wallet={w} preset={params.get('artist') ?? undefined} />
