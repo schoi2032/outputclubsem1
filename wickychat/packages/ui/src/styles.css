@@ -525,6 +525,67 @@
   --q-ring: #8052ff;
 }
 
+.q-deco-dragon {
+  --q-ring: #e63946;
+}
+.q-deco-alien {
+  --q-ring: #7bed9f;
+}
+.q-deco-penguin {
+  --q-ring: #74b9ff;
+}
+.q-deco-zap {
+  --q-ring: #ffd32a;
+}
+.q-deco-dino {
+  --q-ring: #2ecc71;
+}
+.q-deco-money {
+  --q-ring: #27ae60;
+}
+.q-deco-gem {
+  --q-ring: #48dbfb;
+}
+.q-deco-skull {
+  --q-ring: #dfe4ea;
+}
+.q-deco-fox {
+  --q-ring: #ff8c42;
+}
+.q-deco-trophy {
+  --q-ring: #f9ca24;
+}
+.q-deco-comet {
+  --q-ring: #a29bfe;
+}
+.q-deco-earth {
+  --q-ring: #1e90ff;
+}
+.q-deco-pizza {
+  --q-ring: #ffb142;
+}
+.q-deco-octopus {
+  --q-ring: #ff6b81;
+}
+.q-deco-owl {
+  --q-ring: #a47148;
+}
+.q-deco-sloth {
+  --q-ring: #b08968;
+}
+.q-deco-lion {
+  --q-ring: #e1a33b;
+}
+.q-deco-shark {
+  --q-ring: #6c8ebf;
+}
+.q-deco-boba {
+  --q-ring: #c08552;
+}
+.q-deco-invader {
+  --q-ring: #9b59b6;
+}
+
 /* Animated rings */
 .q-deco-pulse {
   --q-ring: #9471ff;

@@ -517,6 +517,38 @@
   background: radial-gradient(ellipse at bottom, rgb(255 60 40 / 0.22), transparent 70%);
 }
 
+/* More name plates. */
+.q-plate-neon {
+  background-image: linear-gradient(110deg, #ff2bd6, #2b6bff, #00f0ff, #ff2bd6);
+}
+.q-plate-gold {
+  background-image: linear-gradient(110deg, #b8860b, #ffd700, #fff1a8, #daa520, #b8860b);
+}
+.q-plate-cotton {
+  background-image: linear-gradient(110deg, #ffc8dd, #cdb4db, #bde0fe, #ffc8dd);
+}
+.q-plate-forest {
+  background-image: linear-gradient(110deg, #1b4332, #40916c, #95d5b2, #2d6a4f, #1b4332);
+}
+.q-plate-cyber {
+  background-image: linear-gradient(110deg, #fcee0a, #ff2a6d, #05d9e8, #fcee0a);
+}
+.q-plate-rainbow {
+  background-image: linear-gradient(110deg, #ff595e, #ffca3a, #8ac926, #1982c4, #6a4c93, #ff595e);
+}
+.q-plate-midnight {
+  background-image: linear-gradient(110deg, #0b132b, #1c2541, #3a506b, #5bc0be, #0b132b);
+}
+.q-plate-peach {
+  background-image: linear-gradient(110deg, #ffcdb2, #ffb4a2, #fff1e6, #e5989b, #ffcdb2);
+}
+.q-plate-storm {
+  background-image: linear-gradient(110deg, #2b2d42, #8d99ae, #edf2f4, #4a4e69, #2b2d42);
+}
+.q-plate-cherry {
+  background-image: linear-gradient(110deg, #d00000, #ff4d6d, #ff8fa3, #9d0208, #d00000);
+}
+
 /* Seasonal name plates. */
 .q-plate-pumpkin {
   background-image: linear-gradient(110deg, #ff7a00, #6d28d9, #1a0b2e, #ff9a3c, #ff7a00);

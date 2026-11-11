@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react'
 import { OrgProfileCard } from '@/components/org/profile-fields'
 import { useOrgContext } from '@/components/org-context'
 import { ProfileCardEditor } from '@/components/profile/profile-editor'
+import { Wardrobe } from '@/components/profile/wardrobe'
 import { SettingsCard, SettingsTitle } from '@/components/settings-ui'
 import { del, errorMessage, get, patch, post, upload } from '@/lib/api'
 import { relative } from '@/lib/format'
@@ -178,6 +179,7 @@ export default function ProfileSettings() {
         </form>
       </SettingsCard>
 
+      <Wardrobe />
       <ProfileCardEditor />
 
       <OrgProfileCard />
