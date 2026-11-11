@@ -14,9 +14,11 @@ import {
   DECORATIONS,
   type DecorationRarity,
   decorationById,
+  type Leaderboard,
   STICKER_POSITIONS,
   type StickerPosition,
   sanitizeThemeCss,
+  streakBonus,
   THEME_TEMPLATE,
   THEMES,
   themeById,
@@ -211,7 +213,7 @@ function ShopInner() {
     act(
       'daily',
       () => post<Wallet>('/api/me/wallet/daily'),
-      `+${COINS.daily} Wicky Coins! See you tomorrow 🎉`,
+      `+${COINS.daily + streakBonus((w?.streak ?? 0) + 1)} Wicky Coins! 🔥 ${(w?.streak ?? 0) + 1}-day streak. See you tomorrow 🎉`,
     )
   const buy = (it: ShopItem) =>
     act(
@@ -442,8 +444,14 @@ function ShopInner() {
                 onClick={claim}
               >
                 <Gift />{' '}
-                {w?.dailyAvailable ? `Claim ${COINS.daily} daily coins` : 'Claimed today ✓'}
+                {w?.dailyAvailable
+                  ? `Claim ${COINS.daily + streakBonus((w?.streak ?? 0) + 1)} daily coins`
+                  : 'Claimed today ✓'}
               </Button>
+              <p className="text-xs text-fg-muted">
+                🔥 {w?.streak ?? 0}-day streak
+                {w && ` · tomorrow +${streakBonus(w.streak + (w.dailyAvailable ? 2 : 1))} bonus`}
+              </p>
               <div className="text-xs text-fg-muted">
                 <p>
                   Messages today: {w?.earnedFromMessagesToday ?? 0}/{COINS.messageDailyCap} coins
@@ -466,6 +474,7 @@ function ShopInner() {
               <TabsTrigger value="themes">Themes</TabsTrigger>
               <TabsTrigger value="community">Community</TabsTrigger>
               <TabsTrigger value="create">Create</TabsTrigger>
+              <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
               <TabsTrigger value="mine">My stuff</TabsTrigger>
             </TabsList>
             <TabsContent value="decorations" className="pt-4">
@@ -492,6 +501,9 @@ function ShopInner() {
                   'No student-made cosmetics yet. Make the first one in the Create tab!',
                 )
               )}
+            </TabsContent>
+            <TabsContent value="leaderboard" className="pt-4">
+              <LeaderboardView />
             </TabsContent>
             <TabsContent value="create" className="pt-4">
               <CreatePicker />
@@ -606,6 +618,64 @@ function CustomPreview({
         {sticker && <img className={`q-deco-art q-deco-at-${position}`} src={sticker} alt="" />}
       </span>
     </span>
+  )
+}
+
+function Board({
+  title,
+  unit,
+  rows,
+}: {
+  title: string
+  unit: string
+  rows: Leaderboard['earners']
+}) {
+  const medal = ['🥇', '🥈', '🥉']
+  return (
+    <section className="rounded-xl border border-border p-4">
+      <h3 className="mb-3 text-[14px] font-semibold">{title}</h3>
+      {!rows.length ? (
+        <p className="text-[13px] text-fg-subtle">Nobody yet. Be the first!</p>
+      ) : (
+        <ol className="flex flex-col gap-2">
+          {rows.map((r, i) => (
+            <li key={r.user.id} className="flex items-center gap-2 text-[13px]">
+              <span className="w-6 text-center tabular-nums text-fg-subtle">
+                {medal[i] ?? i + 1}
+              </span>
+              <Avatar
+                name={r.user.name}
+                id={r.user.id}
+                src={r.user.avatarUrl}
+                decoration={r.user.decoration}
+                size="sm"
+              />
+              <span className="min-w-0 flex-1 truncate font-medium">{displayName(r.user)}</span>
+              <span className="font-semibold tabular-nums">
+                {r.value.toLocaleString()}{' '}
+                <span className="font-normal text-fg-subtle">{unit}</span>
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
+    </section>
+  )
+}
+
+function LeaderboardView() {
+  const { org, api } = useOrgContext()
+  const q = useQuery({
+    queryKey: ['leaderboard', org.id],
+    queryFn: ({ signal }) => get<Leaderboard>(`${api}/leaderboard`, signal),
+  })
+  if (!q.data) return <Skeleton className="h-60" />
+  return (
+    <div className="grid gap-4 md:grid-cols-3">
+      <Board title="🪙 Top earners this week" unit="coins" rows={q.data.earners} />
+      <Board title="🎨 Top creators" unit="sold" rows={q.data.creators} />
+      <Board title="🔥 Longest streaks" unit="days" rows={q.data.streaks} />
+    </div>
   )
 }
 

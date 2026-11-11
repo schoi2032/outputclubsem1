@@ -354,6 +354,8 @@ export interface Wallet {
   equipped: string | null
   /** Equipped app theme: a built-in theme id or `u:<id>`. */
   equippedTheme: string | null
+  /** Days in a row the daily bonus was claimed. */
+  streak: number
   /** Whether today's daily bonus can still be claimed. */
   dailyAvailable: boolean
   /** Coins earned from messages today, out of COINS.messageDailyCap. */
@@ -760,4 +762,79 @@ export function sanitizeThemeCss(raw: string): { css: string; removed: string[] 
   strip(/behavior\s*:/gi, 'behavior')
   strip(/-moz-binding/gi, '-moz-binding')
   return { css: css.trim(), removed: [...removed] }
+}
+
+// --- Badges, streaks, leaderboard ------------------------------------------------------
+
+export interface BadgeDef {
+  id: string
+  emoji: string
+  name: string
+  /** How you get it. */
+  how: string
+  /** Only teachers can give it. */
+  manual?: boolean
+}
+
+export const BADGES: BadgeDef[] = [
+  {
+    id: 'teacher_pick',
+    emoji: '⭐',
+    name: "Teacher's pick",
+    how: 'Given by a teacher',
+    manual: true,
+  },
+  {
+    id: 'helper',
+    emoji: '🤝',
+    name: 'Helper',
+    how: 'Given by a teacher for helping others',
+    manual: true,
+  },
+  {
+    id: 'kindness',
+    emoji: '💛',
+    name: 'Kindness',
+    how: 'Given by a teacher for being kind',
+    manual: true,
+  },
+  { id: 'streak7', emoji: '🔥', name: 'On fire', how: 'Claim daily coins 7 days in a row' },
+  { id: 'streak30', emoji: '☄️', name: 'Unstoppable', how: 'Claim daily coins 30 days in a row' },
+  { id: 'chatter', emoji: '💬', name: 'Chatterbox', how: 'Send 1,000 messages' },
+  { id: 'creator', emoji: '🎨', name: 'Creator', how: 'Get a cosmetic approved for the Shop' },
+  { id: 'seller', emoji: '💰', name: 'Top seller', how: 'Sell 10 of your creations' },
+  { id: 'rich', emoji: '🪙', name: 'Coin collector', how: 'Have 1,000 Wicky Coins at once' },
+  { id: 'quiz', emoji: '🧠', name: 'Quiz whiz', how: 'Answer 10 quiz questions right' },
+  { id: 'early', emoji: '🐣', name: 'Early bird', how: 'Joined WickyChat in its first month' },
+]
+export const badgeById = (id: string) => BADGES.find((b) => b.id === id)
+export const MANUAL_BADGES = BADGES.filter((b) => b.manual).map((b) => b.id)
+
+export interface EarnedBadge {
+  id: string
+  /** For teacher-given badges: who gave it and why. */
+  note?: string
+  by?: string
+}
+
+export interface ProfileStats {
+  badges: EarnedBadge[]
+  streak: number
+  bestStreak: number
+}
+
+/** Extra coins for a daily streak: +5 a day from day 2, up to +30. */
+export const streakBonus = (streak: number) => Math.min(Math.max(streak - 1, 0) * 5, 30)
+
+export interface LeaderRow {
+  user: import('./types').UserSummary
+  value: number
+}
+export interface Leaderboard {
+  /** Coins earned in the last 7 days. */
+  earners: LeaderRow[]
+  /** Creations sold, all time. */
+  creators: LeaderRow[]
+  /** Current daily streak. */
+  streaks: LeaderRow[]
 }

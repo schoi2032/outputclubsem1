@@ -40,6 +40,7 @@ import { callRoutes } from './modules/calls/routes'
 import { leaveAllCalls } from './modules/calls/service'
 import { channelRoutes } from './modules/channels/routes'
 import { coinRoutes } from './modules/coins/routes'
+import { socialRoutes } from './modules/coins/social'
 import { connectedAppRoutes } from './modules/connected-apps/routes'
 import { expressionRoutes } from './modules/expressions/routes'
 import { fileRoutes } from './modules/files/routes'
@@ -298,6 +299,7 @@ export async function buildApp(config: Config, opts: BuildOptions = {}) {
   await moderationRoutes(app, ctx)
   await schoolModerationRoutes(app, ctx)
   await coinRoutes(app, ctx)
+  await socialRoutes(app, ctx)
   await complianceRoutes(app, ctx)
   await pluginRoutes(app, ctx)
   await productivityRoutes(app, ctx)

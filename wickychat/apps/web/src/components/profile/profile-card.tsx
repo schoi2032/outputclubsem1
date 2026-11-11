@@ -16,6 +16,7 @@ import { useOrgContext } from '@/components/org-context'
 import { errorMessage, post } from '@/lib/api'
 import { displayName } from '@/lib/format'
 import { keys, useMembers } from '@/lib/queries'
+import { BadgesRow } from './badges'
 import { StyledName } from './styled-name'
 
 export const DEFAULT_BANNER = 'linear-gradient(135deg, #8052ff, #15846e)'
@@ -245,6 +246,7 @@ export function ProfileCard({ user, panel }: { user: UserSummary; panel?: boolea
             )}
           </div>
         )}
+        {m && !user.isBot && <BadgesRow userId={user.id} canGive={canGift} />}
         {(m?.statusEmoji || m?.statusText) && (
           <p className="mt-2 text-[13px]">
             {m.statusEmoji} {m.statusText}

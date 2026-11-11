@@ -17,6 +17,7 @@ import {
   STICKER_POSITIONS,
   type StickerPosition,
   sanitizeThemeCss,
+  streakBonus,
   THEME_IDS,
   themeById,
   type Wallet,
@@ -29,7 +30,7 @@ import type { AppContext } from '../../core/context'
 import { badRequest, conflict, forbidden, notFound } from '../../core/errors'
 import { type App, orgIdParams, orgParams } from '../../core/http'
 import { avatarUrl } from '../users/serialize'
-import { changeCoins, earnedFromMessagesToday, startOfSchoolDay } from './service'
+import { changeCoins, currentStreak, earnedFromMessagesToday, startOfSchoolDay } from './service'
 
 const CUSTOM = /^u:([0-9a-f-]{36})$/
 
@@ -62,7 +63,13 @@ async function loadWallet(ctx: AppContext, userId: string): Promise<Wallet> {
   const [u, owned, history, earned] = await Promise.all([
     ctx.db.query.users.findFirst({
       where: eq(users.id, userId),
-      columns: { coins: true, decoration: true, appTheme: true, dailyClaimedAt: true },
+      columns: {
+        coins: true,
+        decoration: true,
+        appTheme: true,
+        dailyClaimedAt: true,
+        dailyStreak: true,
+      },
     }),
     ctx.db
       .select({ itemId: userItems.itemId, giverId: userItems.giftedBy, giverName: users.name })
@@ -91,6 +98,7 @@ async function loadWallet(ctx: AppContext, userId: string): Promise<Wallet> {
     giftedBy,
     equipped: u.decoration,
     equippedTheme: u.appTheme,
+    streak: currentStreak(u.dailyClaimedAt, u.dailyStreak),
     dailyAvailable: !u.dailyClaimedAt || u.dailyClaimedAt < startOfSchoolDay(),
     earnedFromMessagesToday: earned,
     history: history.map((h) => ({
@@ -122,14 +130,23 @@ export async function coinRoutes(app: App, ctx: AppContext) {
     await ctx.db.transaction(async (tx) => {
       // Lock the row so two quick clicks can't both claim.
       const [u] = await tx
-        .select({ at: users.dailyClaimedAt })
+        .select({ at: users.dailyClaimedAt, streak: users.dailyStreak, best: users.bestStreak })
         .from(users)
         .where(eq(users.id, me.id))
         .for('update')
       if (u?.at && u.at >= startOfSchoolDay())
         throw conflict("You've already claimed today's coins. Come back tomorrow!")
-      await tx.update(users).set({ dailyClaimedAt: new Date() }).where(eq(users.id, me.id))
-      await changeCoins(tx, me.id, COINS.daily, 'daily')
+      // Claimed yesterday too? The streak keeps going.
+      const streak = currentStreak(u?.at ?? null, u?.streak ?? 0) + 1
+      await tx
+        .update(users)
+        .set({
+          dailyClaimedAt: new Date(),
+          dailyStreak: streak,
+          bestStreak: Math.max(streak, u?.best ?? 0),
+        })
+        .where(eq(users.id, me.id))
+      await changeCoins(tx, me.id, COINS.daily + streakBonus(streak), 'daily')
     })
     return loadWallet(ctx, me.id)
   })

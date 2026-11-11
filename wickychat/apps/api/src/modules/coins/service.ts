@@ -93,3 +93,10 @@ export async function resolveTheme(db: Db, id: string | null): Promise<Me['appTh
   if (c?.kind !== 'theme' || !c.css || c.status === 'rejected') return null
   return { id, name: c.name, css: c.css, dark: null }
 }
+
+/** The daily streak that still counts: it breaks if yesterday was missed. */
+export function currentStreak(lastClaim: Date | null, streak: number) {
+  if (!lastClaim) return 0
+  const yesterday = new Date(startOfSchoolDay().getTime() - 86_400_000)
+  return lastClaim >= yesterday ? streak : 0
+}
