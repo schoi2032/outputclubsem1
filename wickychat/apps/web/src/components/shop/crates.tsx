@@ -596,6 +596,7 @@ export function CratesView({
   const qc = useQueryClient()
   const members = useMembers(org.id)
   const [opening, setOpening] = useState<string | null>(null)
+  const [openMany, setOpenMany] = useState<{ crate: CrateDef; have: number } | null>(null)
   const [odds, setOdds] = useState<CrateDef | null>(null)
   const [gift, setGift] = useState<{ crate: CrateDef; rowId?: string } | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
@@ -743,6 +744,15 @@ export function CratesView({
                   >
                     Open
                   </Button>
+                  {rows.length > 1 && (
+                    <Button
+                      size="sm"
+                      title="Open lots at once"
+                      onClick={() => setOpenMany({ crate, have: rows.length })}
+                    >
+                      Open many
+                    </Button>
+                  )}
                   <Button
                     size="sm"
                     title="Give this crate to someone"
@@ -833,6 +843,15 @@ export function CratesView({
           catalog={catalog}
           onClose={() => setOpening(null)}
           onOpenNext={setOpening}
+        />
+      )}
+      {openMany && (
+        <OpenManyDialog
+          key={openMany.crate.id}
+          crate={openMany.crate}
+          have={openMany.have}
+          catalog={catalog}
+          onClose={() => setOpenMany(null)}
         />
       )}
       {odds && (
@@ -1159,5 +1178,96 @@ export function PackFields(p: {
         <p className="max-w-sm pb-2 text-xs text-fg-subtle">{p.note}</p>
       </div>
     </>
+  )
+}
+
+const TIER_RANK: Record<string, number> = { legendary: 0, epic: 1, rare: 2, common: 3 }
+
+/** Opens many crates of one kind at once and shows everything that came out. */
+function OpenManyDialog({
+  crate,
+  have,
+  catalog,
+  onClose,
+}: {
+  crate: CrateDef
+  have: number
+  catalog: Catalog
+  onClose: () => void
+}) {
+  const qc = useQueryClient()
+  const [count, setCount] = useState(Math.min(have, 10))
+  const [busy, setBusy] = useState(false)
+  const [results, setResults] = useState<CrateResult[] | null>(null)
+
+  const open = async () => {
+    setBusy(true)
+    try {
+      const r = await post<{ results: CrateResult[]; wallet: Wallet }>('/api/me/crates/open-many', {
+        crateId: crate.id,
+        count,
+      })
+      setResults(r.results)
+      qc.setQueryData(['wallet'], r.wallet)
+      void qc.invalidateQueries({ queryKey: ['crates-opened'] })
+      void qc.invalidateQueries({ queryKey: ['achievements'] })
+    } catch (e) {
+      toast.error(errorMessage(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const coins = (results ?? []).reduce((n, r) => n + ('coins' in r ? r.coins : 0), 0)
+  const best = [...(results ?? [])].sort((a, b) => TIER_RANK[a.tier]! - TIER_RANK[b.tier]!)[0]
+  return (
+    <Dialog open onOpenChange={(o) => !o && !busy && onClose()}>
+      <DialogContent
+        title={`Open ${crate.name}s`}
+        description={
+          results
+            ? `Opened ${results.length}.${coins ? ` +🪙 ${coins} in coins.` : ''}${best ? ` Best pull: ${TIER_STYLE[best.tier].label}!` : ''}`
+            : `You have ${have}. How many do you want to open?`
+        }
+        className="max-w-3xl"
+      >
+        {!results ? (
+          <div className="flex flex-col items-center gap-4 py-2">
+            <div className="q-crate-idle">
+              <CrateArt crate={crate} />
+            </div>
+            <QtyPicker
+              value={count}
+              onChange={setCount}
+              max={Math.min(have, 100)}
+              label="Crates to open"
+            />
+            <Button variant="primary" loading={busy} onClick={open}>
+              Open ×{count}
+            </Button>
+          </div>
+        ) : (
+          <ul className="grid max-h-[60vh] grid-cols-3 gap-2 overflow-y-auto sm:grid-cols-5">
+            {[...results]
+              .map((r, i) => ({ r, i }))
+              .sort((a, b) => TIER_RANK[a.r.tier]! - TIER_RANK[b.r.tier]! || a.i - b.i)
+              .map(({ r, i }) => (
+                <li
+                  key={i}
+                  className="q-drop-in flex justify-center"
+                  style={{ animationDelay: `${Math.min(i, 40) * 45}ms` }}
+                >
+                  <DropTile drop={r} catalog={catalog} />
+                </li>
+              ))}
+          </ul>
+        )}
+        <DialogFooter>
+          <Button disabled={busy} onClick={onClose}>
+            {results ? 'Nice!' : 'Cancel'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }

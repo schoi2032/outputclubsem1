@@ -124,6 +124,43 @@ async function notify(ctx: AppContext, userId: string, text: string) {
   await ctx.bus.publish(topics.user(userId), { type: 'wicky.updated', orgId: m?.orgId ?? '', text })
 }
 
+/**
+ * Rolls and gives what's inside one unopened crate. `blocked` (things you already own or that
+ * can't drop) can be passed in when opening many, and is kept up to date.
+ */
+async function openRow(
+  tx: Tx,
+  userId: string,
+  row: typeof userCrates.$inferSelect,
+  cache?: Map<string, Set<string>>,
+): Promise<CrateResult> {
+  const found = await resolveCrate(tx, row.crateId)
+  if (!found) throw notFound('Crate')
+  const crate = found.def
+  let blocked = cache?.get(row.crateId)
+  if (!blocked) {
+    blocked = new Set([...(await ownedBy(tx, userId)), ...(await unavailable(tx, crate))])
+    cache?.set(row.crateId, blocked)
+  }
+  // Nothing left you don't own: some coins back instead.
+  const drop: CrateResult = crateOdds(crate, blocked).length
+    ? rollCrate(crate, blocked, randomInt(0, 1_000_000) / 1_000_000)
+    : { tier: 'common', coins: Math.max(1, Math.floor(crate.price * CUSTOM_CRATE.refund)) }
+  if ('item' in drop) {
+    const m = CUSTOM.exec(drop.item)
+    const serial = m ? await takeCopy(tx, m[1]!) : null
+    await tx.insert(userItems).values({ userId, itemId: drop.item, serial }).onConflictDoNothing()
+    // You own it now, so no crate gives it again.
+    for (const set of cache?.values() ?? []) set.add(drop.item)
+    blocked.add(drop.item)
+  } else await changeCoins(tx, userId, drop.coins, 'crate_coins', crate.id)
+  await tx
+    .update(userCrates)
+    .set({ openedAt: new Date(), result: drop })
+    .where(eq(userCrates.id, row.id))
+  return drop
+}
+
 export async function crateRoutes(app: App, ctx: AppContext) {
   /** Buys a crate for yourself, or for someone else with `giftTo`. It isn't opened yet. */
   app.post(
@@ -229,29 +266,47 @@ export async function crateRoutes(app: App, ctx: AppContext) {
           .for('update')
         if (!row) throw notFound('Crate')
         if (row.openedAt) throw conflict('That crate is already open.')
-        const found = await resolveCrate(tx, row.crateId)
-        if (!found) throw notFound('Crate')
-        const crate = found.def
-        const blocked = new Set([...(await ownedBy(tx, me.id)), ...(await unavailable(tx, crate))])
-        // Nothing left you don't own: some coins back instead.
-        const drop: CrateResult = crateOdds(crate, blocked).length
-          ? rollCrate(crate, blocked, randomInt(0, 1_000_000) / 1_000_000)
-          : { tier: 'common', coins: Math.max(1, Math.floor(crate.price * CUSTOM_CRATE.refund)) }
-        if ('item' in drop) {
-          const m = CUSTOM.exec(drop.item)
-          const serial = m ? await takeCopy(tx, m[1]!) : null
-          await tx
-            .insert(userItems)
-            .values({ userId: me.id, itemId: drop.item, serial })
-            .onConflictDoNothing()
-        } else await changeCoins(tx, me.id, drop.coins, 'crate_coins', crate.id)
-        await tx
-          .update(userCrates)
-          .set({ openedAt: new Date(), result: drop })
-          .where(eq(userCrates.id, row.id))
-        return drop
+        return openRow(tx, me.id, row)
       })
       return { result, wallet: await loadWallet(ctx, me.id) }
+    },
+  )
+
+  /** Opens up to `count` of your unopened crates of one kind in one go. */
+  app.post(
+    '/api/me/crates/open-many',
+    {
+      schema: {
+        body: z.object({
+          crateId: z.string().max(60),
+          count: z.number().int().min(1).max(100),
+        }),
+      },
+      config: { rateLimit: { max: 20, timeWindow: '1 minute' } },
+    },
+    async (req) => {
+      const me = requireUser(req)
+      const results = await ctx.db.transaction(async (tx) => {
+        const rows = await tx
+          .select()
+          .from(userCrates)
+          .where(
+            and(
+              eq(userCrates.userId, me.id),
+              eq(userCrates.crateId, req.body.crateId),
+              isNull(userCrates.openedAt),
+            ),
+          )
+          .orderBy(userCrates.id)
+          .limit(req.body.count)
+          .for('update')
+        if (!rows.length) throw notFound('Crate')
+        const cache = new Map<string, Set<string>>()
+        const out: CrateResult[] = []
+        for (const row of rows) out.push(await openRow(tx, me.id, row, cache))
+        return out
+      })
+      return { results, wallet: await loadWallet(ctx, me.id) }
     },
   )
 
