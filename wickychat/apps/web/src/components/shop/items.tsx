@@ -160,12 +160,27 @@ export function useCommunity() {
 /** Every item by id: built-in ones and the student-made ones the app knows about. */
 const NONE: Cosmetic[] = []
 
+/** Built-in items a student designed: item id → maker. */
+export function useMakers() {
+  const { org, api } = useOrgContext()
+  return useQuery({
+    queryKey: ['shop-makers', org.id],
+    queryFn: ({ signal }) =>
+      get<Record<string, NonNullable<ShopItem['creator']>>>(`${api}/shop/makers`, signal),
+    staleTime: 10 * 60_000,
+  })
+}
+
 export function useCatalog(extra: Cosmetic[] = NONE) {
   const community = useCommunity()
+  const makers = useMakers()
   return useMemo(() => {
-    const all = [...BUILTIN_ITEMS, ...[...(community.data ?? []), ...extra].map(cosmeticItem)]
+    const builtins = BUILTIN_ITEMS.map((it) =>
+      makers.data?.[it.itemId] ? { ...it, creator: makers.data[it.itemId] } : it,
+    )
+    const all = [...builtins, ...[...(community.data ?? []), ...extra].map(cosmeticItem)]
     return new Map(all.map((it) => [it.itemId, it] as const))
-  }, [community.data, extra])
+  }, [community.data, extra, makers.data])
 }
 
 export function itemName(id: string | null | undefined, community: Cosmetic[]) {

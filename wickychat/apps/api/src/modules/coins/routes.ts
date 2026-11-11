@@ -12,6 +12,7 @@ import {
   users,
 } from '@quid/db'
 import {
+  builtinMakers,
   COIN_GIFT,
   COINS,
   COSMETIC_PRICE,
@@ -331,6 +332,16 @@ export async function coinRoutes(app: App, ctx: AppContext) {
         // Buying for yourself puts it on straight away.
         if (!giftTo) await tx.update(users).set(equipFor(itemId, custom)).where(eq(users.id, me.id))
         // The student who made it earns most of the price.
+        // Built-in items a student designed pay them like their own cosmetics.
+        const makerEmail = builtinMakers()[itemId]
+        if (makerEmail) {
+          const maker = await tx.query.users.findFirst({
+            where: sql`lower(${users.email}) = ${makerEmail}`,
+            columns: { id: true },
+          })
+          if (maker && maker.id !== me.id)
+            await changeCoins(tx, maker.id, Math.floor(price * CREATOR_SHARE), 'sale', itemId)
+        }
         if (custom) {
           if (custom.creatorId !== me.id)
             await changeCoins(
@@ -630,6 +641,34 @@ export async function coinRoutes(app: App, ctx: AppContext) {
       throw badRequest("Approved cosmetics can't be deleted, since people may own them.")
     await ctx.db.delete(cosmetics).where(eq(cosmetics.id, c.id))
     return { ok: true }
+  })
+
+  /** Who designed the built-in items that a student made (item id → person). */
+  app.get('/api/orgs/:orgId/shop/makers', { schema: { params: orgParams } }, async (req) => {
+    const scope = await requireOrg(ctx, req, req.params.orgId)
+    const makers = builtinMakers()
+    const emails = [...new Set(Object.values(makers))]
+    if (!emails.length) return {}
+    const rows = await ctx.db
+      .select({
+        id: users.id,
+        name: users.name,
+        displayName: users.displayName,
+        email: users.email,
+      })
+      .from(users)
+      .innerJoin(
+        orgMemberships,
+        and(eq(orgMemberships.userId, users.id), eq(orgMemberships.orgId, scope.orgId)),
+      )
+      .where(inArray(sql`lower(${users.email})`, emails))
+    const byEmail = new Map(rows.map((r) => [r.email.toLowerCase(), r]))
+    const out: Record<string, { id: string; name: string; displayName: string | null }> = {}
+    for (const [item, email] of Object.entries(makers)) {
+      const u = byEmail.get(email)
+      if (u) out[item] = { id: u.id, name: u.name, displayName: u.displayName }
+    }
+    return out
   })
 
   /**

@@ -972,6 +972,8 @@ export interface SimpleItem {
   price: number
   /** Seasonal event it belongs to: only sold while the event is on. */
   event?: string
+  /** Email of the student who designed it: shown as its maker, and they get CREATOR_SHARE of sales. */
+  madeBy?: string
 }
 
 /** Animated overlays on the profile card. Drawn with CSS (`.q-fx-<name>`). */
@@ -1042,6 +1044,7 @@ export const EFFECTS: (SimpleItem & {
     name: 'Dark Rain',
     description: 'Gray rain, a gloomy sky and the odd black heart',
     price: 180,
+    madeBy: 'teum2032@chadwickschool.org',
     particle: '│',
     // Every 5th drop is a heart (see .q-fx-emorain in globals.css).
     particles: ['│', '│', '│', '│', '🖤'],
@@ -1216,3 +1219,9 @@ const STAFF: Record<string, StaffTag[]> = {
 
 export const staffTags = (email: string | null | undefined): StaffTag[] =>
   STAFF[(email ?? '').toLowerCase()] ?? []
+
+/** Built-in items a student designed, by item id → the maker's email. */
+export const builtinMakers = (): Record<string, string> =>
+  Object.fromEntries(
+    [...EFFECTS, ...PLATES].filter((x) => x.madeBy).map((x) => [x.id, x.madeBy!.toLowerCase()]),
+  )

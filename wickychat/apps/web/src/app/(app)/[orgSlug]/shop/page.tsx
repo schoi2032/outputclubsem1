@@ -60,6 +60,7 @@ import { NamePlate } from '@/components/profile/cosmetics-fx'
 import { BundlesView, CreateBundle, MyBundles, useBundleDefs } from '@/components/shop/bundles'
 import { CrateArt, CratesView, CreateCrate, MyCrates, useCrateDefs } from '@/components/shop/crates'
 import {
+  BUILTIN_ITEMS,
   cosmeticItem,
   ItemPreview,
   ItemTags,
@@ -69,6 +70,7 @@ import {
   type ShopItem,
   useCatalog,
   useCommunity,
+  useMakers,
 } from '@/components/shop/items'
 import { SendCoinsDialog } from '@/components/shop/send-coins'
 import { ThemeSwatch } from '@/components/shop/theme-swatch'
@@ -345,7 +347,7 @@ function ShopInner() {
         {it.creator && (
           <p className="text-2xs text-fg-subtle">
             by {displayName(it.creator)}
-            {!isPrivate && ` · ${it.sales ?? 0} sold`}
+            {!isPrivate && it.sales != null && ` · ${it.sales} sold`}
           </p>
         )}
         {gifted && <p className="text-2xs text-accent-text">🎁 from {gifted.name}</p>}
@@ -1984,11 +1986,13 @@ function MyCreations() {
       setBusy(false)
     }
   }
+  const makers = useMakers()
   const mine = useQuery({
     queryKey: ['cosmetics', org.id, 'mine'],
     queryFn: ({ signal }) => get<Cosmetic[]>(`${api}/cosmetics?view=mine`, signal),
   })
-  if (!mine.data?.length) return null
+  const builtinMine = BUILTIN_ITEMS.filter((it) => makers.data?.[it.itemId]?.id === me.id)
+  if (!mine.data?.length && !builtinMine.length) return null
   const status = {
     pending: { label: '⏳ Waiting for review', className: 'text-fg-muted' },
     approved: { label: '✅ On sale', className: 'text-success' },
@@ -1998,7 +2002,20 @@ function MyCreations() {
     <section className="mt-10">
       <h3 className="mb-3 text-[14px] font-semibold">Your creations</h3>
       <ul className="divide-y divide-border rounded-lg border border-border">
-        {mine.data.map((c) => (
+        {builtinMine.map((it) => (
+          <li key={it.itemId} className="flex items-center gap-4 p-3">
+            <div className="w-20 shrink-0">
+              <ItemPreview it={it} compact />
+            </div>
+            <div className="min-w-0 flex-1 text-[13px]">
+              <p className="font-medium">
+                {it.name} <span className="text-fg-subtle">· 🪙 {it.price}</span>
+              </p>
+              <p className="text-success">✅ Sold in the Shop as an official item</p>
+            </div>
+          </li>
+        ))}
+        {(mine.data ?? []).map((c) => (
           <li key={c.id} className="flex items-center gap-4 p-3">
             {c.kind === 'theme' ? (
               <ThemeSwatch css={c.css ?? ''} className="h-14 w-20" />
