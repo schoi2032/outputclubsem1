@@ -10,6 +10,7 @@
 import { sql } from 'drizzle-orm'
 import {
   bigint,
+  bigserial,
   boolean,
   customType,
   index,
@@ -1771,3 +1772,30 @@ export const messageStickers = pgTable('message_stickers', {
     .references(() => messages.id, { onDelete: 'cascade' }),
   stickerKey: text('sticker_key').notNull(),
 })
+
+/**
+ * WickyChat data log: every change to the economy (coins, items, crates, trades, auctions,
+ * the Stock Market, duels, stickers, cosmetics...), written by database triggers so nothing
+ * that changes these tables can skip it. Append-only; there's no screen for it.
+ * See migration 0038_data_log_triggers.
+ */
+export const dataLog = pgTable(
+  'data_log',
+  {
+    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    at: ts('at').notNull().defaultNow(),
+    /** Table that changed. */
+    tbl: text('tbl').notNull(),
+    /** INSERT | UPDATE | DELETE */
+    op: text('op').notNull(),
+    /** The person it's about, when there is one. */
+    userId: text('user_id'),
+    /** Row before and after (null for inserts / deletes). */
+    old: jsonb('old'),
+    new: jsonb('new'),
+  },
+  (t) => [
+    index('data_log_tbl_idx').on(t.tbl, t.at),
+    index('data_log_user_idx').on(t.userId, t.at),
+  ],
+)

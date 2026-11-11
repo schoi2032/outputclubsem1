@@ -197,6 +197,53 @@ const TABS: Tab[] = [
   'mine',
 ]
 
+/**
+ * The Shop's sections. Each kind of cosmetic keeps its own tab; trading, auctions and your own
+ * things live together.
+ */
+const GROUPS: { id: string; label: string; tabs: Tab[] }[] = [
+  {
+    id: 'shop',
+    label: '🛍️ Shop',
+    tabs: [
+      'all',
+      'event',
+      'decorations',
+      'effects',
+      'plates',
+      'themes',
+      'stickers',
+      'crates',
+      'bundles',
+    ],
+  },
+  { id: 'trade', label: '🎒 My stuff & trading', tabs: ['mine', 'trades', 'auctions', 'market'] },
+  { id: 'invest', label: '📈 Invest', tabs: ['invest'] },
+  { id: 'create', label: '🎨 Create', tabs: ['create'] },
+  { id: 'goals', label: '🏆 Achievements', tabs: ['achievements', 'leaderboard'] },
+]
+const groupOf = (t: Tab) => GROUPS.find((g) => g.tabs.includes(t)) ?? GROUPS[0]!
+
+const TAB_LABEL: Record<Tab, string> = {
+  all: 'All',
+  crates: 'Crates',
+  bundles: 'Bundles',
+  event: 'Event',
+  decorations: 'Decorations',
+  effects: 'Effects',
+  plates: 'Name plates',
+  themes: 'Themes',
+  stickers: 'Stickers',
+  create: 'Create',
+  invest: 'Invest',
+  market: 'Market',
+  auctions: 'Auctions',
+  trades: 'Trades',
+  leaderboard: 'Leaderboard',
+  achievements: 'Achievements',
+  mine: 'My stuff',
+}
+
 type KindFilter = 'all' | ItemKind | 'crate'
 type SourceFilter = 'all' | 'builtin' | 'community' | 'event'
 type SortBy = 'popular' | 'cheap' | 'pricey' | 'name'
@@ -240,6 +287,12 @@ function ShopInner() {
           : 'all',
   )
   const events = liveEvents()
+  const group = groupOf(tab)
+  // Coming back to a section opens the tab you were last on there.
+  const [lastTab, setLastTab] = useState<Record<string, Tab>>({})
+  useEffect(() => {
+    setLastTab((m) => (m[groupOf(tab).id] === tab ? m : { ...m, [groupOf(tab).id]: tab }))
+  }, [tab])
   const trades = useTrades()
   const incomingTrades = (trades.data ?? []).filter(
     (t) => t.status === 'pending' && t.to.id === me.id,
@@ -760,50 +813,66 @@ function ShopInner() {
           </section>
 
           <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
-            <TabsList className="flex-wrap gap-x-4 gap-y-0">
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="crates">
-                Crates
-                {!!w?.crates.length && (
-                  <span className="rounded-full bg-accent px-1.5 text-2xs text-accent-fg">
-                    {w.crates.length}
-                  </span>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="bundles">Bundles</TabsTrigger>
-              {!!events.length && (
-                <TabsTrigger value="event">
-                  {events[0]!.emoji} {events.length > 1 ? 'Events' : events[0]!.name}
-                </TabsTrigger>
-              )}
-              <TabsTrigger value="decorations">Decorations</TabsTrigger>
-              <TabsTrigger value="effects">Effects</TabsTrigger>
-              <TabsTrigger value="plates">Name plates</TabsTrigger>
-              <TabsTrigger value="themes">Themes</TabsTrigger>
-              <TabsTrigger value="stickers">Stickers</TabsTrigger>
-              <TabsTrigger value="create">Create</TabsTrigger>
-              <TabsTrigger value="invest">📈 Invest</TabsTrigger>
-              <TabsTrigger value="market">Market</TabsTrigger>
-              <TabsTrigger value="auctions">Auctions</TabsTrigger>
-              <TabsTrigger value="trades">
-                Trades
-                {!!incomingTrades && (
-                  <span className="rounded-full bg-danger px-1.5 text-2xs text-white">
-                    {incomingTrades}
-                  </span>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
-              <TabsTrigger value="achievements">
-                Achievements
-                {claimable > 0 && (
-                  <span className="ml-1.5 rounded-full bg-accent px-1.5 text-2xs text-accent-fg">
-                    {claimable}
-                  </span>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="mine">My stuff</TabsTrigger>
-            </TabsList>
+            {/* Sections first, then the tabs inside the one you're in. */}
+            <nav className="mb-2 flex flex-wrap gap-1.5" aria-label="Shop sections">
+              {GROUPS.map((g) => {
+                const count = g.id === 'trade' ? incomingTrades : g.id === 'goals' ? claimable : 0
+                return (
+                  <button
+                    key={g.id}
+                    type="button"
+                    aria-pressed={group.id === g.id}
+                    onClick={() => setTab(lastTab[g.id] ?? g.tabs[0]!)}
+                    className={cn(
+                      'flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[13px] font-semibold transition-colors',
+                      group.id === g.id
+                        ? 'border-accent bg-accent text-accent-fg'
+                        : 'border-border text-fg-muted hover:bg-bg-muted hover:text-fg',
+                    )}
+                  >
+                    {g.label}
+                    {count > 0 && (
+                      <span
+                        className={cn(
+                          'rounded-full px-1.5 text-2xs',
+                          group.id === g.id ? 'bg-accent-fg/20' : 'bg-danger text-white',
+                        )}
+                      >
+                        {count}
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </nav>
+            {group.tabs.length > 1 && (
+              <TabsList className="flex-wrap gap-x-4 gap-y-0">
+                {group.tabs
+                  .filter((t) => t !== 'event' || events.length > 0)
+                  .map((t) => (
+                    <TabsTrigger key={t} value={t}>
+                      {t === 'event' && events[0]
+                        ? `${events[0].emoji} ${events.length > 1 ? 'Events' : events[0].name}`
+                        : TAB_LABEL[t]}
+                      {t === 'crates' && !!w?.crates.length && (
+                        <span className="rounded-full bg-accent px-1.5 text-2xs text-accent-fg">
+                          {w.crates.length}
+                        </span>
+                      )}
+                      {t === 'trades' && !!incomingTrades && (
+                        <span className="rounded-full bg-danger px-1.5 text-2xs text-white">
+                          {incomingTrades}
+                        </span>
+                      )}
+                      {t === 'achievements' && claimable > 0 && (
+                        <span className="rounded-full bg-accent px-1.5 text-2xs text-accent-fg">
+                          {claimable}
+                        </span>
+                      )}
+                    </TabsTrigger>
+                  ))}
+              </TabsList>
+            )}
 
             <TabsContent value="all" className="pt-4">
               <div className="mb-4 flex flex-col gap-3">
