@@ -48,6 +48,7 @@ import { del, errorMessage, get, post, put } from '@/lib/api'
 import { displayName, relative } from '@/lib/format'
 import { keys, useMembers } from '@/lib/queries'
 import { ItemPicker, type ShopItem } from './items'
+import { QtyPicker } from './qty-picker'
 
 type Catalog = Map<string, ShopItem>
 
@@ -633,6 +634,8 @@ export function CratesView({
     }
   }
 
+  // How many to buy at once (×1 ×5 ×10 ×20 ×100 or custom).
+  const [qty, setQty] = useState(1)
   const buy = async (crate: CrateDef, count = 1, giftTo?: string) => {
     setBusy(`${crate.id}:${count}`)
     try {
@@ -685,21 +688,13 @@ export function CratesView({
           <div className="mt-auto flex flex-wrap gap-1.5 pt-2">
             <Button
               size="sm"
-              variant={afford ? 'primary' : 'secondary'}
-              disabled={!afford || !wallet}
-              loading={busy === `${crate.id}:1`}
-              onClick={() => buy(crate).catch(() => {})}
+              variant={(wallet?.coins ?? 0) >= crate.price * qty ? 'primary' : 'secondary'}
+              disabled={(wallet?.coins ?? 0) < crate.price * qty || !wallet}
+              loading={busy === `${crate.id}:${qty}`}
+              onClick={() => buy(crate, qty).catch(() => {})}
+              className="tabular-nums"
             >
-              🪙 {crate.price}
-            </Button>
-            <Button
-              size="sm"
-              disabled={(wallet?.coins ?? 0) < crate.price * 5}
-              loading={busy === `${crate.id}:5`}
-              onClick={() => buy(crate, 5).catch(() => {})}
-              title={`5 for 🪙 ${crate.price * 5}`}
-            >
-              ×5
+              {qty > 1 ? `Buy ×${qty} · ` : ''}🪙 {(crate.price * qty).toLocaleString()}
             </Button>
             <Button
               size="sm"
@@ -774,6 +769,11 @@ export function CratesView({
             Crate.
           </p>
         )}
+        <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-fg-muted">
+          Buy
+          <QtyPicker value={qty} onChange={setQty} max={100} label="Crates to buy" />
+          at a time
+        </div>
         <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {forSale.map(saleCard)}
         </ul>

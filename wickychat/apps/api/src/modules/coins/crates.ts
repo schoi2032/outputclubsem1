@@ -133,7 +133,7 @@ export async function crateRoutes(app: App, ctx: AppContext) {
         body: z.object({
           crateId: z.string().max(60),
           giftTo: z.uuid().optional(),
-          count: z.number().int().min(1).max(10).default(1),
+          count: z.number().int().min(1).max(100).default(1),
         }),
       },
       config: { rateLimit: { max: 30, timeWindow: '1 minute' } },

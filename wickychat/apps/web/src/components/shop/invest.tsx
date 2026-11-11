@@ -4,11 +4,13 @@
  * people with shares that pay a bonus whenever they earn coins.
  */
 import {
+  buyTotal,
   INVEST,
   type MarketQuote,
   type PersonQuote,
   type Portfolio,
   personKey,
+  sellTotal,
   type Wallet,
 } from '@quid/shared'
 import { Avatar, Button, cn, Input, Select, Skeleton, toast } from '@quid/ui'
@@ -19,6 +21,7 @@ import { useOrgContext } from '@/components/org-context'
 import { errorMessage, get, post } from '@/lib/api'
 import { displayName } from '@/lib/format'
 import { ItemPreview, useCatalog } from './items'
+import { QtyPicker } from './qty-picker'
 
 export function useStocks() {
   const { org, api } = useOrgContext()
@@ -167,37 +170,45 @@ export function InvestView({ wallet, person }: { wallet: Wallet | undefined; per
     have: number,
     label: string,
     closed = false,
-  ) => (
-    <div className="flex shrink-0 gap-1.5">
-      <Button
-        size="sm"
-        variant="primary"
-        className="tabular-nums"
-        disabled={closed || (wallet?.coins ?? 0) < quote.price}
-        loading={busy === `buy:${key}`}
-        onClick={() => trade(key, 'buy', label)}
-        title={closed ? 'Event over: you can only sell' : `Buy ${qty}`}
-      >
-        Buy 🪙 {quote.price}
-      </Button>
-      <Button
-        size="sm"
-        className="tabular-nums"
-        disabled={!have || quote.sell <= 0}
-        loading={busy === `sell:${key}`}
-        onClick={() => trade(key, 'sell', label)}
-        title={
-          quote.supply <= 0
-            ? 'Nobody bought one here yet, so nothing to sell back into'
-            : quote.made && quote.sell <= 0
-              ? "Sells back only what it's gone up since the maker's price"
-              : `Sell ${qty}`
-        }
-      >
-        Sell {quote.sell > 0 ? `🪙 ${quote.sell}` : '—'}
-      </Button>
-    </div>
-  )
+  ) => {
+    const cost = buyTotal(quote.base, quote.supply, qty)
+    const canSell = have >= qty && quote.supply >= qty
+    const pay = canSell ? sellTotal(quote.base, quote.supply, qty, quote.made) : 0
+    const times = qty > 1 ? ` ×${qty}` : ''
+    return (
+      <div className="flex shrink-0 gap-1.5">
+        <Button
+          size="sm"
+          variant="primary"
+          className="tabular-nums"
+          disabled={closed || (wallet?.coins ?? 0) < cost}
+          loading={busy === `buy:${key}`}
+          onClick={() => trade(key, 'buy', label)}
+          title={closed ? 'Event over: you can only sell' : `Buy ${qty} for 🪙 ${cost}`}
+        >
+          Buy{times} 🪙 {cost.toLocaleString()}
+        </Button>
+        <Button
+          size="sm"
+          className="tabular-nums"
+          disabled={pay <= 0}
+          loading={busy === `sell:${key}`}
+          onClick={() => trade(key, 'sell', label)}
+          title={
+            have < qty
+              ? `You have ${have}`
+              : quote.supply < qty
+                ? `Only ${quote.supply} can be sold back right now`
+                : quote.made && pay <= 0
+                  ? "Sells back only what it's gone up since the maker's price"
+                  : `Sell ${qty} for 🪙 ${pay}`
+          }
+        >
+          Sell{times} {pay > 0 ? `🪙 ${pay.toLocaleString()}` : '—'}
+        </Button>
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -257,18 +268,7 @@ export function InvestView({ wallet, person }: { wallet: Wallet | undefined; per
           <option value="pricey">Priciest</option>
           <option value="mine">Mine first</option>
         </Select>
-        <Select
-          value={String(qty)}
-          onChange={(e) => setQty(Number(e.target.value))}
-          className="w-auto"
-          aria-label="How many"
-        >
-          {[1, 2, 5, 10].map((n) => (
-            <option key={n} value={n}>
-              × {n}
-            </option>
-          ))}
-        </Select>
+        <QtyPicker value={qty} onChange={setQty} max={INVEST.maxQty} />
       </div>
 
       {view === 'items' ? (

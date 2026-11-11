@@ -23,7 +23,7 @@ export const INVEST = {
   /** Most bonus coins one shareholder can get in a day. */
   dividendDailyMax: 200,
   /** Most you can buy or sell in one go. */
-  maxQty: 10,
+  maxQty: 100,
 }
 
 /** What the next copy costs when `supply` are already held. */
