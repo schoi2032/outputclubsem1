@@ -458,7 +458,7 @@
   animation-play-state: running;
 }
 
-/* Emo Rain: a gloomy gray tint, fast straight rain and the odd black heart drifting down. */
+/* Dark Rain (id e-emorain): a gloomy gray tint, fast straight rain and the odd black heart drifting down. */
 .q-fx-emorain {
   background: linear-gradient(180deg, rgb(30 30 36 / 0.35), rgb(70 70 80 / 0.15) 60%, transparent);
 }

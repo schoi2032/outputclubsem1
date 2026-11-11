@@ -1039,7 +1039,7 @@ export const EFFECTS: (SimpleItem & {
   },
   {
     id: 'e-emorain',
-    name: 'Emo Rain',
+    name: 'Dark Rain',
     description: 'Gray rain, a gloomy sky and the odd black heart',
     price: 180,
     particle: '│',

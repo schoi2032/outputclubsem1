@@ -59,14 +59,6 @@ const b = (
 
 export const BUNDLES: BundleDef[] = [
   b(
-    'b-emo',
-    'Emo Kit',
-    '🖤',
-    'Emo Rain, a dark theme and a galaxy name plate.',
-    ['#1a1a1f', '#c1121f'],
-    ['e-emorain', 't-dracula', 'p-galaxy', 'ghost'],
-  ),
-  b(
     'b-cozy',
     'Cozy Pastel',
     '🌸',
