@@ -397,6 +397,13 @@ export interface CoinTransaction {
     | 'commission_pay'
     | 'flip_bet'
     | 'flip_win'
+    | 'spin'
+    | 'liked'
+    | 'bounty_hold'
+    | 'bounty_refund'
+    | 'bounty_win'
+    | 'trivia'
+    | 'referral'
   ref: string | null
   createdAt: string
 }

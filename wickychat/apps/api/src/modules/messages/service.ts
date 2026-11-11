@@ -1,5 +1,6 @@
 import {
   bookmarks,
+  bounties,
   channelMembers,
   channels,
   drafts,
@@ -157,37 +158,51 @@ export async function serializeMessages(
     if (r.forwardSnapshot?.authorId) userIds.add(r.forwardSnapshot.authorId)
   }
 
-  const [userRows, reactionMap, fileRows, pinRows, bookmarkRows, pollRows, duelRows, stickerRows] =
-    await Promise.all([
-      userIds.size
-        ? ctx.db
-            .select(userCols)
-            .from(users)
-            .where(inArray(users.id, [...userIds]))
-        : [],
-      reactionGroups(ctx, ids),
-      ctx.db
-        .select()
-        .from(files)
-        .where(and(inArray(files.messageId, ids), isNull(files.deletedAt)))
-        .orderBy(asc(files.createdAt)),
-      ctx.db.select({ messageId: pins.messageId }).from(pins).where(inArray(pins.messageId, ids)),
-      ctx.db
-        .select({ messageId: bookmarks.messageId })
-        .from(bookmarks)
-        .where(and(eq(bookmarks.userId, viewerId), inArray(bookmarks.messageId, ids))),
-      ctx.db
-        .select({ id: polls.id, messageId: polls.messageId })
-        .from(polls)
-        .where(inArray(polls.messageId, ids)),
-      ctx.db
-        .select({ id: duels.id, messageId: duels.messageId })
-        .from(duels)
-        .where(inArray(duels.messageId, ids)),
-      ctx.db.select().from(messageStickers).where(inArray(messageStickers.messageId, ids)),
-    ])
+  const [
+    userRows,
+    reactionMap,
+    fileRows,
+    pinRows,
+    bookmarkRows,
+    pollRows,
+    duelRows,
+    stickerRows,
+    bountyRows,
+  ] = await Promise.all([
+    userIds.size
+      ? ctx.db
+          .select(userCols)
+          .from(users)
+          .where(inArray(users.id, [...userIds]))
+      : [],
+    reactionGroups(ctx, ids),
+    ctx.db
+      .select()
+      .from(files)
+      .where(and(inArray(files.messageId, ids), isNull(files.deletedAt)))
+      .orderBy(asc(files.createdAt)),
+    ctx.db.select({ messageId: pins.messageId }).from(pins).where(inArray(pins.messageId, ids)),
+    ctx.db
+      .select({ messageId: bookmarks.messageId })
+      .from(bookmarks)
+      .where(and(eq(bookmarks.userId, viewerId), inArray(bookmarks.messageId, ids))),
+    ctx.db
+      .select({ id: polls.id, messageId: polls.messageId })
+      .from(polls)
+      .where(inArray(polls.messageId, ids)),
+    ctx.db
+      .select({ id: duels.id, messageId: duels.messageId })
+      .from(duels)
+      .where(inArray(duels.messageId, ids)),
+    ctx.db.select().from(messageStickers).where(inArray(messageStickers.messageId, ids)),
+    ctx.db
+      .select({ id: bounties.id, messageId: bounties.messageId })
+      .from(bounties)
+      .where(inArray(bounties.messageId, ids)),
+  ])
   const pollBy = new Map(pollRows.map((p) => [p.messageId, p.id]))
   const duelBy = new Map(duelRows.map((d) => [d.messageId, d.id]))
+  const bountyBy = new Map(bountyRows.map((b) => [b.messageId, b.id]))
   const stickerOf = stickerRows.length
     ? await resolveStickers(
         ctx.db,
@@ -246,6 +261,7 @@ export async function serializeMessages(
       ...(r.clientId && { clientId: r.clientId }),
       ...(pollBy.has(r.id) && !deleted && { pollId: pollBy.get(r.id) }),
       ...(duelBy.has(r.id) && !deleted && { duelId: duelBy.get(r.id) }),
+      ...(bountyBy.has(r.id) && !deleted && { bountyId: bountyBy.get(r.id) }),
       ...(stickerBy.get(r.id) && !deleted && { sticker: stickerBy.get(r.id) }),
     }
   })

@@ -220,6 +220,8 @@ function handle(e: ServerEvent) {
       // A coinflip was accepted or called off: show it on everyone's card.
       if (e.message.duelId)
         void qc.invalidateQueries({ queryKey: ['duel', e.orgId, e.message.duelId] })
+      if (e.message.bountyId)
+        void qc.invalidateQueries({ queryKey: ['bounty', e.orgId, e.message.bountyId] })
       return
     case 'message.deleted':
       removeMessage(qc, e.channelId, e.messageId)

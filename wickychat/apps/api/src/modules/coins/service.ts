@@ -69,6 +69,10 @@ const EARNINGS = new Set<CoinTransaction['reason']>([
   'achievement',
   'quest',
   'commission_pay',
+  'spin',
+  'liked',
+  'trivia',
+  'bounty_win',
 ])
 
 /** Rounds randomly so small amounts still pay out fairly on average. */

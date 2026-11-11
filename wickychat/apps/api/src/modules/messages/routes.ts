@@ -19,6 +19,7 @@ import type { AppContext } from '../../core/context'
 import { badRequest, forbidden, notFound } from '../../core/errors'
 import { type App, orgIdParams, orgParams } from '../../core/http'
 import { check, getChannelAccess, requireChannel } from '../channels/service'
+import { payForReaction } from '../coins/earn'
 import { coinsForMessage } from '../coins/service'
 import { canUseSticker } from '../coins/sticker-lookup'
 import { enqueueOutgoingWebhooks } from '../integrations/outgoing'
@@ -227,6 +228,8 @@ export async function messageRoutes(app: App, ctx: AppContext) {
             .insert(reactions)
             .values({ messageId: row.id, userId: scope.userId, orgId: scope.orgId, emoji })
             .onConflictDoNothing()
+          // People reacting to what you post earns you a coin or two.
+          await payForReaction(ctx, row.id, scope.userId)
         } else {
           await ctx.db
             .delete(reactions)

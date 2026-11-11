@@ -209,6 +209,8 @@ export interface Message {
   pollId?: string | null
   /** WickyChat: the coinflip duel in this message, if it has one. */
   duelId?: string | null
+  /** WickyChat: the Q&A bounty on this question, if it has one. */
+  bountyId?: string | null
   /** WickyChat: a sticker sent as this message. */
   sticker?: import('./stickers').Sticker | null
 }

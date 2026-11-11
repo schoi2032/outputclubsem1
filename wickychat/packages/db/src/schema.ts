@@ -1872,3 +1872,55 @@ export const commissions = pgTable(
     index('commissions_requester_idx').on(t.requesterId, t.status),
   ],
 )
+
+/** WickyChat: a question with coins on it. The asker picks the best reply, who wins them. */
+export const bounties = pgTable(
+  'bounties',
+  {
+    id: pk(),
+    orgId: orgRef(),
+    channelId: uuid('channel_id')
+      .notNull()
+      .references(() => channels.id, { onDelete: 'cascade' }),
+    messageId: uuid('message_id')
+      .notNull()
+      .references(() => messages.id, { onDelete: 'cascade' }),
+    askerId: uuid('asker_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    amount: integer('amount').notNull(),
+    /** open | awarded | cancelled */
+    status: text('status').notNull().default('open'),
+    winnerId: uuid('winner_id').references(() => users.id, { onDelete: 'set null' }),
+    answerMessageId: uuid('answer_message_id'),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex('bounties_message_uq').on(t.messageId)],
+)
+
+/** WickyChat: today's trivia answers. */
+export const triviaAnswers = pgTable(
+  'trivia_answers',
+  {
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    day: text('day').notNull(),
+    picked: integer('picked').notNull(),
+    correct: boolean('correct').notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.day] })],
+)
+
+/** WickyChat: who brought whom (each person can name one friend, once). */
+export const referrals = pgTable('referrals', {
+  userId: uuid('user_id')
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  orgId: orgRef(),
+  referrerId: uuid('referrer_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  createdAt: createdAt(),
+})

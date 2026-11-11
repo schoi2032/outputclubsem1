@@ -77,6 +77,7 @@ import { BundlesView, CreateBundle, MyBundles, useBundleDefs } from '@/component
 import { ClassWarView } from '@/components/shop/classwar'
 import { CoinflipView } from '@/components/shop/coinflip'
 import { CrateArt, CratesView, CreateCrate, MyCrates, useCrateDefs } from '@/components/shop/crates'
+import { EarnView, earnWaiting, useEarn, useTrivia } from '@/components/shop/earn'
 import { InvestView, useStocks } from '@/components/shop/invest'
 import {
   BUILTIN_ITEMS,
@@ -148,6 +149,13 @@ const REASON: Record<CoinTransaction['reason'], string> = {
   commission_pay: 'Paid for your art 🎨',
   flip_bet: 'Coinflip bet',
   flip_win: 'Won a coinflip 🎉',
+  spin: 'Daily spin 🎡',
+  liked: 'Someone reacted to your message ❤️',
+  bounty_hold: 'Put coins on a question',
+  bounty_refund: 'Question bounty refunded',
+  bounty_win: 'Your answer won a bounty 🏅',
+  trivia: 'Daily trivia 🧠',
+  referral: 'Bring-a-friend bonus 🤝',
 }
 
 const POSITION_LABEL: Record<StickerPosition, string> = {
@@ -191,6 +199,7 @@ type Tab =
   | 'classwar'
   | 'artists'
   | 'flip'
+  | 'earn'
   | 'mine'
 const TABS: Tab[] = [
   'all',
@@ -213,6 +222,7 @@ const TABS: Tab[] = [
   'classwar',
   'artists',
   'flip',
+  'earn',
   'mine',
 ]
 
@@ -236,6 +246,7 @@ const GROUPS: { id: string; label: string; tabs: Tab[] }[] = [
       'bundles',
     ],
   },
+  { id: 'earn', label: '💰 Earn', tabs: ['earn'] },
   { id: 'trade', label: '🎒 My stuff & trading', tabs: ['mine', 'trades', 'auctions', 'market'] },
   { id: 'invest', label: '📈 Invest & games', tabs: ['invest', 'flip'] },
   { id: 'create', label: '🎨 Create & artists', tabs: ['create', 'artists'] },
@@ -268,6 +279,7 @@ const TAB_LABEL: Record<Tab, string> = {
   classwar: '⚔️ Class vs Class',
   artists: '🎨 Official Artists',
   flip: '🪙 Coinflip',
+  earn: 'Earn',
   mine: 'My stuff',
 }
 
@@ -449,6 +461,9 @@ function ShopInner() {
   const claimable = (achievements.data ?? []).filter((x) => x.done && !x.claimed).length
   const questsQ = useQuests()
   const questCount = questsClaimable(questsQ.data)
+  const earnQ = useEarn()
+  const triviaQ = useTrivia()
+  const earnCount = earnWaiting(earnQ.data, triviaQ.data)
 
   const card = (it: ShopItem) => {
     const owned = ownedSet.has(it.itemId)
@@ -848,7 +863,13 @@ function ShopInner() {
             <nav className="mb-2 flex flex-wrap gap-1.5" aria-label="Shop sections">
               {GROUPS.map((g) => {
                 const count =
-                  g.id === 'trade' ? incomingTrades : g.id === 'goals' ? claimable + questCount : 0
+                  g.id === 'trade'
+                    ? incomingTrades
+                    : g.id === 'goals'
+                      ? claimable + questCount
+                      : g.id === 'earn'
+                        ? earnCount
+                        : 0
                 return (
                   <button
                     key={g.id}
@@ -1126,6 +1147,9 @@ function ShopInner() {
             </TabsContent>
             <TabsContent value="quests" className="pt-4">
               <QuestsView />
+            </TabsContent>
+            <TabsContent value="earn" className="pt-4">
+              <EarnView onGo={(t) => setTab(t as Tab)} />
             </TabsContent>
             <TabsContent value="flip" className="pt-4">
               <CoinflipView wallet={w} />

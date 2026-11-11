@@ -302,6 +302,20 @@
       "when": 1794407747962,
       "tag": "0042_data_log_more",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1794412531281,
+      "tag": "0043_earn",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1794412533642,
+      "tag": "0044_data_log_earn",
+      "breakpoints": true
     }
   ]
 }
