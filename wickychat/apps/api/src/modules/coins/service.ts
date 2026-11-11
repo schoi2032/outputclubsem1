@@ -3,7 +3,15 @@
  * `coin_transactions` so people can see their history.
  */
 import { coinTransactions, cosmetics, users } from '@quid/db'
-import { COINS, type CoinTransaction, type Me, themeById, themeCss } from '@quid/shared'
+import {
+  COINS,
+  type CoinTransaction,
+  cosmeticDecoration,
+  customImageValue,
+  type Me,
+  themeById,
+  themeCss,
+} from '@quid/shared'
 import { and, eq, gte, sql } from 'drizzle-orm'
 import { uuidv7 } from 'uuidv7'
 import type { AppContext } from '../../core/context'
@@ -99,4 +107,33 @@ export function currentStreak(lastClaim: Date | null, streak: number) {
   if (!lastClaim) return 0
   const yesterday = new Date(startOfSchoolDay().getTime() - 86_400_000)
   return lastClaim >= yesterday ? streak : 0
+}
+
+/** Takes an item off someone if they're wearing or using it (after it's sold or traded). */
+export async function takeOffItem(db: Db | Tx, userId: string, itemId: string) {
+  const u = await db.query.users.findFirst({
+    where: eq(users.id, userId),
+    columns: { decoration: true, appTheme: true, profileEffect: true, namePlate: true },
+  })
+  if (!u) return
+  const m = /^u:([0-9a-f-]{36})$/.exec(itemId)
+  const c = m ? await db.query.cosmetics.findFirst({ where: eq(cosmetics.id, m[1]!) }) : null
+  const values = new Set([itemId, ...(c ? [cosmeticDecoration(c), customImageValue(c)] : [])])
+  const off: Partial<typeof users.$inferInsert> = {}
+  if (u.decoration && values.has(u.decoration)) off.decoration = null
+  if (u.appTheme && values.has(u.appTheme)) off.appTheme = null
+  if (u.profileEffect && values.has(u.profileEffect)) off.profileEffect = null
+  if (u.namePlate && values.has(u.namePlate)) off.namePlate = null
+  if (Object.keys(off).length) await db.update(users).set(off).where(eq(users.id, userId))
+}
+
+/** Private student-made items can't be sold, traded or passed on. */
+export async function isPrivateItem(db: Db | Tx, itemId: string) {
+  const m = /^u:([0-9a-f-]{36})$/.exec(itemId)
+  if (!m) return false
+  const c = await db.query.cosmetics.findFirst({
+    where: eq(cosmetics.id, m[1]!),
+    columns: { visibility: true },
+  })
+  return c?.visibility === 'private'
 }

@@ -3,13 +3,7 @@
  * The seller gets MARKET_SHARE of the price; the item moves to the buyer.
  */
 import { cosmetics, marketListings, userItems, users } from '@quid/db'
-import {
-  cosmeticDecoration,
-  customImageValue,
-  MARKET_PRICE,
-  MARKET_SHARE,
-  type MarketListing,
-} from '@quid/shared'
+import { MARKET_PRICE, MARKET_SHARE, type MarketListing } from '@quid/shared'
 import { and, desc, eq, inArray } from 'drizzle-orm'
 import { z } from 'zod'
 import { requireOrg } from '../../core/auth'
@@ -18,7 +12,7 @@ import { badRequest, conflict, forbidden, notFound } from '../../core/errors'
 import { type App, orgIdParams, orgParams } from '../../core/http'
 import { toUserSummary, userCols } from '../users/serialize'
 import { serializeCosmetic } from './routes'
-import { changeCoins } from './service'
+import { changeCoins, isPrivateItem, takeOffItem } from './service'
 
 const CUSTOM = /^u:([0-9a-f-]{36})$/
 
@@ -78,6 +72,8 @@ export async function marketRoutes(app: App, ctx: AppContext) {
         where: and(eq(userItems.userId, scope.userId), eq(userItems.itemId, req.body.itemId)),
       })
       if (!owned) throw badRequest("You don't own that.")
+      if (await isPrivateItem(ctx.db, req.body.itemId))
+        throw badRequest("Private items can't be sold.")
       const [row] = await ctx.db
         .insert(marketListings)
         .values({
@@ -142,29 +138,16 @@ export async function marketRoutes(app: App, ctx: AppContext) {
 
       await changeCoins(tx, me, -l.price, 'market_buy', l.itemId)
       await changeCoins(tx, l.sellerId, Math.floor(l.price * MARKET_SHARE), 'market_sale', l.itemId)
+      // The item (and its copy number, if limited) moves to the buyer.
       await tx
-        .delete(userItems)
+        .update(userItems)
+        .set({ userId: me, giftedBy: null })
         .where(and(eq(userItems.userId, l.sellerId), eq(userItems.itemId, l.itemId)))
-      await tx.insert(userItems).values({ userId: me, itemId: l.itemId })
       await tx
         .update(marketListings)
         .set({ status: 'sold', buyerId: me, soldAt: new Date() })
         .where(eq(marketListings.id, l.id))
-
-      // Take it off the seller if they were wearing it.
-      const seller = await tx.query.users.findFirst({
-        where: eq(users.id, l.sellerId),
-        columns: { decoration: true, appTheme: true, profileEffect: true, namePlate: true },
-      })
-      const m = CUSTOM.exec(l.itemId)
-      const c = m ? await tx.query.cosmetics.findFirst({ where: eq(cosmetics.id, m[1]!) }) : null
-      const values = new Set([l.itemId, ...(c ? [cosmeticDecoration(c), customImageValue(c)] : [])])
-      const off: Partial<typeof users.$inferInsert> = {}
-      if (seller?.decoration && values.has(seller.decoration)) off.decoration = null
-      if (seller?.appTheme && values.has(seller.appTheme)) off.appTheme = null
-      if (seller?.profileEffect && values.has(seller.profileEffect)) off.profileEffect = null
-      if (seller?.namePlate && values.has(seller.namePlate)) off.namePlate = null
-      if (Object.keys(off).length) await tx.update(users).set(off).where(eq(users.id, l.sellerId))
+      await takeOffItem(tx, l.sellerId, l.itemId)
     })
     return { ok: true }
   })

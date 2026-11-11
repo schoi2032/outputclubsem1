@@ -14,7 +14,7 @@ import {
 } from '@quid/shared'
 import { Avatar, Button, cn, Input, Popover, PopoverContent, PopoverTrigger, toast } from '@quid/ui'
 import { useQueryClient } from '@tanstack/react-query'
-import { Coins, ExternalLink, Gift, Link2, MessageSquare } from 'lucide-react'
+import { ArrowLeftRight, Coins, ExternalLink, Gift, Link2, MessageSquare } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { TimeoutMenu } from '@/components/moderation/timeout-menu'
@@ -318,7 +318,21 @@ export function ProfileCard({ user, panel }: { user: UserSummary; panel?: boolea
               className={panel ? 'flex-1' : undefined}
               onClick={() => router.push(`${base}/shop?gift=${user.id}`)}
             >
-              <Gift /> {panel && 'Gift a decoration'}
+              <Gift /> {panel && 'Gift'}
+            </Button>
+            <Button
+              title="Send coins"
+              aria-label="Send coins"
+              onClick={() => router.push(`${base}/shop?coins=${user.id}`)}
+            >
+              <Coins />
+            </Button>
+            <Button
+              title="Trade"
+              aria-label="Trade"
+              onClick={() => router.push(`${base}/shop?trade=${user.id}`)}
+            >
+              <ArrowLeftRight />
             </Button>
           </div>
         )}

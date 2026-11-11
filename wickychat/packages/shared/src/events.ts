@@ -82,6 +82,8 @@ export type ServerEvent =
     }
   /** A task in this channel changed (or was deleted). Also sent to the assignee. */
   | { type: 'task.updated'; orgId: string; channelId: string; taskId: string; deleted?: boolean }
+  /** WickyChat: something in your wallet changed because of someone else (trade, gift). */
+  | { type: 'wicky.updated'; orgId: string; text: string }
   | { type: 'resync' }
   | { type: 'pong' }
   | { type: 'error'; message: string }

@@ -224,8 +224,15 @@ export interface Cosmetic {
   status: 'pending' | 'approved' | 'rejected'
   reviewNote: string | null
   sales: number
+  /** Private ones aren't sold: only the creator and people they give a copy to can use them. */
+  visibility: 'public' | 'private'
+  /** Limited: only this many copies will ever exist (null = unlimited). */
+  stock: number | null
   createdAt: string
 }
+
+/** How many copies a limited cosmetic can have. */
+export const COSMETIC_STOCK = { min: 1, max: 1000 } as const
 
 /**
  * The `cosmetic.json` in a pack people upload. Image fields are file names of images in the
@@ -354,6 +361,12 @@ export interface CoinTransaction {
     | 'market_sale'
     | 'poll'
     | 'quiz'
+    | 'crate'
+    | 'crate_gift'
+    | 'crate_coins'
+    | 'coins_sent'
+    | 'coins_received'
+    | 'trade'
   ref: string | null
   createdAt: string
 }
@@ -376,7 +389,16 @@ export interface Wallet {
   /** Coins earned from messages today, out of COINS.messageDailyCap. */
   earnedFromMessagesToday: number
   history: CoinTransaction[]
+  /** Crates you haven't opened yet. */
+  crates: { id: string; crateId: string; giftedBy: { id: string; name: string } | null }[]
+  /** Copy numbers of limited items you own, e.g. #3 of 20. */
+  serials: Record<string, number>
+  /** Coins you've sent to people today, out of COIN_GIFT.dailyMax. */
+  coinsSentToday: number
 }
+
+/** Students sending their own coins to each other. */
+export const COIN_GIFT = { max: 500, dailyMax: 1000 } as const
 
 // --- App themes ------------------------------------------------------------------------
 
@@ -415,6 +437,8 @@ export interface BuiltinTheme {
   /** Who made the original palette (all MIT licensed). */
   credit: string
   vars: Record<ThemeVar, string>
+  /** Seasonal event it belongs to: only sold while the event is on. */
+  event?: string
 }
 
 function palette(
@@ -724,6 +748,87 @@ export const THEMES: BuiltinTheme[] = [
       false,
     ),
   },
+  {
+    id: 't-spooky',
+    name: 'Spooky Night',
+    price: 220,
+    dark: true,
+    credit: 'WickyChat',
+    event: 'halloween',
+    vars: palette(
+      {
+        base: '#16121f',
+        mantle: '#110d18',
+        crust: '#0b0810',
+        s0: '#2a2238',
+        s1: '#3a3049',
+        s2: '#4d405e',
+        text: '#efe6ff',
+        sub: '#c9bce0',
+        overlay: '#8a7ba3',
+        accent: '#ff8a1f',
+        accent2: '#ffb347',
+        red: '#ff5470',
+        green: '#8bd450',
+        yellow: '#ffd166',
+      },
+      true,
+    ),
+  },
+  {
+    id: 't-maple',
+    name: 'Maple Harvest',
+    price: 200,
+    dark: false,
+    credit: 'WickyChat',
+    event: 'harvest',
+    vars: palette(
+      {
+        base: '#fdf6ee',
+        mantle: '#f7ecdf',
+        crust: '#f0e0cd',
+        s0: '#ecdcc8',
+        s1: '#e0ccb4',
+        s2: '#cfb697',
+        text: '#3b2414',
+        sub: '#6e4a30',
+        overlay: '#a07c5e',
+        accent: '#c2410c',
+        accent2: '#9a3412',
+        red: '#b91c1c',
+        green: '#4d7c0f',
+        yellow: '#b45309',
+      },
+      false,
+    ),
+  },
+  {
+    id: 't-frost',
+    name: 'Frostbite',
+    price: 220,
+    dark: true,
+    credit: 'WickyChat',
+    event: 'winter',
+    vars: palette(
+      {
+        base: '#0f1a26',
+        mantle: '#0b141e',
+        crust: '#070e15',
+        s0: '#1c2c3d',
+        s1: '#273b50',
+        s2: '#355068',
+        text: '#e6f4ff',
+        sub: '#b8d4ea',
+        overlay: '#7d9bb5',
+        accent: '#7dd3fc',
+        accent2: '#bae6fd',
+        red: '#fb7185',
+        green: '#6ee7b7',
+        yellow: '#fde68a',
+      },
+      true,
+    ),
+  },
 ]
 
 export const THEME_IDS = THEMES.map((t) => t.id)
@@ -861,10 +966,17 @@ export interface SimpleItem {
   name: string
   description: string
   price: number
+  /** Seasonal event it belongs to: only sold while the event is on. */
+  event?: string
 }
 
 /** Animated overlays on the profile card. Drawn with CSS (`.q-fx-<name>`). */
-export const EFFECTS: (SimpleItem & { particle: string; particles?: string[] })[] = [
+export const EFFECTS: (SimpleItem & {
+  particle: string
+  particles?: string[]
+  /** How the particles move (seasonal effects); the older ones are styled by id in CSS. */
+  motion?: 'fall' | 'rise' | 'drift' | 'twinkle'
+})[] = [
   {
     id: 'e-snow',
     name: 'Snowfall',
@@ -930,7 +1042,60 @@ export const EFFECTS: (SimpleItem & { particle: string; particles?: string[] })[
     // Every 5th drop is a heart (see .q-fx-emorain in globals.css).
     particles: ['│', '│', '│', '│', '🖤'],
   },
+  // Seasonal (sold only while their event is on, then they're collectibles).
+  ev('e-bats', 'Haunted', 'Bats, pumpkins and a ghost or two', 220, 'halloween', 'drift', [
+    '🦇',
+    '🎃',
+    '👻',
+  ]),
+  ev('e-leaves', 'Falling Leaves', 'Autumn leaves drifting down', 180, 'harvest', 'fall', [
+    '🍂',
+    '🍁',
+    '🍂',
+    '🌰',
+  ]),
+  ev('e-winter', 'Winter Wonderland', 'Snowmen, trees and presents', 220, 'winter', 'fall', [
+    '❄️',
+    '⛄',
+    '🎄',
+    '🎁',
+  ]),
+  ev('e-lanterns', 'Lantern Festival', 'Red lanterns rising up', 220, 'lunar', 'rise', [
+    '🏮',
+    '🧧',
+    '✨',
+  ]),
+  ev('e-cupid', "Cupid's Arrow", 'Hearts everywhere', 200, 'valentine', 'rise', ['💘', '💝', '💖']),
+  ev('e-spring', 'Spring Bloom', 'Tulips and butterflies', 180, 'spring', 'drift', [
+    '🌷',
+    '🦋',
+    '🌼',
+  ]),
+  ev('e-finals', 'Finals Week', 'Coffee, books and pencils', 150, 'finals', 'fall', [
+    '☕',
+    '📚',
+    '✏️',
+    '💯',
+  ]),
+  ev('e-beach', 'Beach Day', 'Waves, shells and watermelon', 200, 'summer', 'drift', [
+    '🌊',
+    '🍉',
+    '🐚',
+    '☀️',
+  ]),
 ]
+
+function ev(
+  id: string,
+  name: string,
+  description: string,
+  price: number,
+  event: string,
+  motion: 'fall' | 'rise' | 'drift' | 'twinkle',
+  particles: string[],
+) {
+  return { id, name, description, price, event, motion, particle: particles[0]!, particles }
+}
 
 /** Animated backgrounds behind your name in lists. Drawn with CSS (`.q-plate-<name>`). */
 export const PLATES: SimpleItem[] = [
@@ -942,6 +1107,38 @@ export const PLATES: SimpleItem[] = [
   { id: 'p-matrix', name: 'Terminal', description: 'Green on black', price: 150 },
   { id: 'p-lava', name: 'Lava', description: 'Hot reds that flow', price: 180 },
   { id: 'p-mint', name: 'Mint', description: 'Fresh and green', price: 100 },
+  {
+    id: 'p-pumpkin',
+    name: 'Pumpkin Patch',
+    description: 'Orange and purple',
+    price: 160,
+    event: 'halloween',
+  },
+  {
+    id: 'p-harvest',
+    name: 'Harvest',
+    description: 'Maple, gold and brown',
+    price: 150,
+    event: 'harvest',
+  },
+  { id: 'p-frost', name: 'Frost', description: 'Icy blue and white', price: 160, event: 'winter' },
+  { id: 'p-lunar', name: 'Lucky Red', description: 'Red and gold', price: 160, event: 'lunar' },
+  { id: 'p-rose', name: 'Rose', description: 'Pinks and reds', price: 150, event: 'valentine' },
+  { id: 'p-bloom', name: 'Bloom', description: 'Spring pastels', price: 140, event: 'spring' },
+  {
+    id: 'p-study',
+    name: 'All-nighter',
+    description: 'Midnight blue and lamp light',
+    price: 120,
+    event: 'finals',
+  },
+  {
+    id: 'p-tropical',
+    name: 'Tropical',
+    description: 'Turquoise and sunshine',
+    price: 150,
+    event: 'summer',
+  },
 ]
 
 export const EFFECT_IDS = EFFECTS.map((e) => e.id)

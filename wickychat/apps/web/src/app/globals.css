@@ -489,3 +489,141 @@
     opacity: 0.2;
   }
 }
+
+/* Seasonal effects: emoji particles with a shared motion (`motion` in EFFECTS). */
+.q-fx-m-fall > span {
+  animation-name: q-fx-fall;
+}
+.q-fx-m-rise > span {
+  top: auto;
+  bottom: -10%;
+  animation-name: q-fx-rise;
+}
+.q-fx-m-drift > span {
+  top: var(--y);
+  animation-name: q-fx-drift;
+}
+.q-fx-m-twinkle > span {
+  top: var(--y);
+  animation-name: q-fx-twinkle;
+}
+.q-fx-bats {
+  background: linear-gradient(180deg, rgb(40 10 60 / 0.35), transparent 70%);
+}
+.q-fx-winter {
+  background: linear-gradient(180deg, rgb(180 220 255 / 0.18), transparent 60%);
+}
+.q-fx-lanterns {
+  background: radial-gradient(ellipse at bottom, rgb(255 60 40 / 0.22), transparent 70%);
+}
+
+/* Seasonal name plates. */
+.q-plate-pumpkin {
+  background-image: linear-gradient(110deg, #ff7a00, #6d28d9, #1a0b2e, #ff9a3c, #ff7a00);
+}
+.q-plate-harvest {
+  background-image: linear-gradient(110deg, #c2410c, #eab308, #7c2d12, #f59e0b, #c2410c);
+}
+.q-plate-frost {
+  background-image: linear-gradient(110deg, #bae6fd, #ffffff, #38bdf8, #e0f2fe, #bae6fd);
+}
+.q-plate-lunar {
+  background-image: linear-gradient(110deg, #d7263d, #f6c344, #9b111e, #ffd700, #d7263d);
+}
+.q-plate-rose {
+  background-image: linear-gradient(110deg, #ff4d8d, #ffb3c6, #c9184a, #ff8fab, #ff4d8d);
+}
+.q-plate-bloom {
+  background-image: linear-gradient(110deg, #f9a8d4, #86efac, #fde68a, #c4b5fd, #f9a8d4);
+}
+.q-plate-study {
+  background-image: linear-gradient(110deg, #0f172a, #1e3a8a, #fbbf24, #1e293b, #0f172a);
+}
+.q-plate-tropical {
+  background-image: linear-gradient(110deg, #06b6d4, #facc15, #10b981, #22d3ee, #06b6d4);
+}
+
+/* Crates: idle wobble in the inventory, a pop when the drop is revealed, shimmer on banners. */
+.q-crate-idle {
+  animation: q-crate-wobble 3.2s ease-in-out infinite;
+}
+.q-crate-idle:hover {
+  animation-duration: 0.6s;
+}
+@keyframes q-crate-wobble {
+  0%,
+  80%,
+  100% {
+    transform: rotate(0deg) translateY(0);
+  }
+  85% {
+    transform: rotate(-4deg) translateY(-2px);
+  }
+  90% {
+    transform: rotate(4deg) translateY(-3px);
+  }
+  95% {
+    transform: rotate(-2deg) translateY(-1px);
+  }
+}
+.q-crate::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    115deg,
+    transparent 30%,
+    rgb(255 255 255 / 0.35) 50%,
+    transparent 70%
+  );
+  background-size: 250% 100%;
+  animation: q-shine 3.5s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes q-shine {
+  0% {
+    background-position: 150% 0;
+  }
+  60%,
+  100% {
+    background-position: -100% 0;
+  }
+}
+.q-reveal {
+  animation: q-reveal 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+@keyframes q-reveal {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.q-event-banner {
+  position: relative;
+}
+.q-event-banner::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 35%,
+    rgb(255 255 255 / 0.25) 50%,
+    transparent 65%
+  );
+  background-size: 250% 100%;
+  animation: q-shine 5s ease-in-out infinite;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .q-crate-idle,
+  .q-crate::after,
+  .q-event-banner::after {
+    animation: none;
+  }
+}

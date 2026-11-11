@@ -70,7 +70,11 @@ function Row({ c, onDone, live }: { c: Cosmetic; onDone: () => void; live?: bool
       </div>
       <div className="min-w-0 flex-1 text-[13px]">
         <p className="font-semibold">
-          {c.name} <span className="font-normal text-fg-subtle">· 🪙 {c.price}</span>
+          {c.name}{' '}
+          <span className="font-normal text-fg-subtle">
+            {c.visibility === 'private' ? '· 🔒 Private (not sold)' : `· 🪙 ${c.price}`}
+            {c.stock != null && ` · 💎 limited to ${c.stock}`}
+          </span>
         </p>
         {c.description && <p className="text-fg-muted">{c.description}</p>}
         <p className="mt-0.5 text-xs text-fg-subtle">

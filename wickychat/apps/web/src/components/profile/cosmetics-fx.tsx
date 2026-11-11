@@ -30,7 +30,10 @@ export function ProfileEffect({ value }: { value?: string | null }) {
   const name = fx.id.slice(2)
   const count = name === 'stars' ? 5 : name === 'emorain' ? 25 : 14
   return (
-    <div className={`q-fx q-fx-${name}`} aria-hidden="true">
+    <div
+      className={`q-fx q-fx-${name}${fx.motion ? ` q-fx-m-${fx.motion}` : ''}`}
+      aria-hidden="true"
+    >
       {Array.from({ length: count }, (_, i) => (
         <span
           // biome-ignore lint/suspicious/noArrayIndexKey: fixed list of particles

@@ -6,6 +6,7 @@
  * (Cloud Run closes long-lived requests after 60 minutes, so this is normal).
  */
 import type { Call, Channel, ClientEvent, Message, ServerEvent, VoiceRoom } from '@quid/shared'
+import { toast } from '@quid/ui'
 import type { QueryClient } from '@tanstack/react-query'
 import { useSyncExternalStore } from 'react'
 import { get } from './api'
@@ -321,6 +322,11 @@ function handle(e: ServerEvent) {
     case 'org.updated':
       void qc.invalidateQueries({ queryKey: keys.org(e.orgId) })
       void qc.invalidateQueries({ queryKey: keys.me })
+      return
+    case 'wicky.updated':
+      void qc.invalidateQueries({ queryKey: ['wallet'] })
+      void qc.invalidateQueries({ queryKey: ['trades', e.orgId] })
+      if (e.text) toast.info(e.text)
       return
     case 'expressions.updated':
       void qc.invalidateQueries({ queryKey: [e.kind === 'emoji' ? 'emojis' : 'sounds', e.orgId] })

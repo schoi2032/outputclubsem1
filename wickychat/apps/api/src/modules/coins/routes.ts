@@ -2,12 +2,23 @@
  * WickyChat: wallet, daily bonus, the Shop (built-in and student-made decorations), gifting,
  * teachers rewarding coins, and the review queue for student-made cosmetics.
  */
-import { coinTransactions, cosmetics, files, orgMemberships, userItems, users } from '@quid/db'
 import {
+  coinTransactions,
+  cosmetics,
+  files,
+  orgMemberships,
+  userCrates,
+  userItems,
+  users,
+} from '@quid/db'
+import {
+  COIN_GIFT,
   COINS,
   COSMETIC_PRICE,
+  COSMETIC_STOCK,
   type CoinTransaction,
   type Cosmetic,
+  CRATE_IDS,
   CREATOR_SHARE,
   censorText,
   cosmeticDecoration,
@@ -16,10 +27,12 @@ import {
   decorationById,
   EFFECT_IDS,
   effectById,
+  isEventLive,
   MAX_THEME_CSS,
   PLATE_IDS,
   plateById,
   STICKER_POSITIONS,
+  STREAK_CRATE,
   type StickerPosition,
   sanitizeThemeCss,
   streakBonus,
@@ -27,7 +40,7 @@ import {
   themeById,
   type Wallet,
 } from '@quid/shared'
-import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm'
+import { and, desc, eq, gte, inArray, isNull, or, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { audit } from '../../core/audit'
 import { authorize, requireOrg, requireUser } from '../../core/auth'
@@ -80,12 +93,14 @@ export function serializeCosmetic(
     status: c.status as Cosmetic['status'],
     reviewNote: c.reviewNote,
     sales: c.sales,
+    visibility: c.visibility as Cosmetic['visibility'],
+    stock: c.stock,
     createdAt: c.createdAt.toISOString(),
   }
 }
 
-async function loadWallet(ctx: AppContext, userId: string): Promise<Wallet> {
-  const [u, owned, history, earned] = await Promise.all([
+export async function loadWallet(ctx: AppContext, userId: string): Promise<Wallet> {
+  const [u, owned, history, earned, crates, sent] = await Promise.all([
     ctx.db.query.users.findFirst({
       where: eq(users.id, userId),
       columns: {
@@ -99,7 +114,12 @@ async function loadWallet(ctx: AppContext, userId: string): Promise<Wallet> {
       },
     }),
     ctx.db
-      .select({ itemId: userItems.itemId, giverId: userItems.giftedBy, giverName: users.name })
+      .select({
+        itemId: userItems.itemId,
+        serial: userItems.serial,
+        giverId: userItems.giftedBy,
+        giverName: users.name,
+      })
       .from(userItems)
       .leftJoin(users, eq(users.id, userItems.giftedBy))
       .where(eq(userItems.userId, userId)),
@@ -110,6 +130,19 @@ async function loadWallet(ctx: AppContext, userId: string): Promise<Wallet> {
       .orderBy(desc(coinTransactions.id))
       .limit(30),
     earnedFromMessagesToday(ctx.db, userId),
+    ctx.db
+      .select({
+        id: userCrates.id,
+        crateId: userCrates.crateId,
+        giverId: userCrates.giftedBy,
+        giverName: users.name,
+      })
+      .from(userCrates)
+      .leftJoin(users, eq(users.id, userCrates.giftedBy))
+      .where(and(eq(userCrates.userId, userId), isNull(userCrates.openedAt)))
+      .orderBy(desc(userCrates.id))
+      .limit(200),
+    coinsSentToday(ctx, userId),
   ])
   if (!u) throw notFound('User')
   const valid = owned.filter(
@@ -123,7 +156,18 @@ async function loadWallet(ctx: AppContext, userId: string): Promise<Wallet> {
   const giftedBy: Wallet['giftedBy'] = {}
   for (const o of valid)
     if (o.giverId && o.giverName) giftedBy[o.itemId] = { id: o.giverId, name: o.giverName }
+  const serials: Wallet['serials'] = {}
+  for (const o of valid) if (o.serial) serials[o.itemId] = o.serial
   return {
+    crates: crates
+      .filter((c) => CRATE_IDS.includes(c.crateId))
+      .map((c) => ({
+        id: c.id,
+        crateId: c.crateId,
+        giftedBy: c.giverId && c.giverName ? { id: c.giverId, name: c.giverName } : null,
+      })),
+    serials,
+    coinsSentToday: sent,
     coins: u.coins,
     owned: valid.map((o) => o.itemId),
     giftedBy,
@@ -144,8 +188,44 @@ async function loadWallet(ctx: AppContext, userId: string): Promise<Wallet> {
   }
 }
 
+async function coinsSentToday(ctx: AppContext, userId: string) {
+  const [row] = await ctx.db
+    .select({ n: sql<number>`coalesce(-sum(${coinTransactions.amount}), 0)::int` })
+    .from(coinTransactions)
+    .where(
+      and(
+        eq(coinTransactions.userId, userId),
+        eq(coinTransactions.reason, 'coins_sent'),
+        gte(coinTransactions.createdAt, startOfSchoolDay()),
+      ),
+    )
+  return Number(row?.n ?? 0)
+}
+
+/**
+ * Takes one copy of a student-made cosmetic, if any are left (limited ones). Returns the copy
+ * number for limited ones, null for unlimited, or throws when it's sold out.
+ */
+export async function takeCopy(
+  tx: Parameters<Parameters<AppContext['db']['transaction']>[0]>[0],
+  id: string,
+) {
+  const [row] = await tx
+    .update(cosmetics)
+    .set({ sales: sql`${cosmetics.sales} + 1` })
+    .where(
+      and(
+        eq(cosmetics.id, id),
+        or(isNull(cosmetics.stock), sql`${cosmetics.sales} < ${cosmetics.stock}`),
+      ),
+    )
+    .returning({ sales: cosmetics.sales, stock: cosmetics.stock })
+  if (!row) throw conflict('Sold out! Every copy of this one is taken.')
+  return row.stock ? row.sales : null
+}
+
 /** Both people must be active members of the same school organization. */
-async function sameOrg(ctx: AppContext, a: string, b: string) {
+export async function sameOrg(ctx: AppContext, a: string, b: string) {
   const rows = await ctx.db
     .select({ orgId: orgMemberships.orgId, userId: orgMemberships.userId })
     .from(orgMemberships)
@@ -180,6 +260,9 @@ export async function coinRoutes(app: App, ctx: AppContext) {
         })
         .where(eq(users.id, me.id))
       await changeCoins(tx, me.id, COINS.daily + streakBonus(streak), 'daily')
+      // Every 7 days in a row: a free crate.
+      if (streak % STREAK_CRATE.every === 0)
+        await tx.insert(userCrates).values({ userId: me.id, crateId: STREAK_CRATE.crateId })
     })
     return loadWallet(ctx, me.id)
   })
@@ -208,10 +291,13 @@ export async function coinRoutes(app: App, ctx: AppContext) {
         decorationById(itemId) ?? themeById(itemId) ?? effectById(itemId) ?? plateById(itemId)
       const m = CUSTOM.exec(itemId)
       if (builtin) {
+        if ('event' in builtin && builtin.event && !isEventLive(builtin.event))
+          throw badRequest('That event is over. Look for one on the Market or trade for it!')
         price = builtin.price
       } else if (m) {
         custom = await ctx.db.query.cosmetics.findFirst({ where: eq(cosmetics.id, m[1]!) })
         if (custom?.status !== 'approved') throw notFound('Item')
+        if (custom.visibility === 'private') throw notFound('Item')
         price = custom.price
       } else throw notFound('Item')
 
@@ -238,17 +324,14 @@ export async function coinRoutes(app: App, ctx: AppContext) {
         if (!u || u.coins < price)
           throw badRequest(`You need ${price - (u?.coins ?? 0)} more Wicky Coins for this.`)
         await changeCoins(tx, me.id, -price, giftTo ? 'gift_item' : 'purchase', itemId)
+        const serial = custom ? await takeCopy(tx, custom.id) : null
         await tx
           .insert(userItems)
-          .values({ userId: owner, itemId, giftedBy: giftTo ? me.id : null })
+          .values({ userId: owner, itemId, giftedBy: giftTo ? me.id : null, serial })
         // Buying for yourself puts it on straight away.
         if (!giftTo) await tx.update(users).set(equipFor(itemId, custom)).where(eq(users.id, me.id))
         // The student who made it earns most of the price.
         if (custom) {
-          await tx
-            .update(cosmetics)
-            .set({ sales: sql`${cosmetics.sales} + 1` })
-            .where(eq(cosmetics.id, custom.id))
           if (custom.creatorId !== me.id)
             await changeCoins(
               tx,
@@ -380,7 +463,14 @@ export async function coinRoutes(app: App, ctx: AppContext) {
           and(
             eq(cosmetics.orgId, scope.orgId),
             view === 'shop'
-              ? eq(cosmetics.status, 'approved')
+              ? and(
+                  eq(cosmetics.status, 'approved'),
+                  or(
+                    eq(cosmetics.visibility, 'public'),
+                    eq(cosmetics.creatorId, scope.userId),
+                    sql`exists (select 1 from ${userItems} where ${userItems.userId} = ${scope.userId} and ${userItems.itemId} = 'u:' || ${cosmetics.id}::text)`,
+                  ),
+                )
               : view === 'mine'
                 ? eq(cosmetics.creatorId, scope.userId)
                 : eq(cosmetics.status, 'pending'),
@@ -406,6 +496,14 @@ export async function coinRoutes(app: App, ctx: AppContext) {
           frameFileId: z.uuid().nullable().default(null),
           stickerFileId: z.uuid().nullable().default(null),
           stickerPosition: z.enum(STICKER_POSITIONS).default('tr'),
+          visibility: z.enum(['public', 'private']).default('public'),
+          stock: z
+            .number()
+            .int()
+            .min(COSMETIC_STOCK.min)
+            .max(COSMETIC_STOCK.max)
+            .nullable()
+            .default(null),
         }),
       },
       config: { rateLimit: { max: 10, timeWindow: '1 minute' } },
@@ -458,6 +556,8 @@ export async function coinRoutes(app: App, ctx: AppContext) {
           frameFileId: isTheme ? null : b.frameFileId,
           stickerFileId: isTheme || isImage ? null : b.stickerFileId,
           stickerPosition: b.stickerPosition,
+          visibility: b.visibility,
+          stock: b.stock,
         })
         .returning()
       const me = await ctx.db.query.users.findFirst({
@@ -531,6 +631,104 @@ export async function coinRoutes(app: App, ctx: AppContext) {
     await ctx.db.delete(cosmetics).where(eq(cosmetics.id, c.id))
     return { ok: true }
   })
+
+  /**
+   * The creator of a private cosmetic gives someone a copy. Free, but limited ones still only
+   * have so many copies. The person who gets it can use it but can't sell, trade or pass it on.
+   */
+  app.post(
+    '/api/orgs/:orgId/cosmetics/:id/give',
+    { schema: { params: orgIdParams, body: z.object({ to: z.uuid() }) } },
+    async (req) => {
+      const scope = await requireOrg(ctx, req, req.params.orgId)
+      const c = await ctx.db.query.cosmetics.findFirst({
+        where: and(eq(cosmetics.id, req.params.id), eq(cosmetics.orgId, scope.orgId)),
+      })
+      if (!c) throw notFound('Cosmetic')
+      if (c.creatorId !== scope.userId)
+        throw forbidden('Only the person who made it can give copies.')
+      if (c.visibility !== 'private')
+        throw badRequest('This one is sold in the Shop. Gift it from there instead.')
+      if (c.status !== 'approved') throw badRequest('A teacher needs to approve it first.')
+      const to = req.body.to
+      if (to === scope.userId) throw badRequest('You already have it.')
+      const target = await ctx.db.query.orgMemberships.findFirst({
+        where: and(
+          eq(orgMemberships.orgId, scope.orgId),
+          eq(orgMemberships.userId, to),
+          isNull(orgMemberships.deactivatedAt),
+        ),
+        columns: { id: true },
+      })
+      if (!target) throw notFound('Person')
+      const itemId = `u:${c.id}`
+      await ctx.db.transaction(async (tx) => {
+        const has = await tx.query.userItems.findFirst({
+          where: and(eq(userItems.userId, to), eq(userItems.itemId, itemId)),
+        })
+        if (has) throw conflict('They already have this one.')
+        const serial = await takeCopy(tx, c.id)
+        await tx.insert(userItems).values({ userId: to, itemId, giftedBy: scope.userId, serial })
+      })
+      return { ok: true }
+    },
+  )
+
+  /** Students send some of their own coins to someone. */
+  app.post(
+    '/api/orgs/:orgId/members/:id/send-coins',
+    {
+      schema: {
+        params: orgIdParams,
+        body: z.object({
+          amount: z.number().int().min(1).max(COIN_GIFT.max),
+          note: z.string().trim().max(80).optional(),
+        }),
+      },
+      config: { rateLimit: { max: 20, timeWindow: '1 minute' } },
+    },
+    async (req) => {
+      const scope = await requireOrg(ctx, req, req.params.orgId)
+      const to = req.params.id
+      if (to === scope.userId) throw badRequest("You can't send coins to yourself.")
+      const target = await ctx.db
+        .select({ id: users.id, isBot: users.isBot })
+        .from(orgMemberships)
+        .innerJoin(users, eq(users.id, orgMemberships.userId))
+        .where(
+          and(
+            eq(orgMemberships.orgId, scope.orgId),
+            eq(orgMemberships.userId, to),
+            isNull(orgMemberships.deactivatedAt),
+          ),
+        )
+      if (!target[0] || target[0].isBot) throw notFound('Person')
+      const { amount } = req.body
+      const note = req.body.note ? censorText(req.body.note).text : null
+      await ctx.db.transaction(async (tx) => {
+        const [u] = await tx
+          .select({ coins: users.coins })
+          .from(users)
+          .where(eq(users.id, scope.userId))
+          .for('update')
+        if (!u || u.coins < amount) throw badRequest("You don't have that many coins.")
+        const sent = await coinsSentToday(ctx, scope.userId)
+        if (sent + amount > COIN_GIFT.dailyMax)
+          throw badRequest(
+            `You can send up to ${COIN_GIFT.dailyMax} coins a day. ${Math.max(0, COIN_GIFT.dailyMax - sent)} left today.`,
+          )
+        await changeCoins(tx, scope.userId, -amount, 'coins_sent', to)
+        await changeCoins(
+          tx,
+          to,
+          amount,
+          'coins_received',
+          note ? `${scope.userId}|${note}` : scope.userId,
+        )
+      })
+      return loadWallet(ctx, scope.userId)
+    },
+  )
 
   /** Teachers (org admins) reward someone with coins. */
   app.post(

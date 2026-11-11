@@ -955,6 +955,8 @@ export const userItems = pgTable(
     itemId: text('item_id').notNull(),
     /** Who bought it for them, if it was a gift. */
     giftedBy: uuid('gifted_by').references(() => users.id, { onDelete: 'set null' }),
+    /** Copy number of a limited cosmetic (#3 of 20). Moves with the item. */
+    serial: integer('serial'),
     createdAt: createdAt(),
   },
   (t) => [primaryKey({ columns: [t.userId, t.itemId] })],
@@ -991,6 +993,10 @@ export const cosmetics = pgTable(
     reviewedBy: uuid('reviewed_by').references(() => users.id, { onDelete: 'set null' }),
     reviewedAt: ts('reviewed_at'),
     sales: integer('sales').notNull().default(0),
+    /** public (sold in the Shop) | private (only the creator and people they give copies to) */
+    visibility: text('visibility').notNull().default('public'),
+    /** Limited: how many copies can ever exist. Null = unlimited. */
+    stock: integer('stock'),
     createdAt: createdAt(),
   },
   (t) => [
@@ -1463,4 +1469,49 @@ export const pollVotes = pgTable(
     createdAt: createdAt(),
   },
   (t) => [primaryKey({ columns: [t.pollId, t.userId, t.optionId] })],
+)
+
+/** WickyChat: crates (mystery boxes) someone owns. Unopened until `openedAt`. */
+export const userCrates = pgTable(
+  'user_crates',
+  {
+    id: pk(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /** Crate kind (CRATES in @quid/shared). */
+    crateId: text('crate_id').notNull(),
+    giftedBy: uuid('gifted_by').references(() => users.id, { onDelete: 'set null' }),
+    openedAt: ts('opened_at'),
+    /** What it gave: { tier, item } or { tier, coins }. */
+    result: jsonb('result').$type<{ tier: string; item?: string; coins?: number }>(),
+    createdAt: createdAt(),
+  },
+  (t) => [index('user_crates_user_idx').on(t.userId, t.openedAt)],
+)
+
+/** WickyChat: a trade offer between two people. Nothing moves until `to` accepts. */
+export const trades = pgTable(
+  'trades',
+  {
+    id: pk(),
+    orgId: orgRef(),
+    fromId: uuid('from_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    toId: uuid('to_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    give: jsonb('give').$type<{ items: string[]; crates: string[]; coins: number }>().notNull(),
+    get: jsonb('get').$type<{ items: string[]; crates: string[]; coins: number }>().notNull(),
+    note: text('note').notNull().default(''),
+    /** pending | accepted | declined | cancelled | failed */
+    status: text('status').notNull().default('pending'),
+    resolvedAt: ts('resolved_at'),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index('trades_to_idx').on(t.toId, t.status),
+    index('trades_from_idx').on(t.fromId, t.status),
+  ],
 )
