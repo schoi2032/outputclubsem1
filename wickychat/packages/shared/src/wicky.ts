@@ -384,6 +384,9 @@ export interface CoinTransaction {
     | 'share_sell'
     | 'dividend'
     | 'invest_cut'
+    | 'duel_bet'
+    | 'duel_win'
+    | 'duel_refund'
   ref: string | null
   createdAt: string
 }
@@ -1269,6 +1272,7 @@ export type AchievementStat =
   | 'auctionsWon'
   | 'invested'
   | 'dividends'
+  | 'duelsWon'
 
 export interface AchievementDef {
   id: string
@@ -1313,6 +1317,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   ach('auction-1', '🔨', 'Going, going, gone', 'Win an auction', 'auctionsWon', 1, 20),
   ach('invest-1', '📈', 'Investor', 'Buy something on the Stock Market', 'invested', 1, 15),
   ach('dividend-100', '🏦', 'Believer', 'Earn 100 coins from backing people', 'dividends', 100, 50),
+  ach('duel-1', '🪙', 'Heads or tails', 'Win a coinflip duel', 'duelsWon', 1, 10),
+  ach('duel-10', '🎲', 'Lucky streak', 'Win 10 coinflip duels', 'duelsWon', 10, 60),
   ach('send-500', '💸', 'Generous', 'Send 500 coins to friends in total', 'coinsSent', 500, 25),
 ]
 export const achievementById = (id: string) => ACHIEVEMENTS.find((a) => a.id === id)
@@ -1354,4 +1360,25 @@ export interface Auction {
   endsAt: string
   status: 'open' | 'sold' | 'unsold' | 'cancelled'
   cosmetic: Cosmetic | null
+}
+
+// --- Coinflip duels ----------------------------------------------------------------------
+
+export const DUEL = { min: 1, max: 200, expiresMs: 10 * 60_000 }
+
+export interface Duel {
+  id: string
+  messageId: string
+  channelId: string
+  challenger: import('./types').UserSummary
+  /** Only this person can accept; null = anyone in the chat. */
+  opponent: import('./types').UserSummary | null
+  acceptedBy: import('./types').UserSummary | null
+  amount: number
+  /** The challenger's call. */
+  side: 'heads' | 'tails'
+  result: 'heads' | 'tails' | null
+  winnerId: string | null
+  status: 'open' | 'done' | 'expired' | 'cancelled'
+  expiresAt: string
 }

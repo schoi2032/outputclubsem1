@@ -3,6 +3,7 @@ import {
   channelMembers,
   channels,
   drafts,
+  duels,
   files,
   mentions,
   messages,
@@ -144,30 +145,36 @@ export async function serializeMessages(
     if (r.forwardSnapshot?.authorId) userIds.add(r.forwardSnapshot.authorId)
   }
 
-  const [userRows, reactionMap, fileRows, pinRows, bookmarkRows, pollRows] = await Promise.all([
-    userIds.size
-      ? ctx.db
-          .select(userCols)
-          .from(users)
-          .where(inArray(users.id, [...userIds]))
-      : [],
-    reactionGroups(ctx, ids),
-    ctx.db
-      .select()
-      .from(files)
-      .where(and(inArray(files.messageId, ids), isNull(files.deletedAt)))
-      .orderBy(asc(files.createdAt)),
-    ctx.db.select({ messageId: pins.messageId }).from(pins).where(inArray(pins.messageId, ids)),
-    ctx.db
-      .select({ messageId: bookmarks.messageId })
-      .from(bookmarks)
-      .where(and(eq(bookmarks.userId, viewerId), inArray(bookmarks.messageId, ids))),
-    ctx.db
-      .select({ id: polls.id, messageId: polls.messageId })
-      .from(polls)
-      .where(inArray(polls.messageId, ids)),
-  ])
+  const [userRows, reactionMap, fileRows, pinRows, bookmarkRows, pollRows, duelRows] =
+    await Promise.all([
+      userIds.size
+        ? ctx.db
+            .select(userCols)
+            .from(users)
+            .where(inArray(users.id, [...userIds]))
+        : [],
+      reactionGroups(ctx, ids),
+      ctx.db
+        .select()
+        .from(files)
+        .where(and(inArray(files.messageId, ids), isNull(files.deletedAt)))
+        .orderBy(asc(files.createdAt)),
+      ctx.db.select({ messageId: pins.messageId }).from(pins).where(inArray(pins.messageId, ids)),
+      ctx.db
+        .select({ messageId: bookmarks.messageId })
+        .from(bookmarks)
+        .where(and(eq(bookmarks.userId, viewerId), inArray(bookmarks.messageId, ids))),
+      ctx.db
+        .select({ id: polls.id, messageId: polls.messageId })
+        .from(polls)
+        .where(inArray(polls.messageId, ids)),
+      ctx.db
+        .select({ id: duels.id, messageId: duels.messageId })
+        .from(duels)
+        .where(inArray(duels.messageId, ids)),
+    ])
   const pollBy = new Map(pollRows.map((p) => [p.messageId, p.id]))
+  const duelBy = new Map(duelRows.map((d) => [d.messageId, d.id]))
   const userMap = new Map(userRows.map((u) => [u.id, toUserSummary(u)]))
   const pinned = new Set(pinRows.map((p) => p.messageId))
   const bookmarked = new Set(bookmarkRows.map((b) => b.messageId))
@@ -218,6 +225,7 @@ export async function serializeMessages(
           : null,
       ...(r.clientId && { clientId: r.clientId }),
       ...(pollBy.has(r.id) && !deleted && { pollId: pollBy.get(r.id) }),
+      ...(duelBy.has(r.id) && !deleted && { duelId: duelBy.get(r.id) }),
     }
   })
 }

@@ -57,6 +57,7 @@ import { useAiStatus, useChannels, useMembers } from '@/lib/queries'
 import { send } from '@/lib/realtime'
 import { useOrgContext } from '../org-context'
 import { useIsMac } from '../shell/command-palette'
+import { DuelButton } from './duel'
 import { ALL_EMOJI } from './emoji'
 import { EmojiPicker } from './emoji-picker'
 import { PollButton } from './poll'
@@ -802,6 +803,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                 </IconButton>
               </Tooltip>
               {!parentId && <PollButton channel={channel} />}
+              {!parentId && <DuelButton channel={channel} />}
               <input
                 ref={fileInput}
                 type="file"

@@ -1683,3 +1683,32 @@ export const priceTicks = pgTable(
   },
   (t) => [index('price_ticks_key_idx').on(t.orgId, t.key, t.at)],
 )
+
+/** WickyChat: a coinflip duel posted in chat. Both sides' coins are held until it's flipped. */
+export const duels = pgTable(
+  'duels',
+  {
+    id: pk(),
+    orgId: orgRef(),
+    channelId: uuid('channel_id')
+      .notNull()
+      .references(() => channels.id, { onDelete: 'cascade' }),
+    messageId: uuid('message_id')
+      .notNull()
+      .references(() => messages.id, { onDelete: 'cascade' }),
+    challengerId: uuid('challenger_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    opponentId: uuid('opponent_id').references(() => users.id, { onDelete: 'cascade' }),
+    acceptedBy: uuid('accepted_by').references(() => users.id, { onDelete: 'set null' }),
+    amount: integer('amount').notNull(),
+    side: text('side').notNull(),
+    result: text('result'),
+    winnerId: uuid('winner_id').references(() => users.id, { onDelete: 'set null' }),
+    /** open | done | expired | cancelled */
+    status: text('status').notNull().default('open'),
+    expiresAt: ts('expires_at').notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex('duels_message_uq').on(t.messageId)],
+)

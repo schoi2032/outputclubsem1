@@ -51,6 +51,7 @@ import { StyledName } from '../profile/styled-name'
 import { Attachments } from './attachments'
 import { Composer } from './composer'
 import { EmojiValue, isEmojiOnly } from './custom-emoji'
+import { DuelCard } from './duel'
 import { EmojiPicker } from './emoji-picker'
 import { PollCard } from './poll'
 import { ReportDialog } from './report-dialog'
@@ -305,6 +306,7 @@ export const MessageItem = memo(function MessageItem({
 
         <Attachments items={m.attachments} />
         {m.pollId && <PollCard pollId={m.pollId} />}
+        {m.duelId && <DuelCard duelId={m.duelId} />}
         <Reactions m={m} onToggle={(e) => void actions.toggleReaction(m, e)} />
         {seenReceipts && !local && !inThread && <SeenBy messageId={m.id} />}
         {!inThread && m.replyCount > 0 && <ThreadSummary m={m} onOpen={() => onOpenThread?.(m)} />}

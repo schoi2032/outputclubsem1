@@ -217,6 +217,9 @@ function handle(e: ServerEvent) {
         ...e.message,
         bookmarked: old.bookmarked,
       }))
+      // A coinflip was accepted or called off: show it on everyone's card.
+      if (e.message.duelId)
+        void qc.invalidateQueries({ queryKey: ['duel', e.orgId, e.message.duelId] })
       return
     case 'message.deleted':
       removeMessage(qc, e.channelId, e.messageId)

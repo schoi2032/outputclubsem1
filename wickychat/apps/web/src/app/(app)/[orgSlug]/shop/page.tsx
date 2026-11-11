@@ -130,6 +130,9 @@ const REASON: Record<CoinTransaction['reason'], string> = {
   share_sell: 'Sold shares in',
   dividend: 'Bonus for backing',
   invest_cut: 'Stock Market cut:',
+  duel_bet: 'Coinflip duel bet',
+  duel_win: 'Won a coinflip duel 🎉',
+  duel_refund: 'Coinflip duel refunded',
 }
 
 const POSITION_LABEL: Record<StickerPosition, string> = {

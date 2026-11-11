@@ -246,6 +246,13 @@
       "when": 1794402627148,
       "tag": "0034_stock_market",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1794403071075,
+      "tag": "0035_duels",
+      "breakpoints": true
     }
   ]
 }

@@ -205,6 +205,8 @@ export interface Message {
   clientId?: string
   /** WickyChat: the poll or quiz in this message, if it has one. */
   pollId?: string | null
+  /** WickyChat: the coinflip duel in this message, if it has one. */
+  duelId?: string | null
 }
 
 export interface MessagePage {

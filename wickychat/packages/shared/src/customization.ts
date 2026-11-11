@@ -70,6 +70,8 @@ const customizationFields = {
   banner: z.object({ ...bannerInputSchema.shape, id: z.string().max(40) }).nullable(),
   /** Who can add custom emoji and soundboard sounds. */
   expressionsPolicy: z.enum(['members', 'admins']),
+  /** WickyChat: coinflip duels in chat. */
+  duels: z.boolean(),
 }
 
 export type OrgCustomization = z.infer<z.ZodObject<typeof customizationFields>>
@@ -83,6 +85,7 @@ export const DEFAULT_CUSTOMIZATION: OrgCustomization = {
   profileFields: [],
   banner: null,
   expressionsPolicy: 'members',
+  duels: true,
 }
 
 /** PATCH body. The banner is published without an id; the server assigns one. */
