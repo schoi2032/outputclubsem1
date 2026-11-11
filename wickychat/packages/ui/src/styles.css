@@ -355,6 +355,10 @@
   --q-ring: transparent;
   position: absolute;
   inset: -12%;
+  /* Some screens resize avatars with `[&>span]:size-9`, which would also hit this layer and
+     pin it to the top-left. Its size always comes from `inset` instead. */
+  width: auto !important;
+  height: auto !important;
   border-radius: 9999px;
   pointer-events: none;
   z-index: 1;
