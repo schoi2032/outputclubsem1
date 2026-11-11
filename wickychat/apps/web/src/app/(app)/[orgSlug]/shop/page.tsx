@@ -18,6 +18,9 @@ import {
   effectById,
   type ItemKind,
   type Leaderboard,
+  MARKET_PRICE,
+  MARKET_SHARE,
+  type MarketListing,
   PLATES,
   plateById,
   STICKER_POSITIONS,
@@ -78,6 +81,10 @@ const REASON: Record<CoinTransaction['reason'], string> = {
   gift: 'Reward from a teacher',
   sale: 'Someone bought your',
   gift_item: 'Gifted',
+  market_buy: 'Bought from the Market:',
+  market_sale: 'Sold on the Market:',
+  poll: 'Voted in a poll',
+  quiz: 'Got a quiz right',
 }
 
 const POSITION_LABEL: Record<StickerPosition, string> = {
@@ -128,6 +135,44 @@ function itemName(id: string | null | undefined, community: Cosmetic[]) {
     effectById(key)?.name ??
     plateById(key)?.name ??
     key
+  )
+}
+
+/** The picture of an item on its Shop card. */
+function ItemPreview({ it }: { it: ShopItem }) {
+  const { me } = useOrgContext()
+  return (
+    <>
+      {it.kind === 'theme' ? (
+        <ThemeSwatch css={it.css ?? ''} className="mb-1" />
+      ) : it.kind === 'effect' ? (
+        <div className="relative mb-1 flex h-24 w-full items-center justify-center overflow-hidden rounded-lg bg-gradient-to-b from-[#3b2a6b] to-[#1b1530]">
+          <Avatar name={me.name} id={me.id} src={me.avatarUrl} size="lg" />
+          <ProfileEffect value={it.value} />
+        </div>
+      ) : it.kind === 'plate' ? (
+        <div className="mb-1 flex h-24 w-full flex-col justify-center gap-1.5 rounded-lg border border-border bg-bg-subtle p-2">
+          <div className="relative isolate flex items-center gap-2 overflow-hidden rounded-md px-2 py-1.5">
+            <NamePlate value={it.value} />
+            <Avatar name={me.name} id={me.id} src={me.avatarUrl} size="xs" />
+            <span className="truncate text-[13px] font-semibold">{displayName(me)}</span>
+          </div>
+          <div className="flex items-center gap-2 px-2 py-1 text-[13px] text-fg-subtle">
+            <span className="size-5 rounded-full bg-bg-emphasis" /> Someone else
+          </div>
+        </div>
+      ) : (
+        <div className="my-4">
+          <Avatar
+            name={me.name}
+            id={me.id}
+            src={me.avatarUrl}
+            decoration={it.decoration}
+            size="xl"
+          />
+        </div>
+      )}
+    </>
   )
 }
 
@@ -316,35 +361,7 @@ function ShopInner() {
                   : 'border-border hover:border-border-strong',
               )}
             >
-              {isTheme ? (
-                <ThemeSwatch css={it.css ?? ''} className="mb-1" />
-              ) : it.kind === 'effect' ? (
-                <div className="relative mb-1 flex h-24 w-full items-center justify-center overflow-hidden rounded-lg bg-gradient-to-b from-[#3b2a6b] to-[#1b1530]">
-                  <Avatar name={me.name} id={me.id} src={me.avatarUrl} size="lg" />
-                  <ProfileEffect value={it.value} />
-                </div>
-              ) : it.kind === 'plate' ? (
-                <div className="mb-1 flex h-24 w-full flex-col justify-center gap-1.5 rounded-lg border border-border bg-bg-subtle p-2">
-                  <div className="relative isolate flex items-center gap-2 overflow-hidden rounded-md px-2 py-1.5">
-                    <NamePlate value={it.value} />
-                    <Avatar name={me.name} id={me.id} src={me.avatarUrl} size="xs" />
-                    <span className="truncate text-[13px] font-semibold">{displayName(me)}</span>
-                  </div>
-                  <div className="flex items-center gap-2 px-2 py-1 text-[13px] text-fg-subtle">
-                    <span className="size-5 rounded-full bg-bg-emphasis" /> Someone else
-                  </div>
-                </div>
-              ) : (
-                <div className="my-4">
-                  <Avatar
-                    name={me.name}
-                    id={me.id}
-                    src={me.avatarUrl}
-                    decoration={it.decoration}
-                    size="xl"
-                  />
-                </div>
-              )}
+              <ItemPreview it={it} />
               <p className="mt-1 text-[14px] font-semibold">{it.name}</p>
               <span
                 className={cn(
@@ -435,6 +452,11 @@ function ShopInner() {
       </ul>
     )
 
+  const catalog = new Map(
+    [...builtinItems, ...themeItems, ...effectItems, ...plateItems, ...allCommunity].map(
+      (it) => [it.itemId, it] as const,
+    ),
+  )
   const ownedItems = [
     ...builtinItems,
     ...themeItems,
@@ -545,6 +567,7 @@ function ShopInner() {
               <TabsTrigger value="themes">Themes</TabsTrigger>
               <TabsTrigger value="community">Community</TabsTrigger>
               <TabsTrigger value="create">Create</TabsTrigger>
+              <TabsTrigger value="market">Market</TabsTrigger>
               <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
               <TabsTrigger value="mine">My stuff</TabsTrigger>
             </TabsList>
@@ -592,6 +615,14 @@ function ShopInner() {
                 )
               )}
             </TabsContent>
+            <TabsContent value="market" className="pt-4">
+              <MarketView
+                catalog={catalog}
+                owned={w?.owned ?? []}
+                coins={w?.coins ?? 0}
+                onChange={() => refresh()}
+              />
+            </TabsContent>
             <TabsContent value="leaderboard" className="pt-4">
               <LeaderboardView />
             </TabsContent>
@@ -611,6 +642,8 @@ function ShopInner() {
                         <span className="flex-1">
                           {REASON[h.reason]}
                           {(h.reason === 'purchase' ||
+                            h.reason === 'market_buy' ||
+                            h.reason === 'market_sale' ||
                             h.reason === 'sale' ||
                             h.reason === 'gift_item') &&
                             h.ref &&
@@ -708,6 +741,203 @@ function CustomPreview({
         {sticker && <img className={`q-deco-art q-deco-at-${position}`} src={sticker} alt="" />}
       </span>
     </span>
+  )
+}
+
+function cosmeticItem(c: Cosmetic): ShopItem {
+  return {
+    kind: c.kind,
+    value: c.value,
+    css: c.css ?? undefined,
+    dark: null,
+    itemId: `u:${c.id}`,
+    decoration: c.decoration,
+    name: c.name,
+    description: c.description,
+    price: c.price,
+    rarity: 'community',
+    creator: c.creator,
+  }
+}
+
+function MarketView({
+  catalog,
+  owned,
+  coins,
+  onChange,
+}: {
+  catalog: Map<string, ShopItem>
+  owned: string[]
+  coins: number
+  onChange: () => void
+}) {
+  const { org, api, me } = useOrgContext()
+  const qc = useQueryClient()
+  const [busy, setBusy] = useState<string | null>(null)
+  const [sellId, setSellId] = useState('')
+  const [price, setPrice] = useState(100)
+  const listings = useQuery({
+    queryKey: ['market', org.id],
+    queryFn: ({ signal }) => get<MarketListing[]>(`${api}/market`, signal),
+  })
+  const itemFor = (l: MarketListing) =>
+    catalog.get(l.itemId) ?? (l.cosmetic ? cosmeticItem(l.cosmetic) : undefined)
+  const run = async (key: string, fn: () => Promise<unknown>, ok: string) => {
+    setBusy(key)
+    try {
+      await fn()
+      toast.success(ok)
+      void qc.invalidateQueries({ queryKey: ['market', org.id] })
+      void qc.invalidateQueries({ queryKey: ['wallet'] })
+      onChange()
+    } catch (e) {
+      toast.error(errorMessage(e))
+    } finally {
+      setBusy(null)
+    }
+  }
+  const all = listings.data ?? []
+  const mine = all.filter((l) => l.seller.id === me.id)
+  const others = all.filter((l) => l.seller.id !== me.id)
+  const listed = new Set(mine.map((l) => l.itemId))
+  const sellable = owned.filter((id) => !listed.has(id) && catalog.has(id))
+
+  return (
+    <div className="flex flex-col gap-8">
+      <section className="rounded-xl border border-border p-4">
+        <h3 className="text-[14px] font-semibold">Sell something you own</h3>
+        <p className="mb-3 text-xs text-fg-muted">
+          Set your own price. When it sells you get {Math.round(MARKET_SHARE * 100)}% and the item
+          goes to the buyer (it's taken off you if you're wearing it).
+        </p>
+        {!sellable.length ? (
+          <p className="text-[13px] text-fg-subtle">You don't have anything to sell yet.</p>
+        ) : (
+          <form
+            className="flex flex-wrap items-end gap-2"
+            onSubmit={(e) => {
+              e.preventDefault()
+              if (!sellId) return
+              void run(
+                'sell',
+                () => post(`${api}/market`, { itemId: sellId, price }),
+                'Listed on the Market 🏷️',
+              )
+            }}
+          >
+            <Select
+              aria-label="Item to sell"
+              value={sellId}
+              onChange={(e) => {
+                setSellId(e.target.value)
+                const it = catalog.get(e.target.value)
+                if (it) setPrice(it.price)
+              }}
+              className="min-w-48"
+            >
+              <option value="">Pick an item…</option>
+              {sellable.map((id) => (
+                <option key={id} value={id}>
+                  {catalog.get(id)?.name ?? id}
+                </option>
+              ))}
+            </Select>
+            <Input
+              aria-label="Price"
+              type="number"
+              min={MARKET_PRICE.min}
+              max={MARKET_PRICE.max}
+              value={price}
+              onChange={(e) => setPrice(Number(e.target.value))}
+              className="w-28"
+            />
+            <Button type="submit" variant="primary" disabled={!sellId} loading={busy === 'sell'}>
+              List for 🪙 {price}
+            </Button>
+          </form>
+        )}
+        {!!mine.length && (
+          <ul className="mt-4 divide-y divide-border rounded-lg border border-border text-[13px]">
+            {mine.map((l) => (
+              <li key={l.id} className="flex items-center gap-3 px-3 py-2">
+                <span className="flex-1">
+                  {itemFor(l)?.name ?? l.itemId} · 🪙 {l.price}
+                </span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  loading={busy === `cancel:${l.id}`}
+                  onClick={() =>
+                    run(`cancel:${l.id}`, () => del(`${api}/market/${l.id}`), 'Listing removed')
+                  }
+                >
+                  Stop selling
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section>
+        <h3 className="mb-3 text-[14px] font-semibold">For sale</h3>
+        {listings.isLoading ? (
+          <Skeleton className="h-60" />
+        ) : !others.length ? (
+          <p className="py-10 text-center text-[13px] text-fg-subtle">
+            Nothing for sale right now. Check back later!
+          </p>
+        ) : (
+          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {others.map((l) => {
+              const it = itemFor(l)
+              if (!it) return null
+              const has = owned.includes(l.itemId)
+              const afford = coins >= l.price
+              return (
+                <li
+                  key={l.id}
+                  className="flex flex-col items-center rounded-xl border border-border p-4 text-center"
+                >
+                  <ItemPreview it={it} />
+                  <p className="mt-1 text-[14px] font-semibold">{it.name}</p>
+                  <p className="mt-1 flex items-center gap-1.5 text-xs text-fg-muted">
+                    <Avatar
+                      name={l.seller.name}
+                      id={l.seller.id}
+                      src={l.seller.avatarUrl}
+                      size="xs"
+                    />
+                    {displayName(l.seller)}
+                  </p>
+                  {l.price < it.price && (
+                    <p className="mt-1 text-2xs text-success">
+                      {Math.round((1 - l.price / it.price) * 100)}% under Shop price
+                    </p>
+                  )}
+                  <Button
+                    size="sm"
+                    variant={afford && !has ? 'primary' : 'secondary'}
+                    className="mt-3 w-full tabular-nums"
+                    disabled={has || !afford}
+                    loading={busy === `buy:${l.id}`}
+                    onClick={() =>
+                      run(
+                        `buy:${l.id}`,
+                        () => post(`${api}/market/${l.id}/buy`, {}),
+                        `${it.name} is yours! ✨`,
+                      )
+                    }
+                  >
+                    {has ? 'You own this' : `🪙 ${l.price}`}
+                  </Button>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </section>
+    </div>
   )
 }
 

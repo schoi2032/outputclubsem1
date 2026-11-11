@@ -60,7 +60,7 @@ function equipFor(
 
 type CosmeticRow = typeof cosmetics.$inferSelect
 
-function serializeCosmetic(
+export function serializeCosmetic(
   c: CosmeticRow,
   creator: { id: string; name: string; displayName: string | null },
 ): Cosmetic {

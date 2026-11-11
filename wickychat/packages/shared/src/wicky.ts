@@ -342,7 +342,18 @@ export const BANNER_COLORS = [
 export interface CoinTransaction {
   id: string
   amount: number
-  reason: 'daily' | 'message' | 'swear' | 'purchase' | 'gift' | 'sale' | 'gift_item'
+  reason:
+    | 'daily'
+    | 'message'
+    | 'swear'
+    | 'purchase'
+    | 'gift'
+    | 'sale'
+    | 'gift_item'
+    | 'market_buy'
+    | 'market_sale'
+    | 'poll'
+    | 'quiz'
   ref: string | null
   createdAt: string
 }
@@ -940,3 +951,19 @@ export function customImageFile(value: string | null | undefined): string | null
 }
 
 export type ItemKind = 'decoration' | 'theme' | 'effect' | 'plate'
+
+// --- Marketplace -----------------------------------------------------------------------
+
+/** Sellers get this share when someone buys their listing (the rest is a small fee). */
+export const MARKET_SHARE = 0.9
+export const MARKET_PRICE = { min: 1, max: 5000 } as const
+
+export interface MarketListing {
+  id: string
+  itemId: string
+  price: number
+  seller: import('./types').UserSummary
+  /** Set for student-made items, so they can be drawn and named. */
+  cosmetic: Cosmetic | null
+  createdAt: string
+}

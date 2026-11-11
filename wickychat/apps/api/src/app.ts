@@ -39,6 +39,7 @@ import { authRoutes } from './modules/auth/routes'
 import { callRoutes } from './modules/calls/routes'
 import { leaveAllCalls } from './modules/calls/service'
 import { channelRoutes } from './modules/channels/routes'
+import { marketRoutes } from './modules/coins/market'
 import { coinRoutes } from './modules/coins/routes'
 import { socialRoutes } from './modules/coins/social'
 import { connectedAppRoutes } from './modules/connected-apps/routes'
@@ -300,6 +301,7 @@ export async function buildApp(config: Config, opts: BuildOptions = {}) {
   await schoolModerationRoutes(app, ctx)
   await coinRoutes(app, ctx)
   await socialRoutes(app, ctx)
+  await marketRoutes(app, ctx)
   await complianceRoutes(app, ctx)
   await pluginRoutes(app, ctx)
   await productivityRoutes(app, ctx)
