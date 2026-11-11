@@ -99,7 +99,13 @@ export async function resolveTheme(db: Db, id: string | null): Promise<Me['appTh
     columns: { name: true, css: true, kind: true, status: true },
   })
   if (c?.kind !== 'theme' || !c.css || c.status === 'rejected') return null
-  return { id, name: c.name, css: c.css, dark: null }
+  // A theme that says `color-scheme: dark` switches the app to dark mode too.
+  return {
+    id,
+    name: c.name,
+    css: c.css,
+    dark: /color-scheme\s*:\s*dark/i.test(c.css) ? true : null,
+  }
 }
 
 /** The daily streak that still counts: it breaks if yesterday was missed. */

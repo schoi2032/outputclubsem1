@@ -13,6 +13,7 @@ import {
   type CustomCrate,
   censorText,
   crateById,
+  crateFloor,
   crateOdds,
   customCrateDef,
   isEventLive,
@@ -26,6 +27,7 @@ import type { AppContext } from '../../core/context'
 import { badRequest, conflict, forbidden, notFound } from '../../core/errors'
 import { type App, orgIdParams, orgParams } from '../../core/http'
 import { toUserSummary, userCols } from '../users/serialize'
+import { checkContents, isItemId, outOfSeason } from './contents'
 import { loadWallet, sameOrg, takeCopy } from './routes'
 import { changeCoins } from './service'
 
@@ -103,7 +105,9 @@ async function ownedBy(db: Db | Tx, userId: string) {
   )
 }
 
-async function checkPerson(ctx: AppContext, me: string, to: string) {
+const itemsOf = (c: CrateDef) => c.drops.flatMap((d) => ('item' in d ? [d.item] : []))
+
+export async function checkPerson(ctx: AppContext, me: string, to: string) {
   if (to === me) throw badRequest("You can't gift something to yourself.")
   const target = await ctx.db.query.users.findFirst({
     where: eq(users.id, to),
@@ -144,6 +148,8 @@ export async function crateRoutes(app: App, ctx: AppContext) {
         throw badRequest('That event is over, so its crate is gone from the Shop.')
       if (custom) {
         if (custom.status !== 'active') throw badRequest("That crate isn't for sale any more.")
+        if (outOfSeason(itemsOf(crate)).length)
+          throw badRequest("This crate has seasonal items, so it's only sold during their event.")
         const member = await ctx.db.query.orgMemberships.findFirst({
           where: and(
             eq(orgMemberships.orgId, custom.orgId),
@@ -193,7 +199,9 @@ export async function crateRoutes(app: App, ctx: AppContext) {
             await changeCoins(
               tx,
               custom.creatorId,
-              Math.floor(price * CREATOR_SHARE),
+              Math.floor(
+                Math.max(0, crate.price - crateFloor(itemsOf(crate))) * count * CREATOR_SHARE,
+              ),
               'crate_sale',
               crateId,
             )
@@ -361,7 +369,7 @@ export async function crateRoutes(app: App, ctx: AppContext) {
           drops: z
             .array(
               z.object({
-                item: z.string().regex(CUSTOM),
+                item: z.string().max(60).refine(isItemId, 'Unknown item'),
                 tier: z.enum(['common', 'rare', 'epic', 'legendary']),
               }),
             )
@@ -380,21 +388,12 @@ export async function crateRoutes(app: App, ctx: AppContext) {
         throw badRequest('Pick one emoji for the crate.')
       const items = [...new Set(b.drops.map((d) => d.item))]
       if (items.length !== b.drops.length) throw badRequest('Each item can only be in it once.')
-      const ids = items.map((i) => CUSTOM.exec(i)![1]!)
-      const mine = await ctx.db
-        .select({ id: cosmetics.id })
-        .from(cosmetics)
-        .where(
-          and(
-            inArray(cosmetics.id, ids),
-            eq(cosmetics.orgId, scope.orgId),
-            eq(cosmetics.creatorId, scope.userId),
-            eq(cosmetics.status, 'approved'),
-            eq(cosmetics.visibility, 'public'),
-          ),
+      await checkContents(ctx.db, scope, items, 'crate')
+      const floor = crateFloor(items)
+      if (b.price < floor)
+        throw badRequest(
+          `With Shop items inside, the crate has to cost at least 🪙 ${floor} (its priciest Shop item).`,
         )
-      if (mine.length !== ids.length)
-        throw badRequest('Crates can only hold your own approved cosmetics that are for sale.')
       const [{ n } = { n: 0 }] = await ctx.db
         .select({ n: sql<number>`count(*)::int` })
         .from(customCrates)

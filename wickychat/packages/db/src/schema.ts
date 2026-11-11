@@ -1540,3 +1540,28 @@ export const customCrates = pgTable(
   },
   (t) => [index('custom_crates_org_idx').on(t.orgId, t.status)],
 )
+
+/** WickyChat: item bundles students make. */
+export const customBundles = pgTable(
+  'custom_bundles',
+  {
+    id: pk(),
+    orgId: orgRef(),
+    creatorId: uuid('creator_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    emoji: text('emoji').notNull().default('🎁'),
+    description: text('description').notNull().default(''),
+    colorA: text('color_a').notNull(),
+    colorB: text('color_b').notNull(),
+    price: integer('price').notNull(),
+    /** Item ids: built-in or `u:<cosmetic id>`. */
+    items: jsonb('items').$type<string[]>().notNull(),
+    /** active | removed */
+    status: text('status').notNull().default('active'),
+    sales: integer('sales').notNull().default(0),
+    createdAt: createdAt(),
+  },
+  (t) => [index('custom_bundles_org_idx').on(t.orgId, t.status)],
+)

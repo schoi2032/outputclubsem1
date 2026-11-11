@@ -19,9 +19,9 @@ import {
   themeById,
   themeCss,
 } from '@quid/shared'
-import { Avatar, cn } from '@quid/ui'
+import { Avatar, cn, Input, Select } from '@quid/ui'
 import { useQuery } from '@tanstack/react-query'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useOrgContext } from '@/components/org-context'
 import { NamePlate, ProfileEffect } from '@/components/profile/cosmetics-fx'
 import { ThemeSwatch } from '@/components/shop/theme-swatch'
@@ -133,7 +133,7 @@ export function cosmeticItem(c: Cosmetic): ShopItem {
     kind: c.kind,
     value: c.value,
     css: c.css ?? undefined,
-    dark: null,
+    dark: /color-scheme\s*:\s*dark/i.test(c.css ?? '') ? true : null,
     itemId: `u:${c.id}`,
     decoration: c.decoration,
     name: c.name,
@@ -267,3 +267,132 @@ export function ItemPreview({ it, compact }: { it: ShopItem; compact?: boolean }
     </div>
   )
 }
+
+/**
+ * Picking items for a crate or bundle: your own approved cosmetics that are for sale, and Shop
+ * items (seasonal ones only while their event is on).
+ */
+export function ItemPicker({
+  selected,
+  onToggle,
+  max,
+  extra,
+}: {
+  selected: string[]
+  onToggle: (id: string) => void
+  max: number
+  /** Shown on the right of a picked item (e.g. a rarity picker). */
+  extra?: (id: string) => React.ReactNode
+}) {
+  const { org, api, me } = useOrgContext()
+  const mine = useQuery({
+    queryKey: ['cosmetics', org.id, 'mine'],
+    queryFn: ({ signal }) => get<Cosmetic[]>(`${api}/cosmetics?view=mine`, signal),
+  })
+  const [q, setQ] = useState('')
+  const [kind, setKind] = useState<ItemKind | 'all'>('all')
+  const [source, setSource] = useState<'mine' | 'shop'>('mine')
+  const own = (mine.data ?? [])
+    .filter((c) => c.status === 'approved' && c.visibility === 'public' && c.creator.id === me.id)
+    .map(cosmeticItem)
+  const shop = BUILTIN_ITEMS.filter((it) => it.live)
+  const needle = q.trim().toLowerCase()
+  const list = (source === 'mine' ? own : shop).filter(
+    (it) =>
+      (kind === 'all' || it.kind === kind) && (!needle || it.name.toLowerCase().includes(needle)),
+  )
+  const byId = new Map([...own, ...shop].map((it) => [it.itemId, it]))
+  const picked = selected.map((id) => byId.get(id)).filter((x): x is ShopItem => !!x)
+  const row = (it: ShopItem) => {
+    const on = selected.includes(it.itemId)
+    return (
+      <li
+        key={it.itemId}
+        className={cn(
+          'flex items-center gap-3 rounded-lg border p-2',
+          on ? 'border-accent bg-accent-subtle' : 'border-border',
+        )}
+      >
+        <input
+          type="checkbox"
+          aria-label={`Add ${it.name}`}
+          checked={on}
+          disabled={!on && selected.length >= max}
+          onChange={() => onToggle(it.itemId)}
+        />
+        <div className="w-24 shrink-0">
+          <ItemPreview it={it} compact />
+        </div>
+        <div className="min-w-0 flex-1 text-[13px]">
+          <p className="truncate font-medium">{it.name}</p>
+          <p className="text-xs text-fg-subtle">
+            {KIND_LABEL[it.kind]} · 🪙 {it.price}
+            {it.rarity === 'community' ? ' · yours' : ' · Shop item'}
+            {it.stock != null && ` · limited to ${it.stock}`}
+          </p>
+        </div>
+        {on && extra?.(it.itemId)}
+      </li>
+    )
+  }
+  return (
+    <div className="flex flex-col gap-2">
+      {!!picked.length && <ul className="flex flex-col gap-2">{picked.map(row)}</ul>}
+      <div className="mt-1 flex flex-wrap items-center gap-2">
+        <div className="inline-flex rounded-lg border border-border p-0.5 text-[13px]">
+          {(
+            [
+              ['mine', `Your creations (${own.length})`],
+              ['shop', 'Shop items'],
+            ] as const
+          ).map(([k, label]) => (
+            <button
+              key={k}
+              type="button"
+              aria-pressed={source === k}
+              onClick={() => setSource(k)}
+              className={cn(
+                'rounded-md px-3 py-1',
+                source === k ? 'bg-accent text-accent-fg' : 'text-fg-muted hover:bg-bg-muted',
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <Select
+          aria-label="Kind"
+          className="w-auto"
+          value={kind}
+          onChange={(e) => setKind(e.target.value as ItemKind | 'all')}
+        >
+          <option value="all">All kinds</option>
+          <option value="decoration">Decorations</option>
+          <option value="effect">Effects</option>
+          <option value="plate">Name plates</option>
+          <option value="theme">Themes</option>
+        </Select>
+        <Input
+          aria-label="Search items"
+          placeholder="Search…"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          className="w-44"
+        />
+      </div>
+      <ul className="flex max-h-96 flex-col gap-2 overflow-y-auto">
+        {list.filter((it) => !selected.includes(it.itemId)).map(row)}
+        {!list.length && (
+          <li className="py-4 text-center text-[13px] text-fg-subtle">
+            {source === 'mine'
+              ? 'No approved cosmetics of yours yet. Make some in the other Create tabs, or use Shop items.'
+              : 'Nothing matches.'}
+          </li>
+        )}
+      </ul>
+    </div>
+  )
+}
+
+/** What an item is worth: its Shop price. */
+export const itemValue = (catalog: Map<string, ShopItem>, id: string) => catalog.get(id)?.price ?? 0

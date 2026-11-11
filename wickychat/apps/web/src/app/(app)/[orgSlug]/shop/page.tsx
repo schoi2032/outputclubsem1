@@ -57,6 +57,7 @@ import { PeoplePicker } from '@/components/dialogs/people-picker'
 import { useOrgContext } from '@/components/org-context'
 import { PageHeader } from '@/components/page-header'
 import { NamePlate } from '@/components/profile/cosmetics-fx'
+import { BundlesView, CreateBundle, MyBundles, useBundleDefs } from '@/components/shop/bundles'
 import { CrateArt, CratesView, CreateCrate, MyCrates, useCrateDefs } from '@/components/shop/crates'
 import {
   cosmeticItem,
@@ -96,6 +97,9 @@ const REASON: Record<CoinTransaction['reason'], string> = {
   coins_received: 'Coins from',
   trade: 'Trade',
   crate_sale: 'Someone bought your',
+  bundle: 'Bought the',
+  bundle_gift: 'Gifted the',
+  bundle_sale: 'Someone bought your',
 }
 
 const POSITION_LABEL: Record<StickerPosition, string> = {
@@ -121,6 +125,7 @@ const EXAMPLE_MANIFEST: CosmeticManifest = {
 type Tab =
   | 'all'
   | 'crates'
+  | 'bundles'
   | 'event'
   | 'decorations'
   | 'effects'
@@ -134,6 +139,7 @@ type Tab =
 const TABS: Tab[] = [
   'all',
   'crates',
+  'bundles',
   'event',
   'decorations',
   'effects',
@@ -194,6 +200,7 @@ function ShopInner() {
   const community = useCommunity()
   const catalog = useCatalog()
   const crateDefs = useCrateDefs()
+  const bundleDefs = useBundleDefs()
   const isTeacher = org.role === 'owner' || org.role === 'admin'
   const [selfCoins, setSelfCoins] = useState('')
   const w = wallet.data
@@ -660,6 +667,7 @@ function ShopInner() {
                   </span>
                 )}
               </TabsTrigger>
+              <TabsTrigger value="bundles">Bundles</TabsTrigger>
               {!!events.length && (
                 <TabsTrigger value="event">
                   {events[0]!.emoji} {events.length > 1 ? 'Events' : events[0]!.name}
@@ -773,6 +781,10 @@ function ShopInner() {
               <CratesView wallet={w} catalog={catalog} />
             </TabsContent>
 
+            <TabsContent value="bundles" className="pt-4">
+              <BundlesView wallet={w} catalog={catalog} />
+            </TabsContent>
+
             <TabsContent value="event" className="pt-4">
               {events.map((ev) => (
                 <section key={ev.id} className="mb-10">
@@ -793,6 +805,9 @@ function ShopInner() {
                   )}
                   <div className="mt-6">
                     <CratesView wallet={w} catalog={catalog} onlyEvent={ev.id} />
+                  </div>
+                  <div className="mt-6">
+                    <BundlesView wallet={w} catalog={catalog} onlyEvent={ev.id} />
                   </div>
                 </section>
               ))}
@@ -891,6 +906,7 @@ function ShopInner() {
               {grid(ownedItems, "You don't own anything yet.")}
               <MyCreations />
               <MyCrates />
+              <MyBundles />
               {!!w?.history.length && (
                 <section className="mt-10">
                   <h3 className="mb-3 text-[14px] font-semibold">Recent coins</h3>
@@ -912,6 +928,11 @@ function ShopInner() {
                             h.reason === 'crate_coins') &&
                             h.ref &&
                             ` ${crateDefs.byId(h.ref)?.name ?? 'crate'}`}
+                          {(h.reason === 'bundle' ||
+                            h.reason === 'bundle_gift' ||
+                            h.reason === 'bundle_sale') &&
+                            h.ref &&
+                            ` ${bundleDefs.byId(h.ref)?.name ?? 'bundle'}`}
                           {(h.reason === 'coins_sent' || h.reason === 'coins_received') &&
                             h.ref &&
                             (() => {
@@ -1498,11 +1519,11 @@ function AvailabilityFields({ a }: { a: ReturnType<typeof useAvailability> }) {
 }
 
 function CreatePicker({ catalog }: { catalog: Map<string, ShopItem> }) {
-  const [kind, setKind] = useState<ItemKind | 'crate'>('decoration')
+  const [kind, setKind] = useState<ItemKind | 'crate' | 'bundle'>('decoration')
   return (
     <>
       <div className="mb-5 inline-flex flex-wrap rounded-lg border border-border p-0.5 text-[13px]">
-        {(['decoration', 'effect', 'plate', 'theme', 'crate'] as const).map((k) => (
+        {(['decoration', 'effect', 'plate', 'theme', 'crate', 'bundle'] as const).map((k) => (
           <button
             key={k}
             type="button"
@@ -1513,7 +1534,7 @@ function CreatePicker({ catalog }: { catalog: Map<string, ShopItem> }) {
               kind === k ? 'bg-accent text-accent-fg' : 'text-fg-muted hover:bg-bg-muted',
             )}
           >
-            {k === 'crate' ? '📦 Crate' : KIND_LABEL[k]}
+            {k === 'crate' ? '📦 Crate' : k === 'bundle' ? '🎁 Bundle' : KIND_LABEL[k]}
           </button>
         ))}
       </div>
@@ -1523,6 +1544,8 @@ function CreatePicker({ catalog }: { catalog: Map<string, ShopItem> }) {
         <CreateTheme />
       ) : kind === 'crate' ? (
         <CreateCrate catalog={catalog} />
+      ) : kind === 'bundle' ? (
+        <CreateBundle />
       ) : (
         <CreateImageItem key={kind} kind={kind} />
       )}
@@ -1546,7 +1569,10 @@ function CreateTheme() {
   // Live preview while it's on; your own theme comes back when you stop or leave.
   useEffect(() => {
     if (!previewing) return
-    applyAppTheme({ css: clean.css, dark: null }, { cache: false })
+    applyAppTheme(
+      { css: clean.css, dark: /color-scheme\s*:\s*dark/i.test(clean.css) ? true : null },
+      { cache: false },
+    )
   }, [previewing, clean.css])
   useEffect(() => {
     if (!previewing) return

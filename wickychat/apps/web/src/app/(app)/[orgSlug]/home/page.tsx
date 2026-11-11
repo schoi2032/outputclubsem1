@@ -245,7 +245,14 @@ export default function HomePage() {
       <PageHeader title="Home" icon={<House />} />
       <div className="min-h-0 flex-1 overflow-y-auto bg-bg-subtle">
         <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
-          <div className="relative overflow-hidden rounded-2xl bg-[linear-gradient(120deg,#fbe3da_0%,#fbe2ea_45%,#e6eef0_75%,#e3efe5_100%)] px-5 py-6 sm:px-7 dark:bg-[linear-gradient(120deg,#3a231b_0%,#3a2230_45%,#252b33_75%,#1f2d24_100%)]">
+          <div
+            className="relative overflow-hidden rounded-2xl px-5 py-6 sm:px-7"
+            // Built from the theme's own colours so it reads well in every theme.
+            style={{
+              background:
+                'linear-gradient(120deg, color-mix(in oklab, var(--q-accent) 16%, var(--q-bg)) 0%, color-mix(in oklab, var(--q-danger) 10%, var(--q-bg)) 45%, color-mix(in oklab, var(--q-accent-hover) 8%, var(--q-bg)) 75%, color-mix(in oklab, var(--q-success) 12%, var(--q-bg)) 100%)',
+            }}
+          >
             <div className="relative z-10 max-w-[70%]">
               <h2 className="text-2xl font-semibold tracking-[-0.025em]">
                 {greeting()}, {(me.displayName || me.name).split(' ')[0]}

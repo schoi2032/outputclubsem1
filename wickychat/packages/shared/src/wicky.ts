@@ -368,6 +368,9 @@ export interface CoinTransaction {
     | 'coins_received'
     | 'trade'
     | 'crate_sale'
+    | 'bundle'
+    | 'bundle_gift'
+    | 'bundle_sale'
   ref: string | null
   createdAt: string
 }

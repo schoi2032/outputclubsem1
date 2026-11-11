@@ -4,7 +4,6 @@
  * that lands on what the server rolled (like opening a case in a game).
  */
 import {
-  type Cosmetic,
   CRATES,
   CREATOR_SHARE,
   type CrateDef,
@@ -14,6 +13,7 @@ import {
   CUSTOM_CRATE,
   type CustomCrate,
   crateById,
+  crateFloor,
   crateOdds,
   customCrateDef,
   dropKey,
@@ -47,7 +47,7 @@ import { ThemeSwatch } from '@/components/shop/theme-swatch'
 import { del, errorMessage, get, post, put } from '@/lib/api'
 import { displayName, relative } from '@/lib/format'
 import { keys, useMembers } from '@/lib/queries'
-import { ItemPreview, type ShopItem } from './items'
+import { ItemPicker, type ShopItem } from './items'
 
 type Catalog = Map<string, ShopItem>
 
@@ -523,7 +523,7 @@ function OddsDialog({
   )
 }
 
-function GiftDialog({
+export function GiftDialog({
   title,
   description,
   onSend,
@@ -869,14 +869,10 @@ export function CratesView({
 
 const TIERS: CrateTier[] = ['common', 'rare', 'epic', 'legendary']
 
-/** Students pack their own approved cosmetics into a crate to sell. */
+/** Students pack their own cosmetics and Shop items into a crate to sell. */
 export function CreateCrate({ catalog }: { catalog: Catalog }) {
   const { org, api, me } = useOrgContext()
   const qc = useQueryClient()
-  const mine = useQuery({
-    queryKey: ['cosmetics', org.id, 'mine'],
-    queryFn: ({ signal }) => get<Cosmetic[]>(`${api}/cosmetics?view=mine`, signal),
-  })
   const [name, setName] = useState('')
   const [emoji, setEmoji] = useState('🎁')
   const [description, setDescription] = useState('')
@@ -884,9 +880,6 @@ export function CreateCrate({ catalog }: { catalog: Catalog }) {
   const [price, setPrice] = useState(100)
   const [drops, setDrops] = useState<Record<string, CrateTier>>({})
   const [saving, setSaving] = useState(false)
-  const usable = (mine.data ?? []).filter(
-    (c) => c.status === 'approved' && c.visibility === 'public',
-  )
   const picked = Object.entries(drops).map(([item, tier]) => ({ item, tier }))
   const preview: CrateDef = {
     id: 'preview',
@@ -899,6 +892,13 @@ export function CreateCrate({ catalog }: { catalog: Catalog }) {
     creator: { id: me.id, name: me.name, displayName: me.displayName ?? null },
   }
   const odds = picked.length ? crateOdds(preview) : []
+  const floor = crateFloor(picked.map((d) => d.item))
+  const minPrice = Math.max(CUSTOM_CRATE.price.min, floor)
+  // Adding Shop items raises the lowest price; follow it so the form stays valid.
+  useEffect(() => {
+    setPrice((p) => Math.max(p, minPrice))
+  }, [minPrice])
+  const earn = Math.floor(Math.max(0, price - floor) * CREATOR_SHARE)
 
   const submit = async () => {
     setSaving(true)
@@ -916,20 +916,6 @@ export function CreateCrate({ catalog }: { catalog: Catalog }) {
     }
   }
 
-  if (mine.isLoading) return <Skeleton className="h-60" />
-  if (usable.length < CUSTOM_CRATE.minItems)
-    return (
-      <div className="rounded-xl border border-dashed border-border p-6 text-center text-[13px] text-fg-muted">
-        <p className="text-3xl">📦</p>
-        <p className="mt-2 font-medium text-fg">Make cosmetics first</p>
-        <p className="mt-1">
-          A crate is filled with things <em>you</em> made. You need at least {CUSTOM_CRATE.minItems}{' '}
-          approved cosmetics that are for sale (you have {usable.length}). Make some in the other
-          Create tabs, then come back.
-        </p>
-      </div>
-    )
-
   return (
     <div className="grid gap-6 md:grid-cols-[1fr_280px]">
       <form
@@ -939,137 +925,62 @@ export function CreateCrate({ catalog }: { catalog: Catalog }) {
           void submit()
         }}
       >
-        <div className="flex flex-wrap gap-3">
-          <div className="flex flex-1 flex-col gap-1 text-[13px] font-medium">
-            <span>Name</span>
-            <Input
-              aria-label="Crate name"
-              required
-              minLength={2}
-              maxLength={40}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
-          <div className="flex w-20 flex-col gap-1 text-[13px] font-medium">
-            <span>Emoji</span>
-            <Input
-              aria-label="Crate emoji"
-              maxLength={4}
-              value={emoji}
-              onChange={(e) => setEmoji(e.target.value)}
-              className="text-center text-lg"
-            />
-          </div>
-        </div>
-        <div className="flex flex-col gap-1 text-[13px] font-medium">
-          <span>Description</span>
-          <Input
-            aria-label="Crate description"
-            maxLength={140}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-        </div>
-        <div className="flex flex-wrap items-end gap-4">
-          <div className="flex flex-col gap-1 text-[13px] font-medium">
-            <span>Colours</span>
-            <span className="flex gap-2">
-              {([0, 1] as const).map((i) => (
-                <input
-                  key={i}
-                  type="color"
-                  aria-label={`Colour ${i + 1}`}
-                  value={colors[i]}
-                  onChange={(e) =>
-                    setColors((c) => (i === 0 ? [e.target.value, c[1]] : [c[0], e.target.value]))
-                  }
-                  className="h-9 w-12 cursor-pointer rounded-md border border-border bg-transparent"
-                />
-              ))}
-            </span>
-          </div>
-          <div className="flex flex-col gap-1 text-[13px] font-medium">
-            <span>Price</span>
-            <Input
-              aria-label="Crate price"
-              type="number"
-              min={CUSTOM_CRATE.price.min}
-              max={CUSTOM_CRATE.price.max}
-              value={price}
-              onChange={(e) => setPrice(Number(e.target.value))}
-              className="w-28"
-            />
-          </div>
-          <p className="pb-2 text-xs text-fg-subtle">
-            You get {Math.round(CREATOR_SHARE * 100)}% of every crate sold.
-          </p>
-        </div>
-
+        <PackFields
+          what="crate"
+          name={name}
+          setName={setName}
+          emoji={emoji}
+          setEmoji={setEmoji}
+          description={description}
+          setDescription={setDescription}
+          colors={colors}
+          setColors={setColors}
+          price={price}
+          setPrice={setPrice}
+          minPrice={minPrice}
+          maxPrice={CUSTOM_CRATE.price.max}
+          note={
+            floor
+              ? `With Shop items inside, it has to cost at least 🪙 ${floor} (the priciest one). You earn ${Math.round(CREATOR_SHARE * 100)}% of the part above that: 🪙 ${earn} a crate.`
+              : `You get ${Math.round(CREATOR_SHARE * 100)}% of every crate sold.`
+          }
+        />
         <div>
           <p className="mb-1 text-[13px] font-medium">
             What's inside ({picked.length}/{CUSTOM_CRATE.maxItems})
           </p>
           <p className="mb-2 text-xs text-fg-subtle">
-            Pick your cosmetics and how rare each one is. Rarer tiers drop less often:{' '}
+            Pick anything: your own cosmetics or Shop items, and how rare each one is. Rarer tiers
+            drop less often:{' '}
             {TIERS.map((t) => `${TIER_STYLE[t].label} ${TIER_ODDS[t]}%`).join(' · ')} (shared by the
             items in each tier).
           </p>
-          <ul className="flex flex-col gap-2">
-            {usable.map((c) => {
-              const id = `u:${c.id}`
-              const on = id in drops
-              const it = catalog.get(id)
-              return (
-                <li
-                  key={c.id}
-                  className={cn(
-                    'flex items-center gap-3 rounded-lg border p-2',
-                    on ? 'border-accent bg-accent-subtle' : 'border-border',
-                  )}
-                >
-                  <input
-                    type="checkbox"
-                    aria-label={`Put ${c.name} in the crate`}
-                    checked={on}
-                    disabled={!on && picked.length >= CUSTOM_CRATE.maxItems}
-                    onChange={() =>
-                      setDrops((d) => {
-                        const next = { ...d }
-                        if (on) delete next[id]
-                        else next[id] = 'common'
-                        return next
-                      })
-                    }
-                  />
-                  <div className="w-24">{it && <ItemPreview it={it} compact />}</div>
-                  <div className="min-w-0 flex-1 text-[13px]">
-                    <p className="truncate font-medium">{c.name}</p>
-                    <p className="text-xs text-fg-subtle">
-                      🪙 {c.price} in the Shop
-                      {c.stock != null && ` · limited to ${c.stock}`}
-                    </p>
-                  </div>
-                  {on && (
-                    <Select
-                      aria-label={`Rarity of ${c.name}`}
-                      className="w-32"
-                      value={drops[id]}
-                      onChange={(e) =>
-                        setDrops((d) => ({ ...d, [id]: e.target.value as CrateTier }))
-                      }
-                    >
-                      {TIERS.map((t) => (
-                        <option key={t} value={t}>
-                          {TIER_STYLE[t].label}
-                        </option>
-                      ))}
-                    </Select>
-                  )}
-                </li>
-              )
-            })}
-          </ul>
+          <ItemPicker
+            selected={picked.map((d) => d.item)}
+            max={CUSTOM_CRATE.maxItems}
+            onToggle={(id) =>
+              setDrops((d) => {
+                const next = { ...d }
+                if (id in next) delete next[id]
+                else next[id] = 'common'
+                return next
+              })
+            }
+            extra={(id) => (
+              <Select
+                aria-label="Rarity"
+                className="w-32"
+                value={drops[id]}
+                onChange={(e) => setDrops((d) => ({ ...d, [id]: e.target.value as CrateTier }))}
+              >
+                {TIERS.map((t) => (
+                  <option key={t} value={t}>
+                    {TIER_STYLE[t].label}
+                  </option>
+                ))}
+              </Select>
+            )}
+          />
         </div>
         <p className="text-xs text-fg-subtle">
           Nobody gets the same thing twice. If someone already owns everything left in your crate,
@@ -1081,7 +992,9 @@ export function CreateCrate({ catalog }: { catalog: Catalog }) {
             type="submit"
             variant="primary"
             loading={saving}
-            disabled={picked.length < CUSTOM_CRATE.minItems || name.trim().length < 2}
+            disabled={
+              picked.length < CUSTOM_CRATE.minItems || name.trim().length < 2 || price < minPrice
+            }
           >
             Put it on sale
           </Button>
@@ -1159,5 +1072,92 @@ export function MyCrates() {
         })}
       </ul>
     </section>
+  )
+}
+
+/** Name, emoji, description, colours and price, for making a crate or a bundle. */
+export function PackFields(p: {
+  what: string
+  name: string
+  setName: (v: string) => void
+  emoji: string
+  setEmoji: (v: string) => void
+  description: string
+  setDescription: (v: string) => void
+  colors: [string, string]
+  setColors: (fn: (c: [string, string]) => [string, string]) => void
+  price: number
+  setPrice: (v: number) => void
+  minPrice: number
+  maxPrice: number
+  note: string
+}) {
+  return (
+    <>
+      <div className="flex flex-wrap gap-3">
+        <div className="flex flex-1 flex-col gap-1 text-[13px] font-medium">
+          <span>Name</span>
+          <Input
+            aria-label={`${p.what} name`}
+            required
+            minLength={2}
+            maxLength={40}
+            value={p.name}
+            onChange={(e) => p.setName(e.target.value)}
+          />
+        </div>
+        <div className="flex w-20 flex-col gap-1 text-[13px] font-medium">
+          <span>Emoji</span>
+          <Input
+            aria-label={`${p.what} emoji`}
+            maxLength={4}
+            value={p.emoji}
+            onChange={(e) => p.setEmoji(e.target.value)}
+            className="text-center text-lg"
+          />
+        </div>
+      </div>
+      <div className="flex flex-col gap-1 text-[13px] font-medium">
+        <span>Description</span>
+        <Input
+          aria-label={`${p.what} description`}
+          maxLength={140}
+          value={p.description}
+          onChange={(e) => p.setDescription(e.target.value)}
+        />
+      </div>
+      <div className="flex flex-wrap items-end gap-4">
+        <div className="flex flex-col gap-1 text-[13px] font-medium">
+          <span>Colours</span>
+          <span className="flex gap-2">
+            {([0, 1] as const).map((i) => (
+              <input
+                key={i}
+                type="color"
+                aria-label={`Colour ${i + 1}`}
+                value={p.colors[i]}
+                onChange={(e) =>
+                  p.setColors((c) => (i === 0 ? [e.target.value, c[1]] : [c[0], e.target.value]))
+                }
+                className="h-9 w-12 cursor-pointer rounded-md border border-border bg-transparent"
+              />
+            ))}
+          </span>
+        </div>
+        <div className="flex flex-col gap-1 text-[13px] font-medium">
+          <span>Price</span>
+          <Input
+            aria-label={`${p.what} price`}
+            type="number"
+            min={p.minPrice}
+            max={p.maxPrice}
+            value={p.price}
+            onChange={(e) => p.setPrice(Number(e.target.value))}
+            className="w-28"
+          />
+        </div>
+        <p className="max-w-sm pb-2 text-xs text-fg-subtle">{p.note}</p>
+      </div>
+    </>
   )
 }

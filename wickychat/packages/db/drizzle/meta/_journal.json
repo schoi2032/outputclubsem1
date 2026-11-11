@@ -211,6 +211,13 @@
       "when": 1794398013881,
       "tag": "0029_custom_crates",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1794398906313,
+      "tag": "0030_custom_bundles",
+      "breakpoints": true
     }
   ]
 }
