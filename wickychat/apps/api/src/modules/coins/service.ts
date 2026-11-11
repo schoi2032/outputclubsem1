@@ -2,8 +2,8 @@
  * WickyChat: Wicky Coins. The balance lives on `users.coins`; every change is also written to
  * `coin_transactions` so people can see their history.
  */
-import { coinTransactions, users } from '@quid/db'
-import { COINS, type CoinTransaction } from '@quid/shared'
+import { coinTransactions, cosmetics, users } from '@quid/db'
+import { COINS, type CoinTransaction, type Me, themeById, themeCss } from '@quid/shared'
 import { and, eq, gte, sql } from 'drizzle-orm'
 import { uuidv7 } from 'uuidv7'
 import type { AppContext } from '../../core/context'
@@ -77,4 +77,19 @@ export async function coinsForMessage(ctx: AppContext, userId: string, swore: bo
   } catch (err) {
     ctx.log.warn({ err }, 'could not update coins for message')
   }
+}
+
+/** Turns an equipped theme id into the CSS the app loads. */
+export async function resolveTheme(db: Db, id: string | null): Promise<Me['appTheme']> {
+  if (!id) return null
+  const builtin = themeById(id)
+  if (builtin) return { id, name: builtin.name, css: themeCss(builtin), dark: builtin.dark }
+  const m = /^u:([0-9a-f-]{36})$/.exec(id)
+  if (!m) return null
+  const c = await db.query.cosmetics.findFirst({
+    where: eq(cosmetics.id, m[1]!),
+    columns: { name: true, css: true, kind: true, status: true },
+  })
+  if (c?.kind !== 'theme' || !c.css || c.status === 'rejected') return null
+  return { id, name: c.name, css: c.css, dark: null }
 }

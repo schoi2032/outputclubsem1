@@ -16,6 +16,11 @@ import {
   decorationById,
   STICKER_POSITIONS,
   type StickerPosition,
+  sanitizeThemeCss,
+  THEME_TEMPLATE,
+  THEMES,
+  themeById,
+  themeCss,
   type Wallet,
 } from '@quid/shared'
 import {
@@ -37,13 +42,15 @@ import {
   toast,
 } from '@quid/ui'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Gift, Store, Upload, X } from 'lucide-react'
+import { Eye, EyeOff, Gift, Store, Upload, X } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useMemo, useState } from 'react'
 import { PeoplePicker } from '@/components/dialogs/people-picker'
 import { useOrgContext } from '@/components/org-context'
 import { PageHeader } from '@/components/page-header'
+import { ThemeSwatch } from '@/components/shop/theme-swatch'
 import { del, errorMessage, get, post, put, upload } from '@/lib/api'
+import { applyAppTheme } from '@/lib/app-theme'
 import { displayName, relative } from '@/lib/format'
 import { keys, useMembers } from '@/lib/queries'
 
@@ -85,8 +92,12 @@ const EXAMPLE_MANIFEST: CosmeticManifest = {
   stickerPosition: 'tr',
 }
 
-/** Item shown in a grid: a built-in decoration or a student-made cosmetic. */
+/** Item shown in a grid: a built-in decoration or theme, or a student-made cosmetic. */
 interface ShopItem {
+  kind: 'decoration' | 'theme'
+  /** Theme CSS and whether it's a dark theme (themes only). */
+  css?: string
+  dark?: boolean | null
   itemId: string
   decoration: string
   name: string
@@ -101,7 +112,7 @@ function itemName(id: string | null | undefined, community: Cosmetic[]) {
   if (!id) return ''
   const key = id.split('|')[0]!
   if (key.startsWith('u:')) return community.find((c) => `u:${c.id}` === key)?.name ?? 'a cosmetic'
-  return decorationById(key)?.name ?? key
+  return decorationById(key)?.name ?? themeById(key)?.name ?? key
 }
 
 function ShopInner() {
@@ -128,6 +139,7 @@ function ShopInner() {
   const communityList = community.data ?? []
 
   const builtinItems: ShopItem[] = DECORATIONS.map((d) => ({
+    kind: 'decoration',
     itemId: d.id,
     decoration: d.id,
     name: d.name,
@@ -135,7 +147,21 @@ function ShopInner() {
     price: d.price,
     rarity: d.rarity,
   }))
-  const communityItems: ShopItem[] = communityList.map((c) => ({
+  const themeItems: ShopItem[] = THEMES.map((t) => ({
+    kind: 'theme',
+    css: themeCss(t),
+    dark: t.dark,
+    itemId: t.id,
+    decoration: '',
+    name: t.name,
+    description: `${t.dark ? 'Dark' : 'Light'} theme · palette by ${t.credit}`,
+    price: t.price,
+    rarity: t.price >= 200 ? 'epic' : 'rare',
+  }))
+  const allCommunity: ShopItem[] = communityList.map((c) => ({
+    kind: c.kind,
+    css: c.css ?? undefined,
+    dark: null,
     itemId: `u:${c.id}`,
     decoration: c.decoration,
     name: c.name,
@@ -145,6 +171,21 @@ function ShopInner() {
     creator: c.creator,
     sales: c.sales,
   }))
+  const communityItems = allCommunity.filter((it) => it.kind === 'decoration')
+  const communityThemes = allCommunity.filter((it) => it.kind === 'theme')
+
+  // Previewing a theme puts it on for a moment; leaving the Shop puts yours back.
+  const [preview, setPreview] = useState<string | null>(null)
+  const myThemeKey = JSON.stringify(me.appTheme)
+  useEffect(() => {
+    if (!preview) return
+    return () => applyAppTheme(JSON.parse(myThemeKey))
+  }, [preview, myThemeKey])
+  const togglePreview = (it: ShopItem) => {
+    if (preview === it.itemId) return setPreview(null)
+    applyAppTheme({ css: it.css ?? '', dark: it.dark ?? null }, { cache: false })
+    setPreview(it.itemId)
+  }
 
   const refresh = (next?: Wallet) => {
     if (next) qc.setQueryData(['wallet'], next)
@@ -180,6 +221,10 @@ function ShopInner() {
     )
   const equip = (id: string | null) =>
     act(`equip:${id}`, () => put<Wallet>('/api/me/decoration', { itemId: id }))
+  const switchTheme = (id: string | null) => {
+    setPreview(null)
+    return act(`theme:${id}`, () => put<Wallet>('/api/me/theme', { itemId: id }))
+  }
   const sendGift = async (it: ShopItem, to: string) => {
     const person = members.data?.find((m) => m.id === to)
     const ok = await act(
@@ -206,7 +251,8 @@ function ShopInner() {
       <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {items.map((it) => {
           const owned = w?.owned.includes(it.itemId)
-          const wearing = equippedKey === it.itemId
+          const isTheme = it.kind === 'theme'
+          const wearing = isTheme ? w?.equippedTheme === it.itemId : equippedKey === it.itemId
           const afford = (w?.coins ?? 0) >= it.price
           const gifted = w?.giftedBy[it.itemId]
           return (
@@ -219,15 +265,19 @@ function ShopInner() {
                   : 'border-border hover:border-border-strong',
               )}
             >
-              <div className="my-4">
-                <Avatar
-                  name={me.name}
-                  id={me.id}
-                  src={me.avatarUrl}
-                  decoration={it.decoration}
-                  size="xl"
-                />
-              </div>
+              {isTheme ? (
+                <ThemeSwatch css={it.css ?? ''} className="mb-1" />
+              ) : (
+                <div className="my-4">
+                  <Avatar
+                    name={me.name}
+                    id={me.id}
+                    src={me.avatarUrl}
+                    decoration={it.decoration}
+                    size="xl"
+                  />
+                </div>
+              )}
               <p className="mt-1 text-[14px] font-semibold">{it.name}</p>
               <span
                 className={cn(
@@ -262,20 +312,20 @@ function ShopInner() {
                       <Button
                         size="sm"
                         className="flex-1"
-                        loading={busy === 'equip:null'}
-                        onClick={() => equip(null)}
+                        loading={busy === (isTheme ? 'theme:null' : 'equip:null')}
+                        onClick={() => (isTheme ? switchTheme(null) : equip(null))}
                       >
-                        Wearing ✓
+                        {isTheme ? 'Using ✓' : 'Wearing ✓'}
                       </Button>
                     ) : owned ? (
                       <Button
                         size="sm"
                         variant="primary"
                         className="flex-1"
-                        loading={busy === `equip:${it.itemId}`}
-                        onClick={() => equip(it.itemId)}
+                        loading={busy === `${isTheme ? 'theme' : 'equip'}:${it.itemId}`}
+                        onClick={() => (isTheme ? switchTheme(it.itemId) : equip(it.itemId))}
                       >
-                        Wear
+                        {isTheme ? 'Use' : 'Wear'}
                       </Button>
                     ) : (
                       <Button
@@ -288,6 +338,17 @@ function ShopInner() {
                         title={afford ? undefined : `You need ${it.price - (w?.coins ?? 0)} more`}
                       >
                         🪙 {it.price}
+                      </Button>
+                    )}
+                    {isTheme && !wearing && (
+                      <Button
+                        size="sm"
+                        title={preview === it.itemId ? 'Stop preview' : 'Preview'}
+                        aria-label={`${preview === it.itemId ? 'Stop previewing' : 'Preview'} ${it.name}`}
+                        aria-pressed={preview === it.itemId}
+                        onClick={() => togglePreview(it)}
+                      >
+                        {preview === it.itemId ? <EyeOff /> : <Eye />}
                       </Button>
                     )}
                     <Button
@@ -307,7 +368,7 @@ function ShopInner() {
       </ul>
     )
 
-  const ownedItems = [...builtinItems, ...communityItems].filter((it) =>
+  const ownedItems = [...builtinItems, ...themeItems, ...allCommunity].filter((it) =>
     w?.owned.includes(it.itemId),
   )
 
@@ -359,6 +420,18 @@ function ShopInner() {
                     </button>
                   )}
                 </p>
+                <p className="text-xs text-fg-subtle">
+                  Theme: {w?.equippedTheme ? itemName(w.equippedTheme, communityList) : 'default'}
+                  {w?.equippedTheme && (
+                    <button
+                      type="button"
+                      className="ml-2 text-accent-text hover:underline"
+                      onClick={() => switchTheme(null)}
+                    >
+                      Turn off
+                    </button>
+                  )}
+                </p>
               </div>
             </div>
             <div className="flex flex-col justify-center gap-2 rounded-xl border border-border p-5 md:w-64">
@@ -390,12 +463,25 @@ function ShopInner() {
           <Tabs defaultValue="decorations">
             <TabsList>
               <TabsTrigger value="decorations">Decorations</TabsTrigger>
+              <TabsTrigger value="themes">Themes</TabsTrigger>
               <TabsTrigger value="community">Community</TabsTrigger>
               <TabsTrigger value="create">Create</TabsTrigger>
               <TabsTrigger value="mine">My stuff</TabsTrigger>
             </TabsList>
             <TabsContent value="decorations" className="pt-4">
               {grid(builtinItems, '')}
+            </TabsContent>
+            <TabsContent value="themes" className="pt-4">
+              <p className="mb-3 text-[13px] text-fg-muted">
+                Themes change the colours of the whole app, just for you. Press 👁 to try one on
+                first.
+              </p>
+              {grid(themeItems, '')}
+              <h3 className="mt-8 mb-3 text-[14px] font-semibold">Made by students</h3>
+              {grid(
+                communityThemes,
+                'No student-made themes yet. Write one in CSS in the Create tab!',
+              )}
             </TabsContent>
             <TabsContent value="community" className="pt-4">
               {community.isLoading ? (
@@ -408,11 +494,11 @@ function ShopInner() {
               )}
             </TabsContent>
             <TabsContent value="create" className="pt-4">
-              <CreateCosmetic />
+              <CreatePicker />
             </TabsContent>
             <TabsContent value="mine" className="pt-4">
               <h3 className="mb-3 text-[14px] font-semibold">Your collection</h3>
-              {grid(ownedItems, "You don't own any decorations yet.")}
+              {grid(ownedItems, "You don't own any decorations or themes yet.")}
               <MyCreations />
               {!!w?.history.length && (
                 <section className="mt-10">
@@ -466,8 +552,9 @@ function ShopInner() {
             >
               CC BY 4.0
             </a>
-            . Student-made cosmetics belong to their creators and are checked by a teacher before
-            they're sold.
+            . Theme palettes from Catppuccin, Dracula, Nord, Gruvbox, Tokyo Night, Rosé Pine and
+            Solarized (MIT licensed). Student-made cosmetics belong to their creators and are
+            checked by a teacher before they're sold.
           </p>
         </div>
       </div>
@@ -519,6 +606,180 @@ function CustomPreview({
         {sticker && <img className={`q-deco-art q-deco-at-${position}`} src={sticker} alt="" />}
       </span>
     </span>
+  )
+}
+
+function CreatePicker() {
+  const [kind, setKind] = useState<'decoration' | 'theme'>('decoration')
+  return (
+    <>
+      <div className="mb-5 inline-flex rounded-lg border border-border p-0.5 text-[13px]">
+        {(['decoration', 'theme'] as const).map((k) => (
+          <button
+            key={k}
+            type="button"
+            aria-pressed={kind === k}
+            onClick={() => setKind(k)}
+            className={cn(
+              'rounded-md px-3 py-1',
+              kind === k ? 'bg-accent text-accent-fg' : 'text-fg-muted hover:bg-bg-muted',
+            )}
+          >
+            {k === 'decoration' ? 'Decoration' : 'Theme (CSS)'}
+          </button>
+        ))}
+      </div>
+      {kind === 'decoration' ? <CreateCosmetic /> : <CreateTheme />}
+    </>
+  )
+}
+
+function CreateTheme() {
+  const { org, api, me } = useOrgContext()
+  const qc = useQueryClient()
+  const [name, setName] = useState('')
+  const [description, setDescription] = useState('')
+  const [price, setPrice] = useState(150)
+  const [css, setCss] = useState(THEME_TEMPLATE)
+  const [previewing, setPreviewing] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const clean = useMemo(() => sanitizeThemeCss(css), [css])
+  const myThemeKey = JSON.stringify(me.appTheme)
+
+  // Live preview while it's on; your own theme comes back when you stop or leave.
+  useEffect(() => {
+    if (!previewing) return
+    applyAppTheme({ css: clean.css, dark: null }, { cache: false })
+  }, [previewing, clean.css])
+  useEffect(() => {
+    if (!previewing) return
+    return () => applyAppTheme(JSON.parse(myThemeKey))
+  }, [previewing, myThemeKey])
+
+  const submit = async () => {
+    setSaving(true)
+    try {
+      await post(`${api}/cosmetics`, { kind: 'theme', name, description, price, css })
+      toast.success('Sent to a teacher for review. It shows under Themes once approved!')
+      setName('')
+      setDescription('')
+      setPreviewing(false)
+      void qc.invalidateQueries({ queryKey: ['cosmetics', org.id] })
+    } catch (e) {
+      toast.error(errorMessage(e))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="grid gap-6 md:grid-cols-[1fr_260px]">
+      <form
+        className="flex flex-col gap-4"
+        onSubmit={(e) => {
+          e.preventDefault()
+          void submit()
+        }}
+      >
+        <Field label="Name">
+          {(p) => (
+            <Input
+              {...p}
+              required
+              minLength={2}
+              maxLength={40}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          )}
+        </Field>
+        <Field label="Description">
+          {(p) => (
+            <Input
+              {...p}
+              maxLength={140}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          )}
+        </Field>
+        <Field
+          label="Price"
+          hint={`${COSMETIC_PRICE.min}–${COSMETIC_PRICE.max} coins. You get ${Math.round(CREATOR_SHARE * 100)}% of every sale.`}
+        >
+          {(p) => (
+            <Input
+              {...p}
+              type="number"
+              min={COSMETIC_PRICE.min}
+              max={COSMETIC_PRICE.max}
+              value={price}
+              onChange={(e) => setPrice(Number(e.target.value))}
+              className="w-32"
+            />
+          )}
+        </Field>
+        <div>
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <p className="text-[13px] font-medium">CSS</p>
+            <div className="flex gap-1.5">
+              <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs hover:bg-bg-muted">
+                <Upload className="size-3.5" /> Load .css file
+                <input
+                  type="file"
+                  accept=".css,text/css"
+                  hidden
+                  onChange={async (e) => {
+                    const f = e.target.files?.[0]
+                    e.target.value = ''
+                    if (f) setCss((await f.text()).slice(0, 20_000))
+                  }}
+                />
+              </label>
+              <Button type="button" size="sm" onClick={() => setCss(THEME_TEMPLATE)}>
+                Reset
+              </Button>
+            </div>
+          </div>
+          <Textarea
+            aria-label="Theme CSS"
+            spellCheck={false}
+            rows={18}
+            value={css}
+            onChange={(e) => setCss(e.target.value)}
+            className="font-mono text-xs"
+          />
+          <p className="mt-1 text-2xs text-fg-subtle">
+            Set the <code>--q-…</code> colour variables (bg, fg, accent, border…). You can add other
+            CSS too. Links to other sites (<code>url()</code>, <code>@import</code>) are removed so
+            nobody gets tracked.
+          </p>
+          {!!clean.removed.length && (
+            <p className="mt-1 text-xs text-warning">
+              These will be removed: {clean.removed.join(', ')}
+            </p>
+          )}
+        </div>
+        <p className="text-xs text-fg-subtle">
+          A teacher checks every theme before it goes on sale. Themes that make WickyChat hard to
+          use or hide things won't be approved.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" onClick={() => setPreviewing((v) => !v)}>
+            {previewing ? <EyeOff /> : <Eye />} {previewing ? 'Stop preview' : 'Preview on the app'}
+          </Button>
+          <Button type="submit" variant="primary" loading={saving} disabled={!clean.css}>
+            Submit for review
+          </Button>
+        </div>
+      </form>
+      <div className="flex flex-col items-center gap-3 self-start rounded-xl border border-border p-5">
+        <p className="text-2xs font-semibold text-fg-subtle uppercase">Preview</p>
+        <ThemeSwatch css={clean.css} />
+        <p className="text-[14px] font-semibold">{name || 'Your theme'}</p>
+        <p className="text-xs text-fg-muted">🪙 {price}</p>
+      </div>
+    </div>
   )
 }
 
@@ -782,9 +1043,13 @@ function MyCreations() {
       <ul className="divide-y divide-border rounded-lg border border-border">
         {mine.data.map((c) => (
           <li key={c.id} className="flex items-center gap-4 p-3">
-            <span className="p-2">
-              <Avatar name="" id={c.id} decoration={c.decoration} size="lg" />
-            </span>
+            {c.kind === 'theme' ? (
+              <ThemeSwatch css={c.css ?? ''} className="h-14 w-20" />
+            ) : (
+              <span className="p-2">
+                <Avatar name="" id={c.id} decoration={c.decoration} size="lg" />
+              </span>
+            )}
             <div className="min-w-0 flex-1 text-[13px]">
               <p className="font-medium">
                 {c.name} <span className="text-fg-subtle">· 🪙 {c.price}</span>

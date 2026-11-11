@@ -206,6 +206,10 @@ export const CREATOR_SHARE = 0.9
 
 export interface Cosmetic {
   id: string
+  /** A decoration around the avatar, or an app theme (CSS). */
+  kind: 'decoration' | 'theme'
+  /** Theme CSS (themes only). */
+  css: string | null
   /** What goes in `users.decoration` / `Avatar decoration`: `u:<id>|f:<file>|s:<file>:<pos>`. */
   decoration: string
   name: string
@@ -348,9 +352,412 @@ export interface Wallet {
   /** Who gave you which item, for items that were gifts. */
   giftedBy: Record<string, { id: string; name: string }>
   equipped: string | null
+  /** Equipped app theme: a built-in theme id or `u:<id>`. */
+  equippedTheme: string | null
   /** Whether today's daily bonus can still be claimed. */
   dailyAvailable: boolean
   /** Coins earned from messages today, out of COINS.messageDailyCap. */
   earnedFromMessagesToday: number
   history: CoinTransaction[]
+}
+
+// --- App themes ------------------------------------------------------------------------
+
+/** Colour variables a theme can set. Every part of the app reads these. */
+export const THEME_VARS = [
+  'bg',
+  'bg-subtle',
+  'bg-rail',
+  'bg-muted',
+  'bg-emphasis',
+  'bg-overlay',
+  'border',
+  'border-strong',
+  'fg',
+  'fg-muted',
+  'fg-subtle',
+  'accent',
+  'accent-hover',
+  'accent-subtle',
+  'accent-fg',
+  'accent-text',
+  'danger',
+  'success',
+  'warning',
+  'mention-bg',
+  'mention-border',
+] as const
+export type ThemeVar = (typeof THEME_VARS)[number]
+
+export interface BuiltinTheme {
+  id: string
+  name: string
+  price: number
+  /** Made for dark mode (switches the app to dark while it's on). */
+  dark: boolean
+  /** Who made the original palette (all MIT licensed). */
+  credit: string
+  vars: Record<ThemeVar, string>
+}
+
+function palette(
+  p: {
+    base: string
+    mantle: string
+    crust: string
+    s0: string
+    s1: string
+    s2: string
+    text: string
+    sub: string
+    overlay: string
+    accent: string
+    accent2: string
+    red: string
+    green: string
+    yellow: string
+  },
+  dark: boolean,
+): Record<ThemeVar, string> {
+  const mix = (a: string, b: string, pct: number) => `color-mix(in oklab, ${a} ${pct}%, ${b})`
+  return {
+    bg: p.base,
+    'bg-subtle': p.mantle,
+    'bg-rail': p.crust,
+    'bg-muted': p.s0,
+    'bg-emphasis': p.s1,
+    'bg-overlay': p.mantle,
+    border: p.s0,
+    'border-strong': p.s2,
+    fg: p.text,
+    'fg-muted': p.sub,
+    'fg-subtle': p.overlay,
+    accent: p.accent,
+    'accent-hover': p.accent2,
+    'accent-subtle': mix(p.accent, p.base, dark ? 22 : 16),
+    'accent-fg': dark ? p.crust : '#ffffff',
+    'accent-text': p.accent,
+    danger: p.red,
+    success: p.green,
+    warning: p.yellow,
+    'mention-bg': mix(p.yellow, p.base, dark ? 18 : 22),
+    'mention-border': mix(p.yellow, p.base, 55),
+  }
+}
+
+/** Themes sold in the Shop. Palettes from open-source (MIT) colour schemes. */
+export const THEMES: BuiltinTheme[] = [
+  {
+    id: 't-mocha',
+    name: 'Catppuccin Mocha',
+    price: 200,
+    dark: true,
+    credit: 'Catppuccin',
+    vars: palette(
+      {
+        base: '#1e1e2e',
+        mantle: '#181825',
+        crust: '#11111b',
+        s0: '#313244',
+        s1: '#45475a',
+        s2: '#585b70',
+        text: '#cdd6f4',
+        sub: '#bac2de',
+        overlay: '#7f849c',
+        accent: '#cba6f7',
+        accent2: '#b4befe',
+        red: '#f38ba8',
+        green: '#a6e3a1',
+        yellow: '#f9e2af',
+      },
+      true,
+    ),
+  },
+  {
+    id: 't-macchiato',
+    name: 'Catppuccin Macchiato',
+    price: 200,
+    dark: true,
+    credit: 'Catppuccin',
+    vars: palette(
+      {
+        base: '#24273a',
+        mantle: '#1e2030',
+        crust: '#181926',
+        s0: '#363a4f',
+        s1: '#494d64',
+        s2: '#5b6078',
+        text: '#cad3f5',
+        sub: '#b8c0e0',
+        overlay: '#8087a2',
+        accent: '#8aadf4',
+        accent2: '#b7bdf8',
+        red: '#ed8796',
+        green: '#a6da95',
+        yellow: '#eed49f',
+      },
+      true,
+    ),
+  },
+  {
+    id: 't-frappe',
+    name: 'Catppuccin Frappé',
+    price: 200,
+    dark: true,
+    credit: 'Catppuccin',
+    vars: palette(
+      {
+        base: '#303446',
+        mantle: '#292c3c',
+        crust: '#232634',
+        s0: '#414559',
+        s1: '#51576d',
+        s2: '#626880',
+        text: '#c6d0f5',
+        sub: '#b5bfe2',
+        overlay: '#838ba7',
+        accent: '#f4b8e4',
+        accent2: '#ca9ee6',
+        red: '#e78284',
+        green: '#a6d189',
+        yellow: '#e5c890',
+      },
+      true,
+    ),
+  },
+  {
+    id: 't-latte',
+    name: 'Catppuccin Latte',
+    price: 200,
+    dark: false,
+    credit: 'Catppuccin',
+    vars: palette(
+      {
+        base: '#eff1f5',
+        mantle: '#e6e9ef',
+        crust: '#dce0e8',
+        s0: '#ccd0da',
+        s1: '#bcc0cc',
+        s2: '#acb0be',
+        text: '#4c4f69',
+        sub: '#5c5f77',
+        overlay: '#8c8fa1',
+        accent: '#8839ef',
+        accent2: '#7287fd',
+        red: '#d20f39',
+        green: '#40a02b',
+        yellow: '#df8e1d',
+      },
+      false,
+    ),
+  },
+  {
+    id: 't-dracula',
+    name: 'Dracula',
+    price: 150,
+    dark: true,
+    credit: 'Dracula Theme',
+    vars: palette(
+      {
+        base: '#282a36',
+        mantle: '#21222c',
+        crust: '#191a21',
+        s0: '#343746',
+        s1: '#44475a',
+        s2: '#565973',
+        text: '#f8f8f2',
+        sub: '#d6d6e0',
+        overlay: '#8a8fb0',
+        accent: '#bd93f9',
+        accent2: '#ff79c6',
+        red: '#ff5555',
+        green: '#50fa7b',
+        yellow: '#f1fa8c',
+      },
+      true,
+    ),
+  },
+  {
+    id: 't-nord',
+    name: 'Nord',
+    price: 150,
+    dark: true,
+    credit: 'Nord (Arctic Ice Studio)',
+    vars: palette(
+      {
+        base: '#2e3440',
+        mantle: '#2a303b',
+        crust: '#242933',
+        s0: '#3b4252',
+        s1: '#434c5e',
+        s2: '#4c566a',
+        text: '#eceff4',
+        sub: '#d8dee9',
+        overlay: '#8f9bb3',
+        accent: '#88c0d0',
+        accent2: '#81a1c1',
+        red: '#bf616a',
+        green: '#a3be8c',
+        yellow: '#ebcb8b',
+      },
+      true,
+    ),
+  },
+  {
+    id: 't-gruvbox',
+    name: 'Gruvbox',
+    price: 150,
+    dark: true,
+    credit: 'Gruvbox (morhetz)',
+    vars: palette(
+      {
+        base: '#282828',
+        mantle: '#1d2021',
+        crust: '#161819',
+        s0: '#3c3836',
+        s1: '#504945',
+        s2: '#665c54',
+        text: '#ebdbb2',
+        sub: '#d5c4a1',
+        overlay: '#928374',
+        accent: '#fe8019',
+        accent2: '#fabd2f',
+        red: '#fb4934',
+        green: '#b8bb26',
+        yellow: '#fabd2f',
+      },
+      true,
+    ),
+  },
+  {
+    id: 't-tokyo',
+    name: 'Tokyo Night',
+    price: 150,
+    dark: true,
+    credit: 'Tokyo Night (enkia)',
+    vars: palette(
+      {
+        base: '#1a1b26',
+        mantle: '#16161e',
+        crust: '#101014',
+        s0: '#232433',
+        s1: '#2f3549',
+        s2: '#414868',
+        text: '#c0caf5',
+        sub: '#a9b1d6',
+        overlay: '#737aa2',
+        accent: '#7aa2f7',
+        accent2: '#bb9af7',
+        red: '#f7768e',
+        green: '#9ece6a',
+        yellow: '#e0af68',
+      },
+      true,
+    ),
+  },
+  {
+    id: 't-rosepine',
+    name: 'Rosé Pine',
+    price: 150,
+    dark: true,
+    credit: 'Rosé Pine',
+    vars: palette(
+      {
+        base: '#191724',
+        mantle: '#1f1d2e',
+        crust: '#13111c',
+        s0: '#26233a',
+        s1: '#2f2b45',
+        s2: '#403d52',
+        text: '#e0def4',
+        sub: '#c4c0de',
+        overlay: '#908caa',
+        accent: '#ebbcba',
+        accent2: '#c4a7e7',
+        red: '#eb6f92',
+        green: '#9ccfd8',
+        yellow: '#f6c177',
+      },
+      true,
+    ),
+  },
+  {
+    id: 't-solarized',
+    name: 'Solarized Light',
+    price: 120,
+    dark: false,
+    credit: 'Solarized (Ethan Schoonover)',
+    vars: palette(
+      {
+        base: '#fdf6e3',
+        mantle: '#f5efdc',
+        crust: '#eee8d5',
+        s0: '#e8e1cb',
+        s1: '#ddd6c1',
+        s2: '#c9c2ad',
+        text: '#073642',
+        sub: '#586e75',
+        overlay: '#93a1a1',
+        accent: '#268bd2',
+        accent2: '#2aa198',
+        red: '#dc322f',
+        green: '#859900',
+        yellow: '#b58900',
+      },
+      false,
+    ),
+  },
+]
+
+export const THEME_IDS = THEMES.map((t) => t.id)
+export const themeById = (id: string | null | undefined) => THEMES.find((t) => t.id === id)
+
+/** CSS for a built-in theme. Applies in both light and dark mode. */
+export function themeCss(t: BuiltinTheme) {
+  const body = THEME_VARS.map((v) => `  --q-${v}: ${t.vars[v]};`).join('\n')
+  return `:root[data-wtheme],\n:root.dark[data-wtheme] {\n${body}\n  color-scheme: ${t.dark ? 'dark' : 'light'};\n}`
+}
+
+/** A starting point for people making their own theme. */
+export const THEME_TEMPLATE = `/* Change the colours, keep the names. Keep the :root[data-wtheme] selectors so your theme
+   wins over the normal colours. Links and images from other sites (url()) are removed. */
+${themeCss(THEMES[0]!)}
+
+/* You can style more than colours too, e.g. square corners everywhere: */
+/* * { border-radius: 0 !important; } */`
+
+export const MAX_THEME_CSS = 20_000
+
+/**
+ * Makes student-written theme CSS safe to load: no loading things from other sites (which
+ * could track people), no imports, and nothing that could break out of the <style> tag.
+ * Returns the cleaned CSS and what was removed, so the editor can tell the creator.
+ */
+export function sanitizeThemeCss(raw: string): { css: string; removed: string[] } {
+  const removed = new Set<string>()
+  let css = raw.slice(0, MAX_THEME_CSS).replace(/\/\*[\s\S]*?\*\//g, (c) =>
+    // Keep comments, but they mustn't hide anything.
+    c.replace(/</g, ''),
+  )
+  const strip = (re: RegExp, what: string) => {
+    css = css.replace(re, () => {
+      removed.add(what)
+      return ''
+    })
+  }
+  strip(/<\/?\s*style/gi, '<style>')
+  strip(/</g, '<')
+  strip(/\\/g, 'backslashes')
+  strip(/@import[^;]*;?/gi, '@import')
+  strip(/@font-face\s*\{[^}]*\}/gi, '@font-face')
+  strip(/@namespace[^;]*;?/gi, '@namespace')
+  // Remove the whole call when it's closed, then any opener that's left (an unclosed url( is
+  // still valid CSS).
+  strip(/\b(url|image-set|image|cross-fade|element|paint|src)\s*\([^)]*\)/gi, 'url() / images')
+  strip(/\b(url|image-set|image|cross-fade|element|paint|src)\s*\(/gi, 'url() / images')
+  strip(/expression\s*\(/gi, 'expression()')
+  strip(/javascript:/gi, 'javascript:')
+  strip(/behavior\s*:/gi, 'behavior')
+  strip(/-moz-binding/gi, '-moz-binding')
+  return { css: css.trim(), removed: [...removed] }
 }

@@ -10,6 +10,7 @@ import { Palette } from 'lucide-react'
 import { useState } from 'react'
 import { useOrgContext } from '@/components/org-context'
 import { SettingsTitle } from '@/components/settings-ui'
+import { ThemeSwatch } from '@/components/shop/theme-swatch'
 import { errorMessage, get, post } from '@/lib/api'
 import { displayName, relative } from '@/lib/format'
 
@@ -34,7 +35,11 @@ function Row({ c, onDone, live }: { c: Cosmetic; onDone: () => void; live?: bool
   return (
     <li className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
       <div className="flex shrink-0 gap-6 px-3">
-        <Avatar name={c.creator.name} id={c.creator.id} decoration={c.decoration} size="xl" />
+        {c.kind === 'theme' ? (
+          <ThemeSwatch css={c.css ?? ''} className="w-28" />
+        ) : (
+          <Avatar name={c.creator.name} id={c.creator.id} decoration={c.decoration} size="xl" />
+        )}
         <div className="flex flex-col justify-center gap-2">
           {c.frameUrl && (
             <a
@@ -67,6 +72,16 @@ function Row({ c, onDone, live }: { c: Cosmetic; onDone: () => void; live?: bool
           by {displayName(c.creator)} · {relative(c.createdAt)}
           {live && ` · ${c.sales} sold`}
         </p>
+        {c.kind === 'theme' && c.css && (
+          <details className="mt-1.5">
+            <summary className="cursor-pointer text-xs text-accent-text">
+              Theme CSS ({c.css.length.toLocaleString()} characters)
+            </summary>
+            <pre className="mt-1 max-h-64 overflow-auto rounded-md bg-bg-muted p-2 font-mono text-2xs whitespace-pre-wrap">
+              {c.css}
+            </pre>
+          </details>
+        )}
         <Input
           className="mt-2"
           placeholder="Note to the student (optional)"
@@ -106,7 +121,7 @@ export default function CosmeticsReview() {
     <>
       <SettingsTitle
         title="Cosmetics review"
-        description="Students can make their own avatar decorations and sell them for Wicky Coins. Check each one is appropriate and is their own art (nothing copied from Discord, games or other apps) before approving."
+        description="Students can make their own avatar decorations and app themes (CSS) and sell them for Wicky Coins. Check each one is appropriate and is their own art (nothing copied from Discord, games or other apps) before approving."
       />
       <h2 className="mb-2 text-[15px] font-semibold">Waiting for review</h2>
       {pending.isLoading ? (

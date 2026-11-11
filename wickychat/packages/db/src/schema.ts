@@ -72,6 +72,8 @@ export const users = pgTable(
     profileStyle: jsonb('profile_style').$type<Record<string, unknown>>().notNull().default({}),
     /** Equipped avatar decoration (an id from DECORATIONS in @quid/shared), if any. */
     decoration: text('decoration'),
+    /** Equipped app theme: a built-in theme id (THEMES in @quid/shared) or `u:<cosmetic id>`. */
+    appTheme: text('app_theme'),
     /** Wicky Coins balance. Every change is also written to `coin_transactions`. */
     coins: integer('coins').notNull().default(0),
     /** Last time the daily coin bonus was claimed. */
@@ -426,7 +428,9 @@ export const files = pgTable(
     animated: boolean('animated').notNull().default(false),
     channelId: uuid('channel_id').references(() => channels.id, { onDelete: 'cascade' }),
     messageId: uuid('message_id').references(() => messages.id, { onDelete: 'set null' }),
-    purpose: text('purpose', { enum: ['attachment', 'avatar', 'logo', 'emoji', 'sound', 'banner', 'cosmetic'] })
+    purpose: text('purpose', {
+      enum: ['attachment', 'avatar', 'logo', 'emoji', 'sound', 'banner', 'cosmetic'],
+    })
       .notNull()
       .default('attachment'),
     createdAt: createdAt(),
@@ -963,6 +967,10 @@ export const cosmetics = pgTable(
     name: text('name').notNull(),
     description: text('description').notNull().default(''),
     price: integer('price').notNull(),
+    /** decoration | theme */
+    kind: text('kind').notNull().default('decoration'),
+    /** Theme CSS, already cleaned by sanitizeThemeCss (themes only). */
+    css: text('css'),
     /** Image drawn around the whole avatar (transparent in the middle). */
     frameFileId: uuid('frame_file_id').references(() => files.id, { onDelete: 'set null' }),
     /** Small image perched on the avatar, at `stickerPosition`. */

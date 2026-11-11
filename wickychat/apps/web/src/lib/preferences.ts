@@ -77,9 +77,12 @@ export const getPreferences = () => current
 export function applyPreferences(p: Preferences) {
   if (typeof document === 'undefined') return
   const root = document.documentElement
-  const dark =
-    p.theme === 'dark' ||
-    (p.theme === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)
+  // A Shop theme made for dark (or light) mode decides it while it's on.
+  const forced = root.dataset.wthemeMode
+  const dark = forced
+    ? forced === 'dark'
+    : p.theme === 'dark' ||
+      (p.theme === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)
   root.classList.toggle('dark', dark)
   root.dataset.contrast = p.contrast
   root.dataset.font = p.font

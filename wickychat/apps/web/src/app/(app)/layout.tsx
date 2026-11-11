@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { ErrorScreen } from '@/components/error-screen'
+import { applyAppTheme } from '@/lib/app-theme'
 import { syncPreferences } from '@/lib/preferences'
 import { useMe } from '@/lib/queries'
 import { startRealtime, stopRealtime } from '@/lib/realtime'
@@ -15,10 +16,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const qc = useQueryClient()
   const userId = me.data?.user.id
   const serverPrefs = me.data?.user.preferences
+  const appTheme = me.data === null ? null : me.data?.user.appTheme
+  const themeKey = appTheme === undefined ? undefined : JSON.stringify(appTheme)
 
   useEffect(() => {
     if (serverPrefs) syncPreferences(qc, serverPrefs)
   }, [serverPrefs, qc])
+
+  // Put on (or take off) the Shop theme once we know which one they have.
+  useEffect(() => {
+    if (themeKey !== undefined) applyAppTheme(JSON.parse(themeKey))
+  }, [themeKey])
 
   useEffect(() => {
     if (me.data === null)

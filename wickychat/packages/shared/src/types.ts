@@ -32,6 +32,8 @@ export interface ProfileExtras {
 export interface Me extends UserSummary, ProfileExtras {
   /** Wicky Coins balance. */
   coins: number
+  /** The app theme they have on (from the Wicky Shop), ready to load. */
+  appTheme: { id: string; name: string; css: string; dark: boolean | null } | null
   email: string
   emailVerified: boolean
   timezone: string | null

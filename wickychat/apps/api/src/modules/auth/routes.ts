@@ -34,6 +34,7 @@ import { badRequest, conflict, forbidden, notFound, unauthorized } from '../../c
 import { type App, authRateLimit, idParams } from '../../core/http'
 import { isPlatformAdmin } from '../../core/platform'
 import { assertSchoolEmail } from '../../core/school'
+import { resolveTheme } from '../coins/service'
 import { acceptInvitation } from '../orgs/invitations'
 import { avatarUrl, nameStyle } from '../users/serialize'
 
@@ -138,6 +139,7 @@ export async function loadMe(
       profileStyle: cleanProfileStyle(u.profileStyle),
       nameStyle: nameStyle(u.profileStyle),
       coins: u.coins,
+      appTheme: await resolveTheme(ctx.db, u.appTheme),
       emailVerified: u.emailVerifiedAt !== null,
       timezone: u.timezone,
       createdAt: u.createdAt.toISOString(),

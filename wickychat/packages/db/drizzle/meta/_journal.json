@@ -183,6 +183,13 @@
       "when": 1794376064768,
       "tag": "0025_cosmetics_banners_styles",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1794385250888,
+      "tag": "0026_app_themes",
+      "breakpoints": true
     }
   ]
 }

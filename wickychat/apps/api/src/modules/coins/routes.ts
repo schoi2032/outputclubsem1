@@ -13,8 +13,12 @@ import {
   cosmeticDecoration,
   DECORATION_IDS,
   decorationById,
+  MAX_THEME_CSS,
   STICKER_POSITIONS,
   type StickerPosition,
+  sanitizeThemeCss,
+  THEME_IDS,
+  themeById,
   type Wallet,
 } from '@quid/shared'
 import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm'
@@ -37,7 +41,9 @@ function serializeCosmetic(
 ): Cosmetic {
   return {
     id: c.id,
-    decoration: cosmeticDecoration(c),
+    kind: c.kind === 'theme' ? 'theme' : 'decoration',
+    css: c.kind === 'theme' ? c.css : null,
+    decoration: c.kind === 'theme' ? '' : cosmeticDecoration(c),
     name: c.name,
     description: c.description,
     price: c.price,
@@ -56,7 +62,7 @@ async function loadWallet(ctx: AppContext, userId: string): Promise<Wallet> {
   const [u, owned, history, earned] = await Promise.all([
     ctx.db.query.users.findFirst({
       where: eq(users.id, userId),
-      columns: { coins: true, decoration: true, dailyClaimedAt: true },
+      columns: { coins: true, decoration: true, appTheme: true, dailyClaimedAt: true },
     }),
     ctx.db
       .select({ itemId: userItems.itemId, giverId: userItems.giftedBy, giverName: users.name })
@@ -72,7 +78,10 @@ async function loadWallet(ctx: AppContext, userId: string): Promise<Wallet> {
     earnedFromMessagesToday(ctx.db, userId),
   ])
   if (!u) throw notFound('User')
-  const valid = owned.filter((o) => DECORATION_IDS.includes(o.itemId) || CUSTOM.test(o.itemId))
+  const valid = owned.filter(
+    (o) =>
+      DECORATION_IDS.includes(o.itemId) || THEME_IDS.includes(o.itemId) || CUSTOM.test(o.itemId),
+  )
   const giftedBy: Wallet['giftedBy'] = {}
   for (const o of valid)
     if (o.giverId && o.giverName) giftedBy[o.itemId] = { id: o.giverId, name: o.giverName }
@@ -81,6 +90,7 @@ async function loadWallet(ctx: AppContext, userId: string): Promise<Wallet> {
     owned: valid.map((o) => o.itemId),
     giftedBy,
     equipped: u.decoration,
+    equippedTheme: u.appTheme,
     dailyAvailable: !u.dailyClaimedAt || u.dailyClaimedAt < startOfSchoolDay(),
     earnedFromMessagesToday: earned,
     history: history.map((h) => ({
@@ -144,7 +154,7 @@ export async function coinRoutes(app: App, ctx: AppContext) {
 
       let price: number
       let custom: CosmeticRow | undefined
-      const builtin = decorationById(itemId)
+      const builtin = decorationById(itemId) ?? themeById(itemId)
       const m = CUSTOM.exec(itemId)
       if (builtin) {
         price = builtin.price
@@ -184,7 +194,11 @@ export async function coinRoutes(app: App, ctx: AppContext) {
         if (!giftTo)
           await tx
             .update(users)
-            .set({ decoration: custom ? cosmeticDecoration(custom) : itemId })
+            .set(
+              themeById(itemId) || custom?.kind === 'theme'
+                ? { appTheme: itemId }
+                : { decoration: custom ? cosmeticDecoration(custom) : itemId },
+            )
             .where(eq(users.id, me.id))
         // The student who made it earns most of the price.
         if (custom) {
@@ -221,13 +235,40 @@ export async function coinRoutes(app: App, ctx: AppContext) {
         const m = CUSTOM.exec(itemId)
         if (m) {
           const c = await ctx.db.query.cosmetics.findFirst({ where: eq(cosmetics.id, m[1]!) })
-          if (!c) throw badRequest('That decoration no longer exists.')
+          if (c?.kind !== 'decoration') throw badRequest('That decoration no longer exists.')
           decoration = cosmeticDecoration(c)
         } else if (decorationById(itemId)) {
           decoration = itemId
         } else throw badRequest("You don't own that decoration.")
       }
       await ctx.db.update(users).set({ decoration }).where(eq(users.id, me.id))
+      return loadWallet(ctx, me.id)
+    },
+  )
+
+  /** Puts on (or takes off, with null) an app theme you own. */
+  app.put(
+    '/api/me/theme',
+    { schema: { body: z.object({ itemId: z.string().max(60).nullable() }) } },
+    async (req) => {
+      const me = requireUser(req)
+      const { itemId } = req.body
+      if (itemId) {
+        const owned = await ctx.db.query.userItems.findFirst({
+          where: and(eq(userItems.userId, me.id), eq(userItems.itemId, itemId)),
+        })
+        const m = CUSTOM.exec(itemId)
+        const ok =
+          owned &&
+          (themeById(itemId) ||
+            (m &&
+              (await ctx.db.query.cosmetics.findFirst({
+                where: and(eq(cosmetics.id, m[1]!), eq(cosmetics.kind, 'theme')),
+                columns: { id: true },
+              }))))
+        if (!ok) throw badRequest("You don't own that theme.")
+      }
+      await ctx.db.update(users).set({ appTheme: itemId }).where(eq(users.id, me.id))
       return loadWallet(ctx, me.id)
     },
   )
@@ -280,6 +321,8 @@ export async function coinRoutes(app: App, ctx: AppContext) {
           name: z.string().trim().min(2).max(40),
           description: z.string().trim().max(140).default(''),
           price: z.number().int().min(COSMETIC_PRICE.min).max(COSMETIC_PRICE.max),
+          kind: z.enum(['decoration', 'theme']).default('decoration'),
+          css: z.string().max(MAX_THEME_CSS).optional(),
           frameFileId: z.uuid().nullable().default(null),
           stickerFileId: z.uuid().nullable().default(null),
           stickerPosition: z.enum(STICKER_POSITIONS).default('tr'),
@@ -290,22 +333,29 @@ export async function coinRoutes(app: App, ctx: AppContext) {
     async (req, reply) => {
       const scope = await requireOrg(ctx, req, req.params.orgId)
       const b = req.body
-      if (!b.frameFileId && !b.stickerFileId)
+      const isTheme = b.kind === 'theme'
+      const css = isTheme ? sanitizeThemeCss(b.css ?? '').css : null
+      if (isTheme && !css) throw badRequest('Write some CSS for your theme.')
+      if (!isTheme && !b.frameFileId && !b.stickerFileId)
         throw badRequest('Add a frame image, a sticker image, or both.')
       if (censorText(b.name).hits || censorText(b.description).hits)
         throw badRequest('Keep the name and description school-friendly.')
-      const ids = [b.frameFileId, b.stickerFileId].filter((x): x is string => !!x)
-      const mine = await ctx.db
-        .select({ id: files.id })
-        .from(files)
-        .where(
-          and(
-            inArray(files.id, ids),
-            eq(files.uploaderId, scope.userId),
-            eq(files.purpose, 'cosmetic'),
-            isNull(files.deletedAt),
-          ),
-        )
+      if (css && censorText(css).hits)
+        throw badRequest('Keep the CSS (and its comments) school-friendly.')
+      const ids = isTheme ? [] : [b.frameFileId, b.stickerFileId].filter((x): x is string => !!x)
+      const mine = !ids.length
+        ? []
+        : await ctx.db
+            .select({ id: files.id })
+            .from(files)
+            .where(
+              and(
+                inArray(files.id, ids),
+                eq(files.uploaderId, scope.userId),
+                eq(files.purpose, 'cosmetic'),
+                isNull(files.deletedAt),
+              ),
+            )
       if (mine.length !== ids.length) throw badRequest('Upload the images first.')
       const [{ pending } = { pending: 0 }] = await ctx.db
         .select({ pending: sql<number>`count(*)::int` })
@@ -321,8 +371,10 @@ export async function coinRoutes(app: App, ctx: AppContext) {
           name: b.name,
           description: b.description,
           price: b.price,
-          frameFileId: b.frameFileId,
-          stickerFileId: b.stickerFileId,
+          kind: b.kind,
+          css,
+          frameFileId: isTheme ? null : b.frameFileId,
+          stickerFileId: isTheme ? null : b.stickerFileId,
           stickerPosition: b.stickerPosition,
         })
         .returning()
