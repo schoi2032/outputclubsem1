@@ -1,0 +1,614 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WICKYpedia AI</title>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Inter, Arial, sans-serif;
+    background: #101114;
+    color: #f5f5f5;
+    height: 100vh;
+}
+
+.ai-container {
+    max-width: 1000px;
+    height: 100vh;
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.ai-header {
+    height: 75px;
+    padding: 0 25px;
+    border-bottom: 1px solid #28292f;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.ai-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.ai-logo, .welcome-logo {
+    width: 42px;
+    height: 42px;
+    background: linear-gradient(135deg, #7767ff, #a855f7);
+    border-radius: 13px;
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+    font-size: 22px;
+}
+
+.ai-header h2 {
+    font-size: 16px;
+}
+
+.online-status {
+    color: #999ba8;
+    font-size: 12px;
+}
+
+.status-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    background: #43d69b;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+
+.clear-button {
+    background: #24252b;
+    color: white;
+    border: 1px solid #363740;
+    padding: 10px 15px;
+    border-radius: 9px;
+    cursor: pointer;
+}
+
+.clear-button:hover {
+    background: #34353d;
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 35px 25px;
+}
+
+.welcome-screen {
+    text-align: center;
+    margin: 90px auto 0;
+    max-width: 550px;
+}
+
+.welcome-logo {
+    width: 65px;
+    height: 65px;
+    font-size: 30px;
+    margin: 0 auto 25px;
+}
+
+.welcome-screen h1 {
+    font-size: 30px;
+    margin-bottom: 12px;
+}
+
+.welcome-screen p {
+    color: #999ba8;
+    line-height: 1.6;
+}
+
+.suggestions {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 30px;
+}
+
+.suggestion {
+    background: #202127;
+    border: 1px solid #34353e;
+    color: #d6d6df;
+    padding: 12px 15px;
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+.suggestion:hover {
+    background: #30313c;
+}
+
+.message {
+    max-width: 780px;
+    margin: 0 auto 28px;
+    display: flex;
+    gap: 13px;
+    line-height: 1.7;
+}
+
+.message-avatar {
+    min-width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    font-weight: bold;
+    background: #33343c;
+}
+
+.message.ai .message-avatar {
+    background: linear-gradient(135deg, #7767ff, #a855f7);
+}
+
+.message-content {
+    padding-top: 4px;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
+.message-name {
+    font-size: 13px;
+    color: #a8a9b6;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.input-area {
+    padding: 15px 25px 20px;
+}
+
+#chatForm {
+    max-width: 780px;
+    margin: auto;
+    display: flex;
+    align-items: flex-end;
+    background: #202127;
+    border: 1px solid #3a3b45;
+    border-radius: 16px;
+    padding: 12px;
+}
+
+#messageInput {
+    flex: 1;
+    resize: none;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: white;
+    font: inherit;
+    max-height: 160px;
+    padding: 8px;
+}
+
+#messageInput::placeholder {
+    color: #858693;
+}
+
+#sendButton {
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 11px;
+    background: #7867ff;
+    color: white;
+    font-size: 23px;
+    cursor: pointer;
+}
+
+#sendButton:hover {
+    background: #9588ff;
+}
+
+#sendButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.disclaimer {
+    text-align: center;
+    font-size: 11px;
+    color: #777986;
+    margin-top: 12px;
+}
+
+.typing {
+    color: #999ba8;
+    font-size: 13px;
+}
+
+@media (max-width: 600px) {
+    .welcome-screen {
+        margin-top: 60px;
+    }
+
+    .welcome-screen h1 {
+        font-size: 24px;
+    }
+
+    .ai-header {
+        padding: 0 15px;
+    }
+
+    .chat-messages {
+        padding: 25px 15px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="ai-container">
+
+<header class="ai-header">
+    <div class="ai-brand">
+        <div class="ai-logo">W</div>
+        <div>
+            <h2>WICKYpedia AI</h2>
+            <span class="online-status">
+                <span class="status-dot"></span>
+                AI Assistant
+            </span>
+        </div>
+    </div>
+
+    <button id="clearChat" class="clear-button">
+        + New chat
+    </button>
+</header>
+
+<main id="chatMessages" class="chat-messages">
+
+    <div class="welcome-screen" id="welcomeScreen">
+        <div class="welcome-logo">W</div>
+
+        <h1>How can I help you?</h1>
+
+        <p>
+            Ask WICKYpedia anything.
+            I'm here to help you think, learn and create.
+        </p>
+
+        <div class="suggestions">
+            <button class="suggestion">
+                Explain something complicated
+            </button>
+
+            <button class="suggestion">
+                Help me write code
+            </button>
+
+            <button class="suggestion">
+                Brainstorm creative ideas
+            </button>
+        </div>
+    </div>
+
+</main>
+
+<div class="input-area">
+    <form id="chatForm">
+
+        <textarea
+            id="messageInput"
+            placeholder="Message WICKYpedia AI..."
+            rows="1"
+            maxlength="5000"
+            required
+        ></textarea>
+
+        <button type="submit" id="sendButton">↑</button>
+
+    </form>
+
+    <p class="disclaimer">
+        WICKYpedia AI can make mistakes. Check important information.
+    </p>
+</div>
+
+</div>
+
+<script>
+
+// ======================================
+// WICKYPEDIA AI CONFIGURATION
+// ======================================
+
+// Change this if your backend uses another URL.
+const API_URL = "/api/chat";
+
+let conversation = [];
+let isGenerating = false;
+
+const chatMessages = document.getElementById("chatMessages");
+const chatForm = document.getElementById("chatForm");
+const messageInput = document.getElementById("messageInput");
+const sendButton = document.getElementById("sendButton");
+const clearChat = document.getElementById("clearChat");
+
+
+// ======================================
+// DISPLAY MESSAGES
+// ======================================
+
+function addMessage(role, content) {
+
+    const welcome = document.getElementById("welcomeScreen");
+
+    if (welcome) welcome.remove();
+
+    const message = document.createElement("div");
+
+    message.className =
+        `message ${role === "assistant" ? "ai" : "user"}`;
+
+    const avatar = document.createElement("div");
+    avatar.className = "message-avatar";
+
+    avatar.textContent =
+        role === "assistant" ? "W" : "U";
+
+    const wrapper = document.createElement("div");
+
+    const name = document.createElement("div");
+    name.className = "message-name";
+
+    name.textContent =
+        role === "assistant" ? "WICKYpedia AI" : "You";
+
+    const text = document.createElement("div");
+    text.className = "message-content";
+    text.textContent = content;
+
+    wrapper.append(name, text);
+    message.append(avatar, wrapper);
+
+    chatMessages.appendChild(message);
+
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+
+// ======================================
+// TYPING INDICATOR
+// ======================================
+
+function showTyping() {
+
+    const typing = document.createElement("div");
+
+    typing.id = "typingIndicator";
+    typing.className = "message ai";
+
+    const avatar = document.createElement("div");
+    avatar.className = "message-avatar";
+    avatar.textContent = "W";
+
+    const wrapper = document.createElement("div");
+
+    const name = document.createElement("div");
+    name.className = "message-name";
+    name.textContent = "WICKYpedia AI";
+
+    const status = document.createElement("div");
+    status.className = "typing";
+    status.textContent = "Generating response...";
+
+    wrapper.append(name, status);
+    typing.append(avatar, wrapper);
+
+    chatMessages.appendChild(typing);
+
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+
+function hideTyping() {
+    document.getElementById("typingIndicator")?.remove();
+}
+
+
+// ======================================
+// SEND MESSAGE TO AI
+// ======================================
+
+async function sendMessage(message) {
+
+    if (isGenerating || !message.trim()) return;
+
+    isGenerating = true;
+    sendButton.disabled = true;
+
+    addMessage("user", message);
+
+    conversation.push({
+        role: "user",
+        content: message
+    });
+
+    messageInput.value = "";
+    messageInput.style.height = "auto";
+
+    showTyping();
+
+    try {
+
+        const response = await fetch(API_URL, {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+                messages: conversation
+            })
+
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                data.error || "Something went wrong."
+            );
+        }
+
+        if (!data.reply) {
+            throw new Error("The AI returned an empty response.");
+        }
+
+        conversation.push({
+            role: "assistant",
+            content: data.reply
+        });
+
+        hideTyping();
+
+        addMessage("assistant", data.reply);
+
+    } catch (error) {
+
+        hideTyping();
+
+        conversation.pop();
+
+        addMessage(
+            "assistant",
+            "I couldn't generate a response. " + error.message
+        );
+
+    } finally {
+
+        isGenerating = false;
+        sendButton.disabled = false;
+
+        messageInput.focus();
+
+    }
+}
+
+
+// ======================================
+// FORM SUBMISSION
+// ======================================
+
+chatForm.addEventListener("submit", function(event) {
+
+    event.preventDefault();
+
+    const message = messageInput.value.trim();
+
+    if (message) {
+        sendMessage(message);
+    }
+
+});
+
+
+// ======================================
+// ENTER TO SEND
+// ======================================
+
+messageInput.addEventListener("keydown", function(event) {
+
+    if (event.key === "Enter" && !event.shiftKey) {
+
+        event.preventDefault();
+
+        chatForm.requestSubmit();
+
+    }
+
+});
+
+
+// ======================================
+// AUTO-RESIZE INPUT
+// ======================================
+
+messageInput.addEventListener("input", function() {
+
+    messageInput.style.height = "auto";
+
+    messageInput.style.height =
+        Math.min(messageInput.scrollHeight, 160) + "px";
+
+});
+
+
+// ======================================
+// SUGGESTED PROMPTS
+// ======================================
+
+document.querySelectorAll(".suggestion").forEach(button => {
+
+    button.addEventListener("click", function() {
+
+        messageInput.value = this.textContent.trim();
+
+        chatForm.requestSubmit();
+
+    });
+
+});
+
+
+// ======================================
+// NEW CONVERSATION
+// ======================================
+
+clearChat.addEventListener("click", function() {
+
+    if (isGenerating) return;
+
+    conversation = [];
+
+    chatMessages.innerHTML = "";
+
+    const welcome = document.createElement("div");
+
+    welcome.className = "welcome-screen";
+    welcome.id = "welcomeScreen";
+
+    const logo = document.createElement("div");
+    logo.className = "welcome-logo";
+    logo.textContent = "W";
+
+    const heading = document.createElement("h1");
+    heading.textContent = "How can I help you?";
+
+    const description = document.createElement("p");
+    description.textContent =
+        "Start a new conversation with WICKYpedia AI.";
+
+    welcome.append(logo, heading, description);
+
+    chatMessages.appendChild(welcome);
+
+    messageInput.focus();
+
+});
+
+</script>
+
+</body>
+</html>
