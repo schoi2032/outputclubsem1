@@ -52,6 +52,7 @@ import { Attachments } from './attachments'
 import { Composer } from './composer'
 import { EmojiValue, isEmojiOnly } from './custom-emoji'
 import { EmojiPicker } from './emoji-picker'
+import { PollCard } from './poll'
 import { ReportDialog } from './report-dialog'
 import { RichText } from './rich-text'
 import { SeenBy } from './seen-by'
@@ -303,6 +304,7 @@ export const MessageItem = memo(function MessageItem({
         )}
 
         <Attachments items={m.attachments} />
+        {m.pollId && <PollCard pollId={m.pollId} />}
         <Reactions m={m} onToggle={(e) => void actions.toggleReaction(m, e)} />
         {seenReceipts && !local && !inThread && <SeenBy messageId={m.id} />}
         {!inThread && m.replyCount > 0 && <ThreadSummary m={m} onOpen={() => onOpenThread?.(m)} />}

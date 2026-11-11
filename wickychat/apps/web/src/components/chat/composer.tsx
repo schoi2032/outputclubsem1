@@ -59,6 +59,7 @@ import { useOrgContext } from '../org-context'
 import { useIsMac } from '../shell/command-palette'
 import { ALL_EMOJI } from './emoji'
 import { EmojiPicker } from './emoji-picker'
+import { PollButton } from './poll'
 
 // ---------------------------------------------------------------------------
 // Wire format <-> editor format
@@ -800,6 +801,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                   <Paperclip />
                 </IconButton>
               </Tooltip>
+              {!parentId && <PollButton channel={channel} />}
               <input
                 ref={fileInput}
                 type="file"

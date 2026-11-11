@@ -203,6 +203,8 @@ export interface Message {
     createdAt: string
   } | null
   clientId?: string
+  /** WickyChat: the poll or quiz in this message, if it has one. */
+  pollId?: string | null
 }
 
 export interface MessagePage {

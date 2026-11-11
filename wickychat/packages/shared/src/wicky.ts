@@ -967,3 +967,29 @@ export interface MarketListing {
   cosmetic: Cosmetic | null
   createdAt: string
 }
+
+// --- Polls and quizzes -----------------------------------------------------------------
+
+export interface Poll {
+  id: string
+  messageId: string
+  channelId: string
+  kind: 'poll' | 'quiz'
+  question: string
+  options: { id: string; text: string; votes: number }[]
+  totalVoters: number
+  multiple: boolean
+  anonymous: boolean
+  reward: number
+  /** Options this person picked. */
+  myVotes: string[]
+  /** Quizzes: shown once you've answered, once it's closed, or to teachers. */
+  correctOptionId: string | null
+  closesAt: string | null
+  closed: boolean
+  /** Who picked what (not for anonymous polls). */
+  voters: Record<string, import('./types').UserSummary[]>
+  canClose: boolean
+}
+
+export const POLL_REWARD_MAX = 50

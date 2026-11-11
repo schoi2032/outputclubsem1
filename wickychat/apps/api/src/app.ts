@@ -59,6 +59,7 @@ import { notificationRoutes } from './modules/notifications/routes'
 import { customizationRoutes } from './modules/orgs/customization'
 import { orgRoutes } from './modules/orgs/routes'
 import { pluginRoutes } from './modules/plugins/routes'
+import { pollRoutes } from './modules/polls/routes'
 import { presenceRoutes } from './modules/presence/routes'
 import { installPresenceTracking } from './modules/presence/service'
 import { productivityRoutes } from './modules/productivity/routes'
@@ -299,6 +300,7 @@ export async function buildApp(config: Config, opts: BuildOptions = {}) {
   await adminRoutes(app, ctx)
   await moderationRoutes(app, ctx)
   await schoolModerationRoutes(app, ctx)
+  await pollRoutes(app, ctx)
   await coinRoutes(app, ctx)
   await socialRoutes(app, ctx)
   await marketRoutes(app, ctx)

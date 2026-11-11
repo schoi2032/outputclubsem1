@@ -8,6 +8,7 @@ import {
   messages,
   moderationEvents,
   pins,
+  polls,
   reactions,
   users,
 } from '@quid/db'
@@ -143,7 +144,7 @@ export async function serializeMessages(
     if (r.forwardSnapshot?.authorId) userIds.add(r.forwardSnapshot.authorId)
   }
 
-  const [userRows, reactionMap, fileRows, pinRows, bookmarkRows] = await Promise.all([
+  const [userRows, reactionMap, fileRows, pinRows, bookmarkRows, pollRows] = await Promise.all([
     userIds.size
       ? ctx.db
           .select(userCols)
@@ -161,7 +162,12 @@ export async function serializeMessages(
       .select({ messageId: bookmarks.messageId })
       .from(bookmarks)
       .where(and(eq(bookmarks.userId, viewerId), inArray(bookmarks.messageId, ids))),
+    ctx.db
+      .select({ id: polls.id, messageId: polls.messageId })
+      .from(polls)
+      .where(inArray(polls.messageId, ids)),
   ])
+  const pollBy = new Map(pollRows.map((p) => [p.messageId, p.id]))
   const userMap = new Map(userRows.map((u) => [u.id, toUserSummary(u)]))
   const pinned = new Set(pinRows.map((p) => p.messageId))
   const bookmarked = new Set(bookmarkRows.map((b) => b.messageId))
@@ -211,6 +217,7 @@ export async function serializeMessages(
             }
           : null,
       ...(r.clientId && { clientId: r.clientId }),
+      ...(pollBy.has(r.id) && !deleted && { pollId: pollBy.get(r.id) }),
     }
   })
 }
