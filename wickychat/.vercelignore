@@ -10,3 +10,4 @@ node_modules
 !.env.example
 apps/e2e/test-results
 apps/desktop/src-tauri/target
+**/*.tsbuildinfo
