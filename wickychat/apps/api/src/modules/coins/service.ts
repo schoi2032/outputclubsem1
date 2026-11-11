@@ -67,6 +67,7 @@ const EARNINGS = new Set<CoinTransaction['reason']>([
   'crate_sale',
   'bundle_sale',
   'achievement',
+  'quest',
 ])
 
 /** Rounds randomly so small amounts still pay out fairly on average. */

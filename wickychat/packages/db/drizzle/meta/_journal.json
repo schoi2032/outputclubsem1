@@ -274,6 +274,13 @@
       "when": 1794403823656,
       "tag": "0038_data_log_triggers",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1794407189373,
+      "tag": "0039_quests",
+      "breakpoints": true
     }
   ]
 }

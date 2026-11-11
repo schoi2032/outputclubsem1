@@ -390,6 +390,7 @@ export interface CoinTransaction {
     | 'sticker_pack'
     | 'sticker_gift'
     | 'sticker_sale'
+    | 'quest'
   ref: string | null
   createdAt: string
 }
@@ -1386,4 +1387,68 @@ export interface Duel {
   winnerId: string | null
   status: 'open' | 'done' | 'expired' | 'cancelled'
   expiresAt: string
+}
+
+// --- Daily quests ------------------------------------------------------------------------
+
+export type QuestStat =
+  | 'messages'
+  | 'reactions'
+  | 'daily'
+  | 'shop'
+  | 'gift'
+  | 'sticker'
+  | 'duel'
+  | 'vote'
+  | 'crate'
+
+export interface QuestDef {
+  id: string
+  emoji: string
+  text: string
+  stat: QuestStat
+  goal: number
+  reward: number
+}
+
+const q = (
+  id: string,
+  emoji: string,
+  text: string,
+  stat: QuestStat,
+  goal: number,
+  reward: number,
+) => ({ id, emoji, text, stat, goal, reward }) satisfies QuestDef
+
+/** Everyone gets 3 of these a day (a different mix for each person). */
+export const QUESTS: QuestDef[] = [
+  q('msg-10', '💬', 'Send 10 messages', 'messages', 10, 10),
+  q('msg-25', '🗣️', 'Send 25 messages', 'messages', 25, 20),
+  q('react-5', '😄', 'React to 5 messages', 'reactions', 5, 10),
+  q('react-15', '🎉', 'React to 15 messages', 'reactions', 15, 20),
+  q('daily', '🎁', 'Claim your daily coins', 'daily', 1, 5),
+  q('shop', '🛍️', 'Buy something in the Shop', 'shop', 1, 15),
+  q('gift', '💝', 'Gift someone something (an item, a crate or coins)', 'gift', 1, 20),
+  q('sticker-3', '🖼️', 'Send 3 stickers', 'sticker', 3, 10),
+  q('duel', '🪙', 'Play a coinflip duel', 'duel', 1, 10),
+  q('vote', '📊', 'Vote in a poll', 'vote', 1, 10),
+  q('crate', '📦', 'Open a crate', 'crate', 1, 10),
+]
+/** Extra for finishing all 3 in a day. */
+export const QUEST_BONUS = 25
+export const QUESTS_PER_DAY = 3
+
+export interface QuestProgress {
+  id: string
+  progress: number
+  done: boolean
+  claimed: boolean
+}
+export interface QuestDay {
+  /** The school day, e.g. 2026-11-12. */
+  day: string
+  quests: QuestProgress[]
+  bonusClaimed: boolean
+  /** When the next set arrives. */
+  resetsAt: string
 }

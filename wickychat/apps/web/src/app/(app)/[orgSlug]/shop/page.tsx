@@ -88,6 +88,7 @@ import {
   useCommunity,
   useMakers,
 } from '@/components/shop/items'
+import { QuestsView, questsClaimable, useQuests } from '@/components/shop/quests'
 import { SendCoinsDialog } from '@/components/shop/send-coins'
 import { StickersView } from '@/components/shop/sticker-shop'
 import { ThemeSwatch } from '@/components/shop/theme-swatch'
@@ -137,6 +138,7 @@ const REASON: Record<CoinTransaction['reason'], string> = {
   sticker_pack: 'Bought a sticker pack',
   sticker_gift: 'Gifted a sticker pack',
   sticker_sale: 'Someone bought your sticker pack',
+  quest: 'Daily quest done',
 }
 
 const POSITION_LABEL: Record<StickerPosition, string> = {
@@ -176,6 +178,7 @@ type Tab =
   | 'trades'
   | 'leaderboard'
   | 'achievements'
+  | 'quests'
   | 'mine'
 const TABS: Tab[] = [
   'all',
@@ -194,6 +197,7 @@ const TABS: Tab[] = [
   'trades',
   'leaderboard',
   'achievements',
+  'quests',
   'mine',
 ]
 
@@ -220,7 +224,7 @@ const GROUPS: { id: string; label: string; tabs: Tab[] }[] = [
   { id: 'trade', label: '🎒 My stuff & trading', tabs: ['mine', 'trades', 'auctions', 'market'] },
   { id: 'invest', label: '📈 Invest', tabs: ['invest'] },
   { id: 'create', label: '🎨 Create', tabs: ['create'] },
-  { id: 'goals', label: '🏆 Achievements', tabs: ['achievements', 'leaderboard'] },
+  { id: 'goals', label: '🏆 Quests & goals', tabs: ['quests', 'achievements', 'leaderboard'] },
 ]
 const groupOf = (t: Tab) => GROUPS.find((g) => g.tabs.includes(t)) ?? GROUPS[0]!
 
@@ -241,6 +245,7 @@ const TAB_LABEL: Record<Tab, string> = {
   trades: 'Trades',
   leaderboard: 'Leaderboard',
   achievements: 'Achievements',
+  quests: 'Daily quests',
   mine: 'My stuff',
 }
 
@@ -418,6 +423,8 @@ function ShopInner() {
   const shelf = useMyShelf()
   const achievements = useAchievements()
   const claimable = (achievements.data ?? []).filter((x) => x.done && !x.claimed).length
+  const questsQ = useQuests()
+  const questCount = questsClaimable(questsQ.data)
 
   const card = (it: ShopItem) => {
     const owned = ownedSet.has(it.itemId)
@@ -816,7 +823,8 @@ function ShopInner() {
             {/* Sections first, then the tabs inside the one you're in. */}
             <nav className="mb-2 flex flex-wrap gap-1.5" aria-label="Shop sections">
               {GROUPS.map((g) => {
-                const count = g.id === 'trade' ? incomingTrades : g.id === 'goals' ? claimable : 0
+                const count =
+                  g.id === 'trade' ? incomingTrades : g.id === 'goals' ? claimable + questCount : 0
                 return (
                   <button
                     key={g.id}
@@ -862,6 +870,11 @@ function ShopInner() {
                       {t === 'trades' && !!incomingTrades && (
                         <span className="rounded-full bg-danger px-1.5 text-2xs text-white">
                           {incomingTrades}
+                        </span>
+                      )}
+                      {t === 'quests' && questCount > 0 && (
+                        <span className="rounded-full bg-accent px-1.5 text-2xs text-accent-fg">
+                          {questCount}
                         </span>
                       )}
                       {t === 'achievements' && claimable > 0 && (
@@ -1086,6 +1099,9 @@ function ShopInner() {
             </TabsContent>
             <TabsContent value="trades" className="pt-4">
               <TradesView wallet={w} catalog={catalog} presetTo={presetTrade} />
+            </TabsContent>
+            <TabsContent value="quests" className="pt-4">
+              <QuestsView />
             </TabsContent>
             <TabsContent value="achievements" className="pt-4">
               <AchievementsView />

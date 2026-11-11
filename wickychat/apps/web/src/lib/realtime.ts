@@ -331,6 +331,7 @@ function handle(e: ServerEvent) {
       void qc.invalidateQueries({ queryKey: ['trades', e.orgId] })
       void qc.invalidateQueries({ queryKey: ['auctions', e.orgId] })
       void qc.invalidateQueries({ queryKey: ['achievements'] })
+      void qc.invalidateQueries({ queryKey: ['quests'] })
       if (e.text) toast.info(e.text)
       return
     case 'expressions.updated':

@@ -1799,3 +1799,17 @@ export const dataLog = pgTable(
     index('data_log_user_idx').on(t.userId, t.at),
   ],
 )
+
+/** WickyChat: daily quest rewards someone has claimed (`bonus` = all 3 done). */
+export const questClaims = pgTable(
+  'quest_claims',
+  {
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    day: text('day').notNull(),
+    questId: text('quest_id').notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.day, t.questId] })],
+)
