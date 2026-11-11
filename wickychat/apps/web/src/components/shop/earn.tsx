@@ -51,22 +51,29 @@ function Wheel() {
   const earn = useEarn()
   const [angle, setAngle] = useState(0)
   const [spinning, setSpinning] = useState(false)
-  const [won, setWon] = useState<number | null>(null)
+  const [won, setWon] = useState<{ coins: number; slices: number[] } | null>(null)
 
-  const spin = async () => {
+  const spin = async (count: number) => {
     setSpinning(true)
     setWon(null)
     try {
-      const r = await post<{ slice: number; coins: number; wallet: Wallet }>(`${api}/earn/spin`, {})
+      const r = await post<{ slice: number; slices: number[]; coins: number; wallet: Wallet }>(
+        `${api}/earn/spin`,
+        { count },
+      )
       // Land the middle of the winning slice under the pointer, after a few full turns.
       const target = 360 * 6 + (360 - (r.slice * SLICE + SLICE / 2))
       setAngle((a) => a - (a % 360) + target)
       setTimeout(() => {
         setSpinning(false)
-        setWon(r.coins)
+        setWon({ coins: r.coins, slices: r.slices })
         qc.setQueryData(['wallet'], r.wallet)
         void qc.invalidateQueries({ queryKey: ['earn', org.id] })
-        toast.success(`+${r.coins} Wicky Coins from the wheel! 🎡`)
+        toast.success(
+          r.slices.length > 1
+            ? `+${r.coins} Wicky Coins from ${r.slices.length} spins! 🎡`
+            : `+${r.coins} Wicky Coins from the wheel! 🎡`,
+        )
       }, 4200)
     } catch (e) {
       setSpinning(false)
@@ -80,7 +87,9 @@ function Wheel() {
     const a1 = (((i + 1) * SLICE - 90) * Math.PI) / 180
     return `M ${r} ${r} L ${r + r * Math.cos(a0)} ${r + r * Math.sin(a0)} A ${r} ${r} 0 0 1 ${r + r * Math.cos(a1)} ${r + r * Math.sin(a1)} Z`
   }
-  const can = !!earn.data && (earn.data.spinAvailable || earn.data.spinTickets > 0) && !spinning
+  const total = earn.data ? (earn.data.spinAvailable ? 1 : 0) + earn.data.spinTickets : 0
+  const can = total > 0 && !spinning
+  const multi = [5, 10, 25].filter((n) => n < total)
 
   return (
     <section className="flex flex-col items-center gap-3 rounded-xl border border-border p-5">
@@ -129,15 +138,48 @@ function Wheel() {
         </svg>
       </div>
       <p className="h-5 text-[14px] font-semibold" aria-live="polite">
-        {won != null && !spinning ? `You won 🪙 ${won}!` : ''}
+        {won != null && !spinning
+          ? won.slices.length > 1
+            ? `${won.slices.length} spins: you won 🪙 ${won.coins}!`
+            : `You won 🪙 ${won.coins}!`
+          : ''}
       </p>
-      <Button variant="primary" disabled={!can} loading={spinning} onClick={spin}>
+      {won != null && !spinning && won.slices.length > 1 && (
+        <ul className="flex max-w-xs flex-wrap justify-center gap-1" aria-label="Spin results">
+          {WHEEL.map((w, i) => {
+            const n = won.slices.filter((s) => s === i).length
+            if (!n) return null
+            return (
+              <li
+                key={i}
+                className="rounded-full px-2 py-0.5 text-2xs font-bold text-white"
+                style={{ background: w.color }}
+              >
+                {w.coins} × {n}
+              </li>
+            )
+          })}
+        </ul>
+      )}
+      <Button variant="primary" disabled={!can} loading={spinning} onClick={() => spin(1)}>
         {!earn.data || earn.data.spinAvailable
           ? 'Spin for free'
           : earn.data.spinTickets > 0
             ? `Use a 🎟️ ticket (${earn.data.spinTickets} left)`
             : 'Come back tomorrow'}
       </Button>
+      {total > 1 && (
+        <div className="flex flex-wrap justify-center gap-1.5">
+          {multi.map((n) => (
+            <Button key={n} size="sm" disabled={!can} onClick={() => spin(n)}>
+              Spin ×{n}
+            </Button>
+          ))}
+          <Button size="sm" disabled={!can} onClick={() => spin(Math.min(total, 100))}>
+            Spin all ({Math.min(total, 100)})
+          </Button>
+        </div>
+      )}
       <p className="text-2xs text-fg-subtle">
         🎟️ {earn.data?.spinTickets ?? 0} spin ticket{earn.data?.spinTickets === 1 ? '' : 's'}. Get
         more from crates.

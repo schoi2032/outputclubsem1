@@ -140,39 +140,64 @@ export async function earnRoutes(app: App, ctx: AppContext) {
     },
   )
 
-  /** One free spin a day; after that, each spin uses a 🎟️ spin ticket from a crate. */
-  app.post('/api/orgs/:orgId/earn/spin', { schema: { params: orgParams } }, async (req) => {
-    const scope = await requireOrg(ctx, req, req.params.orgId)
-    const slice = await ctx.db.transaction(async (tx) => {
-      const [u] = await tx
-        .select({ tickets: users.spinTickets })
-        .from(users)
-        .where(eq(users.id, scope.userId))
-        .for('update')
-      const free = (await freeSpinsToday(tx, scope.userId)) === 0
-      if (!free) {
-        if (!u?.tickets)
+  /**
+   * One free spin a day; after that, each spin uses a 🎟️ spin ticket from a crate. `count` spins
+   * several times at once (the free one first, then tickets).
+   */
+  app.post(
+    '/api/orgs/:orgId/earn/spin',
+    {
+      schema: {
+        params: orgParams,
+        body: z
+          .object({ count: z.number().int().min(1).max(100).default(1) })
+          .default({ count: 1 }),
+      },
+    },
+    async (req) => {
+      const scope = await requireOrg(ctx, req, req.params.orgId)
+      const n = req.body.count
+      const slices = await ctx.db.transaction(async (tx) => {
+        const [u] = await tx
+          .select({ tickets: users.spinTickets })
+          .from(users)
+          .where(eq(users.id, scope.userId))
+          .for('update')
+        const free = (await freeSpinsToday(tx, scope.userId)) === 0 ? 1 : 0
+        const tickets = u?.tickets ?? 0
+        if (free + tickets === 0)
           throw conflict(
             'You already spun today. Get 🎟️ spin tickets from crates, or come back tomorrow!',
           )
-        await tx
-          .update(users)
-          .set({ spinTickets: u.tickets - 1 })
-          .where(eq(users.id, scope.userId))
+        if (n > free + tickets)
+          throw badRequest(
+            `You only have ${free + tickets} spin${free + tickets === 1 ? '' : 's'}.`,
+          )
+        const used = n - free
+        if (used > 0)
+          await tx
+            .update(users)
+            .set({ spinTickets: tickets - used })
+            .where(eq(users.id, scope.userId))
+        const out: number[] = []
+        for (let k = 0; k < n; k++) {
+          const i = wheelSlice(randomInt(0, 100))
+          // The ref says which slice, and whether it was the free spin or a ticket.
+          const kind = k < free ? 'free' : 'ticket'
+          await changeCoins(tx, scope.userId, WHEEL[i]!.coins, 'spin', `${i}|${kind}`)
+          out.push(i)
+        }
+        return out
+      })
+      const coins = slices.reduce((t, i) => t + WHEEL[i]!.coins, 0)
+      return {
+        slice: slices[slices.length - 1]!,
+        slices,
+        coins,
+        wallet: await loadWallet(ctx, scope.userId),
       }
-      const i = wheelSlice(randomInt(0, 100))
-      // The ref says which slice, and whether it was the free spin or a ticket.
-      await changeCoins(
-        tx,
-        scope.userId,
-        WHEEL[i]!.coins,
-        'spin',
-        `${i}|${free ? 'free' : 'ticket'}`,
-      )
-      return i
-    })
-    return { slice, coins: WHEEL[slice]!.coins, wallet: await loadWallet(ctx, scope.userId) }
-  })
+    },
+  )
 
   app.get('/api/orgs/:orgId/trivia', { schema: { params: orgParams } }, async (req) => {
     const scope = await requireOrg(ctx, req, req.params.orgId)
