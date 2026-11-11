@@ -5,7 +5,13 @@
  * decoration, and (teachers) reward them with coins.
  */
 import type { Channel, Member, UserSummary } from '@quid/shared'
-import { cleanProfileStyle, decorationById, ROLE_LABEL } from '@quid/shared'
+import {
+  cleanProfileStyle,
+  decorationById,
+  ROLE_LABEL,
+  type StaffTag,
+  staffTags,
+} from '@quid/shared'
 import { Avatar, Button, cn, Input, Popover, PopoverContent, PopoverTrigger, toast } from '@quid/ui'
 import { useQueryClient } from '@tanstack/react-query'
 import { Coins, ExternalLink, Gift, Link2, MessageSquare } from 'lucide-react'
@@ -19,6 +25,11 @@ import { keys, useMembers } from '@/lib/queries'
 import { BadgesRow } from './badges'
 import { ProfileEffect } from './cosmetics-fx'
 import { StyledName } from './styled-name'
+
+const STAFF_TAG: Record<StaffTag, { label: string; className: string }> = {
+  founder: { label: '👑 Founder', className: 'bg-[#ffb829]/20 text-[#b07800]' },
+  developer: { label: '🛠️ Developer', className: 'bg-[#8052ff]/15 text-[#8052ff]' },
+}
 
 export const DEFAULT_BANNER = 'linear-gradient(135deg, #8052ff, #15846e)'
 
@@ -57,15 +68,22 @@ export function CardFace({
   look,
   children,
   presence,
+  fill,
 }: {
   look: CardLook
   children?: React.ReactNode
   presence?: Member['presence']
+  /** Stretch to the full height of its container (the DM side panel). */
+  fill?: boolean
 }) {
   const themed = !!look.theme
   return (
     <div
-      className={cn('relative w-full overflow-hidden rounded-lg', themed && 'p-[3px]')}
+      className={cn(
+        'relative w-full overflow-hidden',
+        fill ? 'flex min-h-full flex-col' : 'rounded-lg',
+        themed && 'p-[3px]',
+      )}
       style={
         themed
           ? { background: `linear-gradient(180deg, ${look.theme![0]}, ${look.theme![1]})` }
@@ -73,7 +91,7 @@ export function CardFace({
       }
     >
       <div
-        className={cn('overflow-hidden', themed && 'rounded-[6px]')}
+        className={cn('overflow-hidden', fill && 'flex-1 bg-bg-overlay', themed && 'rounded-[6px]')}
         style={
           look.cardBg
             ? bgVars(look.cardBg)
@@ -216,8 +234,9 @@ export function ProfileCard({ user, panel }: { user: UserSummary; panel?: boolea
   }
 
   return (
-    <div className={panel ? 'w-full' : 'w-[320px]'}>
+    <div className={panel ? 'flex min-h-full w-full flex-col' : 'w-[320px]'}>
       <CardFace
+        fill={panel}
         presence={m?.presence}
         look={{
           user: merged,
@@ -233,16 +252,30 @@ export function ProfileCard({ user, panel }: { user: UserSummary; panel?: boolea
       >
         {m && (
           <div className="mt-2 flex flex-wrap gap-1.5">
-            <span
-              className={cn(
-                'rounded-md px-1.5 py-0.5 text-2xs font-semibold',
-                isTeacher(m.role)
-                  ? 'bg-accent-subtle text-accent-text'
-                  : 'bg-bg-muted text-fg-muted',
-              )}
-            >
-              {isTeacher(m.role) ? '🍎 Teacher' : ROLE_LABEL[m.role]}
-            </span>
+            {staffTags(m.email).length ? (
+              staffTags(m.email).map((t) => (
+                <span
+                  key={t}
+                  className={cn(
+                    'rounded-md px-1.5 py-0.5 text-2xs font-semibold',
+                    STAFF_TAG[t].className,
+                  )}
+                >
+                  {STAFF_TAG[t].label}
+                </span>
+              ))
+            ) : (
+              <span
+                className={cn(
+                  'rounded-md px-1.5 py-0.5 text-2xs font-semibold',
+                  isTeacher(m.role)
+                    ? 'bg-accent-subtle text-accent-text'
+                    : 'bg-bg-muted text-fg-muted',
+                )}
+              >
+                {isTeacher(m.role) ? '🍎 Teacher' : ROLE_LABEL[m.role]}
+              </span>
+            )}
             {m.title && (
               <span className="rounded-md bg-bg-muted px-1.5 py-0.5 text-2xs text-fg-muted">
                 {m.title}
@@ -369,9 +402,7 @@ export function ProfilePanel({ user }: { user: UserSummary }) {
       aria-label={`${displayName(user)}'s profile`}
       className="hidden w-[340px] shrink-0 flex-col overflow-y-auto border-l border-border bg-bg-overlay lg:flex"
     >
-      <div className="p-3">
-        <ProfileCard user={user} panel />
-      </div>
+      <ProfileCard user={user} panel />
     </aside>
   )
 }

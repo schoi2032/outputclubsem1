@@ -993,3 +993,16 @@ export interface Poll {
 }
 
 export const POLL_REWARD_MAX = 50
+
+// --- Staff tags ------------------------------------------------------------------------
+
+export type StaffTag = 'founder' | 'developer'
+
+/** The people who made WickyChat. Shown on their profile instead of the Teacher tag. */
+const STAFF: Record<string, StaffTag[]> = {
+  'teum2032@chadwickschool.org': ['developer'],
+  'schoi2032@chadwickschool.org': ['founder'],
+}
+
+export const staffTags = (email: string | null | undefined): StaffTag[] =>
+  STAFF[(email ?? '').toLowerCase()] ?? []
