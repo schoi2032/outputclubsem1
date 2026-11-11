@@ -27,6 +27,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { MoreHorizontal, UserPlus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { NamePlate } from '@/components/profile/cosmetics-fx'
 import { del, errorMessage, get, patch, post } from '@/lib/api'
 import { channelTitle, isDirect } from '@/lib/channels'
 import { displayName } from '@/lib/format'
@@ -266,8 +267,9 @@ export function ChannelDetails({
                 {members.data?.map((m) => (
                   <li
                     key={m.id}
-                    className="flex items-center gap-3 rounded-md px-1 py-1.5 hover:bg-bg-subtle"
+                    className="relative isolate flex items-center gap-3 overflow-hidden rounded-md px-1 py-1.5 hover:bg-bg-subtle"
                   >
+                    <NamePlate value={m.namePlate} />
                     <Avatar
                       name={m.name}
                       id={m.id}

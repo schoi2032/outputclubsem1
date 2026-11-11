@@ -242,3 +242,202 @@
   background-clip: text;
   color: transparent;
 }
+
+/* ---------------------------------------------------------------------------
+ * WickyChat profile effects (overlay on the profile card) and name plates
+ * (animated background behind a name). Items in EFFECTS / PLATES (@quid/shared).
+ * ------------------------------------------------------------------------- */
+.q-fx {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 5;
+}
+.q-fx > span {
+  position: absolute;
+  left: var(--x);
+  top: -10%;
+  font-size: var(--s);
+  line-height: 1;
+  opacity: 0;
+  animation: q-fx-fall var(--t) linear var(--d) infinite;
+}
+.q-fx > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+@keyframes q-fx-fall {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.9;
+  }
+  50% {
+    transform: translate(18px, 260px) rotate(160deg);
+  }
+  90% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate(-6px, 560px) rotate(320deg);
+    opacity: 0;
+  }
+}
+@keyframes q-fx-rise {
+  0% {
+    transform: translate(0, 0) scale(0.7);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.85;
+  }
+  50% {
+    transform: translate(-14px, -240px) scale(1);
+  }
+  100% {
+    transform: translate(10px, -520px) scale(1.1);
+    opacity: 0;
+  }
+}
+@keyframes q-fx-twinkle {
+  0%,
+  100% {
+    transform: scale(0.3) rotate(0deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1) rotate(90deg);
+    opacity: 1;
+  }
+}
+@keyframes q-fx-drift {
+  0%,
+  100% {
+    transform: translate(0, 0);
+    opacity: 0.2;
+  }
+  25% {
+    opacity: 1;
+  }
+  50% {
+    transform: translate(22px, -18px);
+    opacity: 0.4;
+  }
+  75% {
+    transform: translate(-12px, 14px);
+    opacity: 1;
+  }
+}
+@keyframes q-fx-streak {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  40%,
+  100% {
+    transform: translate(-420px, 300px);
+    opacity: 0;
+  }
+}
+.q-fx-snow > span {
+  color: #e8f4ff;
+  text-shadow: 0 0 4px #9cc8ff;
+}
+.q-fx-sakura > span {
+  animation-name: q-fx-fall;
+}
+.q-fx-confetti > span {
+  color: var(--c);
+}
+.q-fx-hearts > span,
+.q-fx-bubbles > span {
+  top: auto;
+  bottom: -10%;
+  animation-name: q-fx-rise;
+}
+.q-fx-hearts > span {
+  color: #ff5c8a;
+}
+.q-fx-bubbles > span {
+  color: #9fd8ff;
+  font-weight: 300;
+}
+.q-fx-sparkle > span,
+.q-fx-fireflies > span {
+  top: var(--y);
+}
+.q-fx-sparkle > span {
+  color: #ffe27a;
+  text-shadow: 0 0 6px #ffd23f;
+  animation-name: q-fx-twinkle;
+}
+.q-fx-fireflies > span {
+  color: #d7ff6b;
+  text-shadow:
+    0 0 6px #c4ff3a,
+    0 0 12px #9be000;
+  animation-name: q-fx-drift;
+}
+.q-fx-stars > span {
+  top: var(--y);
+  left: calc(var(--x) + 40%);
+  color: #fff8c4;
+  text-shadow: 6px -4px 6px #ffe680;
+  animation-name: q-fx-streak;
+}
+
+.q-plate {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0.55;
+  background-size: 300% 300%;
+  animation: q-plate-flow 8s ease-in-out infinite;
+}
+.q-plate-img {
+  background-size: cover;
+  background-position: center;
+  animation: none;
+}
+@keyframes q-plate-flow {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+.q-plate-sunset {
+  background-image: linear-gradient(110deg, #ff7e5f, #feb47b, #ff6a88, #ff7e5f);
+}
+.q-plate-ocean {
+  background-image: linear-gradient(110deg, #2193b0, #6dd5ed, #1c5d99, #2193b0);
+}
+.q-plate-aurora {
+  background-image: linear-gradient(110deg, #00c9a7, #845ec2, #2c73d2, #00c9a7);
+}
+.q-plate-candy {
+  background-image: linear-gradient(110deg, #ffafcc, #a2d2ff, #cdb4db, #ffafcc);
+}
+.q-plate-galaxy {
+  background-image: linear-gradient(110deg, #1a0b3d, #6a2c91, #2e1065, #c13584, #1a0b3d);
+}
+.q-plate-matrix {
+  background-image: linear-gradient(110deg, #001a00, #00a83a, #002b0f, #00ff66, #001a00);
+}
+.q-plate-lava {
+  background-image: linear-gradient(110deg, #ff3d00, #8e0e00, #ff9100, #c62828, #ff3d00);
+}
+.q-plate-mint {
+  background-image: linear-gradient(110deg, #b8f2e6, #5ec9a5, #d8f3dc, #b8f2e6);
+}

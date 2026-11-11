@@ -11,9 +11,14 @@ import {
   CREATOR_SHARE,
   censorText,
   cosmeticDecoration,
+  customImageValue,
   DECORATION_IDS,
   decorationById,
+  EFFECT_IDS,
+  effectById,
   MAX_THEME_CSS,
+  PLATE_IDS,
+  plateById,
   STICKER_POSITIONS,
   type StickerPosition,
   sanitizeThemeCss,
@@ -34,6 +39,25 @@ import { changeCoins, currentStreak, earnedFromMessagesToday, startOfSchoolDay }
 
 const CUSTOM = /^u:([0-9a-f-]{36})$/
 
+/** Which column an item goes in when it's put on, and what's stored there. */
+function equipFor(
+  itemId: string,
+  custom?: {
+    id: string
+    kind: string
+    frameFileId: string | null
+    stickerFileId: string | null
+    stickerPosition: string
+  },
+): Partial<typeof users.$inferInsert> {
+  if (themeById(itemId) || custom?.kind === 'theme') return { appTheme: itemId }
+  if (effectById(itemId)) return { profileEffect: itemId }
+  if (plateById(itemId)) return { namePlate: itemId }
+  if (custom?.kind === 'effect') return { profileEffect: customImageValue(custom) }
+  if (custom?.kind === 'plate') return { namePlate: customImageValue(custom) }
+  return { decoration: custom ? cosmeticDecoration(custom) : itemId }
+}
+
 type CosmeticRow = typeof cosmetics.$inferSelect
 
 function serializeCosmetic(
@@ -42,9 +66,10 @@ function serializeCosmetic(
 ): Cosmetic {
   return {
     id: c.id,
-    kind: c.kind === 'theme' ? 'theme' : 'decoration',
+    kind: c.kind as Cosmetic['kind'],
     css: c.kind === 'theme' ? c.css : null,
-    decoration: c.kind === 'theme' ? '' : cosmeticDecoration(c),
+    decoration: c.kind === 'decoration' ? cosmeticDecoration(c) : '',
+    value: c.kind === 'effect' || c.kind === 'plate' ? customImageValue(c) : `u:${c.id}`,
     name: c.name,
     description: c.description,
     price: c.price,
@@ -69,6 +94,8 @@ async function loadWallet(ctx: AppContext, userId: string): Promise<Wallet> {
         appTheme: true,
         dailyClaimedAt: true,
         dailyStreak: true,
+        profileEffect: true,
+        namePlate: true,
       },
     }),
     ctx.db
@@ -87,7 +114,11 @@ async function loadWallet(ctx: AppContext, userId: string): Promise<Wallet> {
   if (!u) throw notFound('User')
   const valid = owned.filter(
     (o) =>
-      DECORATION_IDS.includes(o.itemId) || THEME_IDS.includes(o.itemId) || CUSTOM.test(o.itemId),
+      DECORATION_IDS.includes(o.itemId) ||
+      THEME_IDS.includes(o.itemId) ||
+      EFFECT_IDS.includes(o.itemId) ||
+      PLATE_IDS.includes(o.itemId) ||
+      CUSTOM.test(o.itemId),
   )
   const giftedBy: Wallet['giftedBy'] = {}
   for (const o of valid)
@@ -98,6 +129,8 @@ async function loadWallet(ctx: AppContext, userId: string): Promise<Wallet> {
     giftedBy,
     equipped: u.decoration,
     equippedTheme: u.appTheme,
+    equippedEffect: u.profileEffect,
+    equippedPlate: u.namePlate,
     streak: currentStreak(u.dailyClaimedAt, u.dailyStreak),
     dailyAvailable: !u.dailyClaimedAt || u.dailyClaimedAt < startOfSchoolDay(),
     earnedFromMessagesToday: earned,
@@ -171,7 +204,8 @@ export async function coinRoutes(app: App, ctx: AppContext) {
 
       let price: number
       let custom: CosmeticRow | undefined
-      const builtin = decorationById(itemId) ?? themeById(itemId)
+      const builtin =
+        decorationById(itemId) ?? themeById(itemId) ?? effectById(itemId) ?? plateById(itemId)
       const m = CUSTOM.exec(itemId)
       if (builtin) {
         price = builtin.price
@@ -208,15 +242,7 @@ export async function coinRoutes(app: App, ctx: AppContext) {
           .insert(userItems)
           .values({ userId: owner, itemId, giftedBy: giftTo ? me.id : null })
         // Buying for yourself puts it on straight away.
-        if (!giftTo)
-          await tx
-            .update(users)
-            .set(
-              themeById(itemId) || custom?.kind === 'theme'
-                ? { appTheme: itemId }
-                : { decoration: custom ? cosmeticDecoration(custom) : itemId },
-            )
-            .where(eq(users.id, me.id))
+        if (!giftTo) await tx.update(users).set(equipFor(itemId, custom)).where(eq(users.id, me.id))
         // The student who made it earns most of the price.
         if (custom) {
           await tx
@@ -259,6 +285,43 @@ export async function coinRoutes(app: App, ctx: AppContext) {
         } else throw badRequest("You don't own that decoration.")
       }
       await ctx.db.update(users).set({ decoration }).where(eq(users.id, me.id))
+      return loadWallet(ctx, me.id)
+    },
+  )
+
+  /** Puts on (or takes off, with null) a profile effect or name plate you own. */
+  app.put(
+    '/api/me/equip',
+    {
+      schema: {
+        body: z.object({
+          slot: z.enum(['effect', 'plate']),
+          itemId: z.string().max(60).nullable(),
+        }),
+      },
+    },
+    async (req) => {
+      const me = requireUser(req)
+      const { slot, itemId } = req.body
+      const column = slot === 'effect' ? 'profileEffect' : 'namePlate'
+      let value: string | null = null
+      if (itemId) {
+        const owned = await ctx.db.query.userItems.findFirst({
+          where: and(eq(userItems.userId, me.id), eq(userItems.itemId, itemId)),
+        })
+        if (!owned) throw badRequest("You don't own that.")
+        const m = CUSTOM.exec(itemId)
+        const custom = m
+          ? await ctx.db.query.cosmetics.findFirst({ where: eq(cosmetics.id, m[1]!) })
+          : undefined
+        const set = equipFor(itemId, custom)
+        if (!(column in set)) throw badRequest("That doesn't go there.")
+        value = set[column] ?? null
+      }
+      await ctx.db
+        .update(users)
+        .set({ [column]: value })
+        .where(eq(users.id, me.id))
       return loadWallet(ctx, me.id)
     },
   )
@@ -338,7 +401,7 @@ export async function coinRoutes(app: App, ctx: AppContext) {
           name: z.string().trim().min(2).max(40),
           description: z.string().trim().max(140).default(''),
           price: z.number().int().min(COSMETIC_PRICE.min).max(COSMETIC_PRICE.max),
-          kind: z.enum(['decoration', 'theme']).default('decoration'),
+          kind: z.enum(['decoration', 'theme', 'effect', 'plate']).default('decoration'),
           css: z.string().max(MAX_THEME_CSS).optional(),
           frameFileId: z.uuid().nullable().default(null),
           stickerFileId: z.uuid().nullable().default(null),
@@ -353,7 +416,9 @@ export async function coinRoutes(app: App, ctx: AppContext) {
       const isTheme = b.kind === 'theme'
       const css = isTheme ? sanitizeThemeCss(b.css ?? '').css : null
       if (isTheme && !css) throw badRequest('Write some CSS for your theme.')
-      if (!isTheme && !b.frameFileId && !b.stickerFileId)
+      const isImage = b.kind === 'effect' || b.kind === 'plate'
+      if (isImage && !b.frameFileId) throw badRequest('Add an image.')
+      if (b.kind === 'decoration' && !b.frameFileId && !b.stickerFileId)
         throw badRequest('Add a frame image, a sticker image, or both.')
       if (censorText(b.name).hits || censorText(b.description).hits)
         throw badRequest('Keep the name and description school-friendly.')
@@ -391,7 +456,7 @@ export async function coinRoutes(app: App, ctx: AppContext) {
           kind: b.kind,
           css,
           frameFileId: isTheme ? null : b.frameFileId,
-          stickerFileId: isTheme ? null : b.stickerFileId,
+          stickerFileId: isTheme || isImage ? null : b.stickerFileId,
           stickerPosition: b.stickerPosition,
         })
         .returning()

@@ -132,6 +132,8 @@ export async function loadMe(
       avatarUrl: avatarUrl(u.avatarKey, u.avatarAnimated),
       isBot: false,
       decoration: u.decoration,
+      namePlate: u.namePlate,
+      profileEffect: u.profileEffect,
       bio: u.bio,
       pronouns: u.pronouns,
       bannerColor: u.bannerColor,

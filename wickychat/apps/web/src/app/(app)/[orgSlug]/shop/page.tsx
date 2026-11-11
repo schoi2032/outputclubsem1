@@ -14,7 +14,12 @@ import {
   DECORATIONS,
   type DecorationRarity,
   decorationById,
+  EFFECTS,
+  effectById,
+  type ItemKind,
   type Leaderboard,
+  PLATES,
+  plateById,
   STICKER_POSITIONS,
   type StickerPosition,
   sanitizeThemeCss,
@@ -50,6 +55,7 @@ import { Suspense, useEffect, useMemo, useState } from 'react'
 import { PeoplePicker } from '@/components/dialogs/people-picker'
 import { useOrgContext } from '@/components/org-context'
 import { PageHeader } from '@/components/page-header'
+import { NamePlate, ProfileEffect } from '@/components/profile/cosmetics-fx'
 import { ThemeSwatch } from '@/components/shop/theme-swatch'
 import { del, errorMessage, get, post, put, upload } from '@/lib/api'
 import { applyAppTheme } from '@/lib/app-theme'
@@ -96,7 +102,9 @@ const EXAMPLE_MANIFEST: CosmeticManifest = {
 
 /** Item shown in a grid: a built-in decoration or theme, or a student-made cosmetic. */
 interface ShopItem {
-  kind: 'decoration' | 'theme'
+  kind: ItemKind
+  /** Stored value for effects and plates (student-made ones include the image). */
+  value?: string
   /** Theme CSS and whether it's a dark theme (themes only). */
   css?: string
   dark?: boolean | null
@@ -114,7 +122,13 @@ function itemName(id: string | null | undefined, community: Cosmetic[]) {
   if (!id) return ''
   const key = id.split('|')[0]!
   if (key.startsWith('u:')) return community.find((c) => `u:${c.id}` === key)?.name ?? 'a cosmetic'
-  return decorationById(key)?.name ?? themeById(key)?.name ?? key
+  return (
+    decorationById(key)?.name ??
+    themeById(key)?.name ??
+    effectById(key)?.name ??
+    plateById(key)?.name ??
+    key
+  )
 }
 
 function ShopInner() {
@@ -160,8 +174,29 @@ function ShopInner() {
     price: t.price,
     rarity: t.price >= 200 ? 'epic' : 'rare',
   }))
+  const effectItems: ShopItem[] = EFFECTS.map((e) => ({
+    kind: 'effect',
+    value: e.id,
+    itemId: e.id,
+    decoration: '',
+    name: e.name,
+    description: e.description,
+    price: e.price,
+    rarity: e.price >= 200 ? 'epic' : 'rare',
+  }))
+  const plateItems: ShopItem[] = PLATES.map((pl) => ({
+    kind: 'plate',
+    value: pl.id,
+    itemId: pl.id,
+    decoration: '',
+    name: pl.name,
+    description: pl.description,
+    price: pl.price,
+    rarity: pl.price >= 180 ? 'epic' : pl.price >= 120 ? 'rare' : 'common',
+  }))
   const allCommunity: ShopItem[] = communityList.map((c) => ({
     kind: c.kind,
+    value: c.value,
     css: c.css ?? undefined,
     dark: null,
     itemId: `u:${c.id}`,
@@ -175,6 +210,8 @@ function ShopInner() {
   }))
   const communityItems = allCommunity.filter((it) => it.kind === 'decoration')
   const communityThemes = allCommunity.filter((it) => it.kind === 'theme')
+  const communityEffects = allCommunity.filter((it) => it.kind === 'effect')
+  const communityPlates = allCommunity.filter((it) => it.kind === 'plate')
 
   // Previewing a theme puts it on for a moment; leaving the Shop puts yours back.
   const [preview, setPreview] = useState<string | null>(null)
@@ -223,6 +260,8 @@ function ShopInner() {
     )
   const equip = (id: string | null) =>
     act(`equip:${id}`, () => put<Wallet>('/api/me/decoration', { itemId: id }))
+  const equipSlot = (slot: 'effect' | 'plate', id: string | null) =>
+    act(`${slot}:${id}`, () => put<Wallet>('/api/me/equip', { slot, itemId: id }))
   const switchTheme = (id: string | null) => {
     setPreview(null)
     return act(`theme:${id}`, () => put<Wallet>('/api/me/theme', { itemId: id }))
@@ -254,7 +293,17 @@ function ShopInner() {
         {items.map((it) => {
           const owned = w?.owned.includes(it.itemId)
           const isTheme = it.kind === 'theme'
-          const wearing = isTheme ? w?.equippedTheme === it.itemId : equippedKey === it.itemId
+          const slot = it.kind === 'effect' || it.kind === 'plate' ? it.kind : null
+          const wearing = isTheme
+            ? w?.equippedTheme === it.itemId
+            : slot
+              ? (slot === 'effect' ? w?.equippedEffect : w?.equippedPlate) === it.value
+              : equippedKey === it.itemId
+          const takeOff = () =>
+            isTheme ? switchTheme(null) : slot ? equipSlot(slot, null) : equip(null)
+          const putOn = () =>
+            isTheme ? switchTheme(it.itemId) : slot ? equipSlot(slot, it.itemId) : equip(it.itemId)
+          const busyKey = isTheme ? 'theme' : (slot ?? 'equip')
           const afford = (w?.coins ?? 0) >= it.price
           const gifted = w?.giftedBy[it.itemId]
           return (
@@ -269,6 +318,22 @@ function ShopInner() {
             >
               {isTheme ? (
                 <ThemeSwatch css={it.css ?? ''} className="mb-1" />
+              ) : it.kind === 'effect' ? (
+                <div className="relative mb-1 flex h-24 w-full items-center justify-center overflow-hidden rounded-lg bg-gradient-to-b from-[#3b2a6b] to-[#1b1530]">
+                  <Avatar name={me.name} id={me.id} src={me.avatarUrl} size="lg" />
+                  <ProfileEffect value={it.value} />
+                </div>
+              ) : it.kind === 'plate' ? (
+                <div className="mb-1 flex h-24 w-full flex-col justify-center gap-1.5 rounded-lg border border-border bg-bg-subtle p-2">
+                  <div className="relative isolate flex items-center gap-2 overflow-hidden rounded-md px-2 py-1.5">
+                    <NamePlate value={it.value} />
+                    <Avatar name={me.name} id={me.id} src={me.avatarUrl} size="xs" />
+                    <span className="truncate text-[13px] font-semibold">{displayName(me)}</span>
+                  </div>
+                  <div className="flex items-center gap-2 px-2 py-1 text-[13px] text-fg-subtle">
+                    <span className="size-5 rounded-full bg-bg-emphasis" /> Someone else
+                  </div>
+                </div>
               ) : (
                 <div className="my-4">
                   <Avatar
@@ -314,8 +379,8 @@ function ShopInner() {
                       <Button
                         size="sm"
                         className="flex-1"
-                        loading={busy === (isTheme ? 'theme:null' : 'equip:null')}
-                        onClick={() => (isTheme ? switchTheme(null) : equip(null))}
+                        loading={busy === `${busyKey}:null`}
+                        onClick={() => takeOff()}
                       >
                         {isTheme ? 'Using ✓' : 'Wearing ✓'}
                       </Button>
@@ -324,8 +389,8 @@ function ShopInner() {
                         size="sm"
                         variant="primary"
                         className="flex-1"
-                        loading={busy === `${isTheme ? 'theme' : 'equip'}:${it.itemId}`}
-                        onClick={() => (isTheme ? switchTheme(it.itemId) : equip(it.itemId))}
+                        loading={busy === `${busyKey}:${it.itemId}`}
+                        onClick={() => putOn()}
                       >
                         {isTheme ? 'Use' : 'Wear'}
                       </Button>
@@ -370,9 +435,13 @@ function ShopInner() {
       </ul>
     )
 
-  const ownedItems = [...builtinItems, ...themeItems, ...allCommunity].filter((it) =>
-    w?.owned.includes(it.itemId),
-  )
+  const ownedItems = [
+    ...builtinItems,
+    ...themeItems,
+    ...effectItems,
+    ...plateItems,
+    ...allCommunity,
+  ].filter((it) => w?.owned.includes(it.itemId))
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -471,6 +540,8 @@ function ShopInner() {
           <Tabs defaultValue="decorations">
             <TabsList>
               <TabsTrigger value="decorations">Decorations</TabsTrigger>
+              <TabsTrigger value="effects">Effects</TabsTrigger>
+              <TabsTrigger value="plates">Name plates</TabsTrigger>
               <TabsTrigger value="themes">Themes</TabsTrigger>
               <TabsTrigger value="community">Community</TabsTrigger>
               <TabsTrigger value="create">Create</TabsTrigger>
@@ -479,6 +550,25 @@ function ShopInner() {
             </TabsList>
             <TabsContent value="decorations" className="pt-4">
               {grid(builtinItems, '')}
+            </TabsContent>
+            <TabsContent value="effects" className="pt-4">
+              <p className="mb-3 text-[13px] text-fg-muted">
+                Animated effects that play over your profile card.
+              </p>
+              {grid(effectItems, '')}
+              <h3 className="mt-8 mb-3 text-[14px] font-semibold">Made by students</h3>
+              {grid(communityEffects, 'No student-made effects yet. Make one in the Create tab!')}
+            </TabsContent>
+            <TabsContent value="plates" className="pt-4">
+              <p className="mb-3 text-[13px] text-fg-muted">
+                An animated background behind your name in DMs and member lists.
+              </p>
+              {grid(plateItems, '')}
+              <h3 className="mt-8 mb-3 text-[14px] font-semibold">Made by students</h3>
+              {grid(
+                communityPlates,
+                'No student-made name plates yet. Make one in the Create tab!',
+              )}
             </TabsContent>
             <TabsContent value="themes" className="pt-4">
               <p className="mb-3 text-[13px] text-fg-muted">
@@ -679,12 +769,158 @@ function LeaderboardView() {
   )
 }
 
+const KIND_LABEL: Record<ItemKind, string> = {
+  decoration: 'Decoration',
+  effect: 'Profile effect',
+  plate: 'Name plate',
+  theme: 'Theme (CSS)',
+}
+
+/** Profile effects and name plates students make: one image each. */
+function CreateImageItem({ kind }: { kind: 'effect' | 'plate' }) {
+  const { org, api, me } = useOrgContext()
+  const qc = useQueryClient()
+  const [name, setName] = useState('')
+  const [description, setDescription] = useState('')
+  const [price, setPrice] = useState(120)
+  const [file, setFile] = useState<File | null>(null)
+  const [saving, setSaving] = useState(false)
+  const url = useMemo(() => (file ? URL.createObjectURL(file) : null), [file])
+  useEffect(() => () => void (url && URL.revokeObjectURL(url)), [url])
+
+  const submit = async () => {
+    if (!file) return
+    setSaving(true)
+    try {
+      const f = await upload<Attachment>(`${api}/files?purpose=cosmetic`, file).promise
+      await post(`${api}/cosmetics`, { kind, name, description, price, frameFileId: f.id })
+      toast.success('Sent to a teacher for review. It shows in the Shop once approved!')
+      setName('')
+      setDescription('')
+      setFile(null)
+      void qc.invalidateQueries({ queryKey: ['cosmetics', org.id] })
+    } catch (e) {
+      toast.error(errorMessage(e))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="grid gap-6 md:grid-cols-[1fr_260px]">
+      <form
+        className="flex flex-col gap-4"
+        onSubmit={(e) => {
+          e.preventDefault()
+          void submit()
+        }}
+      >
+        <Field label="Name">
+          {(p) => (
+            <Input
+              {...p}
+              required
+              minLength={2}
+              maxLength={40}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          )}
+        </Field>
+        <Field label="Description">
+          {(p) => (
+            <Input
+              {...p}
+              maxLength={140}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          )}
+        </Field>
+        <Field
+          label="Price"
+          hint={`${COSMETIC_PRICE.min}–${COSMETIC_PRICE.max} coins. You get ${Math.round(CREATOR_SHARE * 100)}% of every sale.`}
+        >
+          {(p) => (
+            <Input
+              {...p}
+              type="number"
+              min={COSMETIC_PRICE.min}
+              max={COSMETIC_PRICE.max}
+              value={price}
+              onChange={(e) => setPrice(Number(e.target.value))}
+              className="w-32"
+            />
+          )}
+        </Field>
+        <div>
+          <p className="mb-1 text-[13px] font-medium">Image</p>
+          <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-[13px] hover:bg-bg-muted">
+            <Upload className="size-3.5" /> {file ? file.name : 'Choose image'}
+            <input
+              type="file"
+              accept="image/png,image/gif,image/webp"
+              hidden
+              onChange={(e) => {
+                setFile(e.target.files?.[0] ?? null)
+                e.target.value = ''
+              }}
+            />
+          </label>
+          <p className="mt-1 text-2xs text-fg-subtle">
+            {kind === 'effect'
+              ? 'A transparent GIF or WebP that plays over the whole card (about 340×500). Keep the middle mostly clear so people can read the card.'
+              : 'A wide image or GIF (about 600×80) that goes behind your name. Darker or softer images keep names readable.'}{' '}
+            Up to 2 MB.
+          </p>
+        </div>
+        <p className="text-xs text-fg-subtle">
+          Only use art you made yourself or have permission to use. A teacher checks it first.
+        </p>
+        <div>
+          <Button type="submit" variant="primary" loading={saving} disabled={!file}>
+            Submit for review
+          </Button>
+        </div>
+      </form>
+      <div className="flex flex-col items-center gap-3 self-start rounded-xl border border-border p-5">
+        <p className="text-2xs font-semibold text-fg-subtle uppercase">Preview</p>
+        {kind === 'effect' ? (
+          <div className="relative flex h-40 w-full items-center justify-center overflow-hidden rounded-lg bg-gradient-to-b from-[#3b2a6b] to-[#1b1530]">
+            <Avatar name={me.name} id={me.id} src={me.avatarUrl} size="xl" />
+            {url && (
+              // biome-ignore lint/performance/noImgElement: local preview of the picked file
+              <img src={url} alt="" className="absolute inset-0 size-full object-cover" />
+            )}
+          </div>
+        ) : (
+          <div className="relative isolate flex w-full items-center gap-2 overflow-hidden rounded-md px-2 py-1.5">
+            {url && (
+              <span
+                aria-hidden="true"
+                className="q-plate q-plate-img"
+                style={{ backgroundImage: `url("${url}")` }}
+              />
+            )}
+            <Avatar name={me.name} id={me.id} src={me.avatarUrl} size="xs" />
+            <span className="truncate text-[13px] font-semibold">{displayName(me)}</span>
+          </div>
+        )}
+        <p className="text-[14px] font-semibold">
+          {name || `Your ${KIND_LABEL[kind].toLowerCase()}`}
+        </p>
+        <p className="text-xs text-fg-muted">🪙 {price}</p>
+      </div>
+    </div>
+  )
+}
+
 function CreatePicker() {
-  const [kind, setKind] = useState<'decoration' | 'theme'>('decoration')
+  const [kind, setKind] = useState<ItemKind>('decoration')
   return (
     <>
       <div className="mb-5 inline-flex rounded-lg border border-border p-0.5 text-[13px]">
-        {(['decoration', 'theme'] as const).map((k) => (
+        {(['decoration', 'effect', 'plate', 'theme'] as const).map((k) => (
           <button
             key={k}
             type="button"
@@ -695,11 +931,17 @@ function CreatePicker() {
               kind === k ? 'bg-accent text-accent-fg' : 'text-fg-muted hover:bg-bg-muted',
             )}
           >
-            {k === 'decoration' ? 'Decoration' : 'Theme (CSS)'}
+            {KIND_LABEL[k]}
           </button>
         ))}
       </div>
-      {kind === 'decoration' ? <CreateCosmetic /> : <CreateTheme />}
+      {kind === 'decoration' ? (
+        <CreateCosmetic />
+      ) : kind === 'theme' ? (
+        <CreateTheme />
+      ) : (
+        <CreateImageItem key={kind} kind={kind} />
+      )}
     </>
   )
 }
@@ -1115,6 +1357,10 @@ function MyCreations() {
           <li key={c.id} className="flex items-center gap-4 p-3">
             {c.kind === 'theme' ? (
               <ThemeSwatch css={c.css ?? ''} className="h-14 w-20" />
+            ) : c.kind === 'effect' || c.kind === 'plate' ? (
+              <span className="relative isolate block h-14 w-20 overflow-hidden rounded-md bg-bg-muted">
+                <NamePlate value={c.value} />
+              </span>
             ) : (
               <span className="p-2">
                 <Avatar name="" id={c.id} decoration={c.decoration} size="lg" />

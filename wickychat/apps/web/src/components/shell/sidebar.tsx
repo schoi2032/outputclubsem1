@@ -37,6 +37,7 @@ import {
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
+import { NamePlate } from '@/components/profile/cosmetics-fx'
 import { channelTitle, dmPartner, isDirect } from '@/lib/channels'
 import { usePreference } from '@/lib/preferences'
 import { useReminders, useTasks } from '@/lib/productivity'
@@ -174,13 +175,14 @@ function ChannelRow({ c }: { c: Channel }) {
         href={`${base}/c/${c.id}`}
         aria-current={active ? 'page' : undefined}
         className={cn(
-          'q-nav flex items-center gap-2 rounded-md px-2 text-[13.5px] text-fg-muted hover:bg-bg-muted',
+          'q-nav relative isolate flex items-center gap-2 overflow-hidden rounded-md px-2 text-[13.5px] text-fg-muted hover:bg-bg-muted',
           compact ? 'h-[26px]' : 'h-[30px]',
           active && 'bg-bg-emphasis text-fg hover:bg-bg-emphasis',
           (unread || mentions > 0) && 'font-semibold text-fg',
           m?.muted && !active && 'opacity-55',
         )}
       >
+        {partner?.namePlate && <NamePlate value={partner.namePlate} />}
         <span className="flex size-5 shrink-0 items-center justify-center">{icon}</span>
         <span className="min-w-0 flex-1 truncate">{channelTitle(c, me.id)}</span>
         {voice && voice.participants.length > 0 && (

@@ -4,7 +4,12 @@ import { cleanProfileStyle, type UserSummary } from '@quid/shared'
 type UserRow = Pick<
   typeof users.$inferSelect,
   'id' | 'name' | 'displayName' | 'avatarKey' | 'avatarAnimated' | 'isBot'
-> & { decoration?: string | null; profileStyle?: Record<string, unknown> | null }
+> & {
+  decoration?: string | null
+  profileStyle?: Record<string, unknown> | null
+  namePlate?: string | null
+  profileEffect?: string | null
+}
 
 /** Columns needed for `toUserSummary`, for use in `select()`. */
 export const userCols = {
@@ -16,6 +21,8 @@ export const userCols = {
   isBot: users.isBot,
   decoration: users.decoration,
   profileStyle: users.profileStyle,
+  namePlate: users.namePlate,
+  profileEffect: users.profileEffect,
 }
 
 /**
@@ -35,6 +42,8 @@ export function toUserSummary(u: UserRow): UserSummary {
     isBot: u.isBot,
     decoration: u.decoration ?? null,
     nameStyle: nameStyle(u.profileStyle),
+    namePlate: u.namePlate ?? null,
+    profileEffect: u.profileEffect ?? null,
   }
 }
 

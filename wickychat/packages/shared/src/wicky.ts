@@ -206,8 +206,10 @@ export const CREATOR_SHARE = 0.9
 
 export interface Cosmetic {
   id: string
-  /** A decoration around the avatar, or an app theme (CSS). */
-  kind: 'decoration' | 'theme'
+  /** A decoration around the avatar, an app theme (CSS), a profile effect or a name plate. */
+  kind: 'decoration' | 'theme' | 'effect' | 'plate'
+  /** What gets stored when it's equipped (effects and plates). */
+  value: string
   /** Theme CSS (themes only). */
   css: string | null
   /** What goes in `users.decoration` / `Avatar decoration`: `u:<id>|f:<file>|s:<file>:<pos>`. */
@@ -354,6 +356,8 @@ export interface Wallet {
   equipped: string | null
   /** Equipped app theme: a built-in theme id or `u:<id>`. */
   equippedTheme: string | null
+  equippedEffect: string | null
+  equippedPlate: string | null
   /** Days in a row the daily bonus was claimed. */
   streak: number
   /** Whether today's daily bonus can still be claimed. */
@@ -838,3 +842,101 @@ export interface Leaderboard {
   /** Current daily streak. */
   streaks: LeaderRow[]
 }
+
+// --- Profile effects and name plates ----------------------------------------------------
+
+export interface SimpleItem {
+  id: string
+  name: string
+  description: string
+  price: number
+}
+
+/** Animated overlays on the profile card. Drawn with CSS (`.q-fx-<name>`). */
+export const EFFECTS: (SimpleItem & { particle: string })[] = [
+  {
+    id: 'e-snow',
+    name: 'Snowfall',
+    description: 'Soft snow drifting down',
+    price: 150,
+    particle: '❄',
+  },
+  {
+    id: 'e-sparkle',
+    name: 'Sparkles',
+    description: 'Twinkling sparkles',
+    price: 150,
+    particle: '✦',
+  },
+  {
+    id: 'e-hearts',
+    name: 'Floating hearts',
+    description: 'Hearts rising up',
+    price: 180,
+    particle: '♥',
+  },
+  {
+    id: 'e-sakura',
+    name: 'Sakura',
+    description: 'Cherry blossom petals',
+    price: 200,
+    particle: '🌸',
+  },
+  {
+    id: 'e-bubbles',
+    name: 'Bubbles',
+    description: 'Bubbles floating up',
+    price: 120,
+    particle: '◯',
+  },
+  {
+    id: 'e-stars',
+    name: 'Shooting stars',
+    description: 'Stars streaking across',
+    price: 250,
+    particle: '★',
+  },
+  {
+    id: 'e-confetti',
+    name: 'Confetti',
+    description: 'A party on your card',
+    price: 220,
+    particle: '▮',
+  },
+  {
+    id: 'e-fireflies',
+    name: 'Fireflies',
+    description: 'Glowing dots drifting around',
+    price: 200,
+    particle: '●',
+  },
+]
+
+/** Animated backgrounds behind your name in lists. Drawn with CSS (`.q-plate-<name>`). */
+export const PLATES: SimpleItem[] = [
+  { id: 'p-sunset', name: 'Sunset', description: 'Warm orange and pink', price: 120 },
+  { id: 'p-ocean', name: 'Ocean', description: 'Rolling blues', price: 120 },
+  { id: 'p-aurora', name: 'Aurora', description: 'Northern lights', price: 180 },
+  { id: 'p-candy', name: 'Candy', description: 'Pastel pink and blue', price: 120 },
+  { id: 'p-galaxy', name: 'Galaxy', description: 'Deep space purple', price: 200 },
+  { id: 'p-matrix', name: 'Terminal', description: 'Green on black', price: 150 },
+  { id: 'p-lava', name: 'Lava', description: 'Hot reds that flow', price: 180 },
+  { id: 'p-mint', name: 'Mint', description: 'Fresh and green', price: 100 },
+]
+
+export const EFFECT_IDS = EFFECTS.map((e) => e.id)
+export const PLATE_IDS = PLATES.map((p) => p.id)
+export const effectById = (id: string | null | undefined) => EFFECTS.find((e) => e.id === id)
+export const plateById = (id: string | null | undefined) => PLATES.find((p) => p.id === id)
+
+/** Value stored for a student-made effect or plate: `u:<cosmetic id>|i:<image file id>`. */
+export const customImageValue = (c: { id: string; frameFileId: string | null }) =>
+  `u:${c.id}${c.frameFileId ? `|i:${c.frameFileId}` : ''}`
+
+/** The image file of a student-made effect or plate, if the value is one. */
+export function customImageFile(value: string | null | undefined): string | null {
+  const m = /^u:[0-9a-f-]{36}\|i:([0-9a-f-]{36})$/.exec(value ?? '')
+  return m?.[1] ?? null
+}
+
+export type ItemKind = 'decoration' | 'theme' | 'effect' | 'plate'

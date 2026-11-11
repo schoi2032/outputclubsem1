@@ -9,6 +9,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Palette } from 'lucide-react'
 import { useState } from 'react'
 import { useOrgContext } from '@/components/org-context'
+import { NamePlate } from '@/components/profile/cosmetics-fx'
 import { SettingsTitle } from '@/components/settings-ui'
 import { ThemeSwatch } from '@/components/shop/theme-swatch'
 import { errorMessage, get, post } from '@/lib/api'
@@ -37,6 +38,10 @@ function Row({ c, onDone, live }: { c: Cosmetic; onDone: () => void; live?: bool
       <div className="flex shrink-0 gap-6 px-3">
         {c.kind === 'theme' ? (
           <ThemeSwatch css={c.css ?? ''} className="w-28" />
+        ) : c.kind === 'effect' || c.kind === 'plate' ? (
+          <span className="relative isolate block h-20 w-28 overflow-hidden rounded-md bg-bg-muted">
+            <NamePlate value={c.value} />
+          </span>
         ) : (
           <Avatar name={c.creator.name} id={c.creator.id} decoration={c.decoration} size="xl" />
         )}
