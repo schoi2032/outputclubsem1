@@ -35,7 +35,7 @@ const num = (rows: { n: unknown }[]) => Number(rows[0]?.n ?? 0)
 
 export async function achievementStats(ctx: AppContext, userId: string): Promise<Stats> {
   const db = ctx.db
-  const [u, msgs, crates, trd, gifts, items, sold, quiz, serial, sent, ups, won] =
+  const [u, msgs, crates, trd, gifts, items, sold, quiz, serial, sent, ups, won, inv, div] =
     await Promise.all([
       db.query.users.findFirst({ where: eq(users.id, userId), columns: { bestStreak: true } }),
       db
@@ -96,6 +96,19 @@ export async function achievementStats(ctx: AppContext, userId: string): Promise
         .select({ n: count() })
         .from(auctions)
         .where(and(eq(auctions.topBidderId, userId), eq(auctions.status, 'sold'))),
+      db
+        .select({ n: count() })
+        .from(coinTransactions)
+        .where(
+          and(
+            eq(coinTransactions.userId, userId),
+            inArray(coinTransactions.reason, ['invest_buy', 'share_buy']),
+          ),
+        ),
+      db
+        .select({ n: sum(coinTransactions.amount) })
+        .from(coinTransactions)
+        .where(and(eq(coinTransactions.userId, userId), eq(coinTransactions.reason, 'dividend'))),
     ])
   return {
     messages: num(msgs),
@@ -110,6 +123,8 @@ export async function achievementStats(ctx: AppContext, userId: string): Promise
     coinsSent: num(sent),
     tradeUps: num(ups),
     auctionsWon: num(won),
+    invested: num(inv),
+    dividends: num(div),
   }
 }
 

@@ -14,7 +14,15 @@ import {
 } from '@quid/shared'
 import { Avatar, Button, cn, Input, Popover, PopoverContent, PopoverTrigger, toast } from '@quid/ui'
 import { useQueryClient } from '@tanstack/react-query'
-import { ArrowLeftRight, Coins, ExternalLink, Gift, Link2, MessageSquare } from 'lucide-react'
+import {
+  ArrowLeftRight,
+  Coins,
+  ExternalLink,
+  Gift,
+  Link2,
+  MessageSquare,
+  TrendingUp,
+} from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { TimeoutMenu } from '@/components/moderation/timeout-menu'
@@ -335,6 +343,13 @@ export function ProfileCard({ user, panel }: { user: UserSummary; panel?: boolea
               onClick={() => router.push(`${base}/shop?trade=${user.id}`)}
             >
               <ArrowLeftRight />
+            </Button>
+            <Button
+              title="Back them on the Stock Market"
+              aria-label="Back them on the Stock Market"
+              onClick={() => router.push(`${base}/shop?back=${user.id}`)}
+            >
+              <TrendingUp />
             </Button>
           </div>
         )}

@@ -13,6 +13,7 @@ import {
 } from '@quid/db'
 import {
   builtinMakers,
+  buyPrice,
   COIN_GIFT,
   COINS,
   COSMETIC_PRICE,
@@ -50,6 +51,7 @@ import { badRequest, conflict, forbidden, notFound } from '../../core/errors'
 import { type App, orgIdParams, orgParams } from '../../core/http'
 import { avatarUrl } from '../users/serialize'
 import { settleAuctions } from './auctions'
+import { listed, lockSupply, orgOf, setSupply } from './invest'
 import { changeCoins, currentStreak, earnedFromMessagesToday, startOfSchoolDay } from './service'
 
 const CUSTOM = /^u:([0-9a-f-]{36})$/
@@ -97,6 +99,7 @@ export function serializeCosmetic(
     sales: c.sales,
     visibility: c.visibility as Cosmetic['visibility'],
     stock: c.stock,
+    dynamic: c.dynamic,
     createdAt: c.createdAt.toISOString(),
   }
 }
@@ -318,11 +321,18 @@ export async function coinRoutes(app: App, ctx: AppContext) {
           throw notFound('Person')
       }
 
+      // Shop items (and student items on the Stock Market) cost more the more people hold.
+      const orgId = await orgOf(ctx.db, me.id)
+      const market = orgId ? await listed(ctx.db, orgId, itemId) : null
+      const base = price
+
       await ctx.db.transaction(async (tx) => {
         const has = await tx.query.userItems.findFirst({
           where: and(eq(userItems.userId, owner), eq(userItems.itemId, itemId)),
         })
         if (has) throw conflict(giftTo ? 'They already have this one.' : 'You already own this.')
+        const supply = market && orgId ? await lockSupply(tx, orgId, itemId) : 0
+        if (market) price = buyPrice(market.base, supply)
         const [u] = await tx
           .select({ coins: users.coins })
           .from(users)
@@ -335,6 +345,7 @@ export async function coinRoutes(app: App, ctx: AppContext) {
         await tx
           .insert(userItems)
           .values({ userId: owner, itemId, giftedBy: giftTo ? me.id : null, serial })
+        if (market && orgId) await setSupply(tx, orgId, itemId, supply + 1, market.base)
         // Buying for yourself puts it on straight away.
         if (!giftTo) await tx.update(users).set(equipFor(itemId, custom)).where(eq(users.id, me.id))
         // The student who made it earns most of the price.
@@ -346,14 +357,15 @@ export async function coinRoutes(app: App, ctx: AppContext) {
             columns: { id: true },
           })
           if (maker && maker.id !== me.id)
-            await changeCoins(tx, maker.id, Math.floor(price * CREATOR_SHARE), 'sale', itemId)
+            await changeCoins(tx, maker.id, Math.floor(base * CREATOR_SHARE), 'sale', itemId)
         }
         if (custom) {
           if (custom.creatorId !== me.id)
             await changeCoins(
               tx,
               custom.creatorId,
-              Math.floor(price * CREATOR_SHARE),
+              // On the Stock Market the maker gets their own price; the rise is for investors.
+              Math.floor((market ? base : price) * CREATOR_SHARE),
               'sale',
               itemId,
             )
@@ -521,6 +533,7 @@ export async function coinRoutes(app: App, ctx: AppContext) {
             .max(COSMETIC_STOCK.max)
             .nullable()
             .default(null),
+          dynamic: z.boolean().default(false),
         }),
       },
       config: { rateLimit: { max: 10, timeWindow: '1 minute' } },
@@ -575,6 +588,8 @@ export async function coinRoutes(app: App, ctx: AppContext) {
           stickerPosition: b.stickerPosition,
           visibility: b.visibility,
           stock: b.stock,
+          // Limited and private items have their own rules, so they stay off the Stock Market.
+          dynamic: b.dynamic && b.visibility === 'public' && b.stock == null,
         })
         .returning()
       const me = await ctx.db.query.users.findFirst({

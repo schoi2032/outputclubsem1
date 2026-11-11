@@ -228,6 +228,8 @@ export interface Cosmetic {
   visibility: 'public' | 'private'
   /** Limited: only this many copies will ever exist (null = unlimited). */
   stock: number | null
+  /** On the Stock Market (price follows demand). */
+  dynamic: boolean
   createdAt: string
 }
 
@@ -376,6 +378,12 @@ export interface CoinTransaction {
     | 'auction_bid'
     | 'auction_refund'
     | 'auction_sale'
+    | 'invest_buy'
+    | 'invest_sell'
+    | 'share_buy'
+    | 'share_sell'
+    | 'dividend'
+    | 'invest_cut'
   ref: string | null
   createdAt: string
 }
@@ -1259,6 +1267,8 @@ export type AchievementStat =
   | 'coinsSent'
   | 'tradeUps'
   | 'auctionsWon'
+  | 'invested'
+  | 'dividends'
 
 export interface AchievementDef {
   id: string
@@ -1301,6 +1311,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   ach('tradeup-1', '🧪', 'Alchemist', 'Do a trade-up contract', 'tradeUps', 1, 15),
   ach('tradeup-10', '⚗️', 'Trade-up master', 'Do 10 trade-up contracts', 'tradeUps', 10, 100),
   ach('auction-1', '🔨', 'Going, going, gone', 'Win an auction', 'auctionsWon', 1, 20),
+  ach('invest-1', '📈', 'Investor', 'Buy something on the Stock Market', 'invested', 1, 15),
+  ach('dividend-100', '🏦', 'Believer', 'Earn 100 coins from backing people', 'dividends', 100, 50),
   ach('send-500', '💸', 'Generous', 'Send 500 coins to friends in total', 'coinsSent', 500, 25),
 ]
 export const achievementById = (id: string) => ACHIEVEMENTS.find((a) => a.id === id)

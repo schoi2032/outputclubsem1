@@ -239,6 +239,13 @@
       "when": 1794401976845,
       "tag": "0033_auctions",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1794402627148,
+      "tag": "0034_stock_market",
+      "breakpoints": true
     }
   ]
 }

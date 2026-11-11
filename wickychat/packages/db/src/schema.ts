@@ -1025,6 +1025,8 @@ export const cosmetics = pgTable(
     visibility: text('visibility').notNull().default('public'),
     /** Limited: how many copies can ever exist. Null = unlimited. */
     stock: integer('stock'),
+    /** On the Stock Market: price goes up as people buy and down as they sell. */
+    dynamic: boolean('dynamic').notNull().default(false),
     createdAt: createdAt(),
   },
   (t) => [
@@ -1621,4 +1623,63 @@ export const auctions = pgTable(
     index('auctions_org_idx').on(t.orgId, t.status),
     index('auctions_due_idx').on(t.status, t.endsAt),
   ],
+)
+
+/**
+ * WickyChat Stock Market: how many copies of an item (or shares of a person, `p:<user id>`)
+ * have been bought and not sold back, per school. The price follows from this.
+ */
+export const marketSupply = pgTable(
+  'market_supply',
+  {
+    orgId: orgRef(),
+    key: text('key').notNull(),
+    supply: integer('supply').notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.orgId, t.key] })],
+)
+
+/** WickyChat: extra copies of an item someone holds as an investment. */
+export const holdings = pgTable(
+  'holdings',
+  {
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    itemId: text('item_id').notNull(),
+    qty: integer('qty').notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.itemId] })],
+)
+
+/** WickyChat: shares someone holds in a person. They earn when that person earns coins. */
+export const personShares = pgTable(
+  'person_shares',
+  {
+    holderId: uuid('holder_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    targetId: uuid('target_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    orgId: orgRef(),
+    qty: integer('qty').notNull().default(0),
+  },
+  (t) => [
+    primaryKey({ columns: [t.holderId, t.targetId] }),
+    index('person_shares_target_idx').on(t.targetId),
+  ],
+)
+
+/** WickyChat: price history for the Stock Market charts. */
+export const priceTicks = pgTable(
+  'price_ticks',
+  {
+    id: pk(),
+    orgId: orgRef(),
+    key: text('key').notNull(),
+    price: integer('price').notNull(),
+    at: createdAt(),
+  },
+  (t) => [index('price_ticks_key_idx').on(t.orgId, t.key, t.at)],
 )

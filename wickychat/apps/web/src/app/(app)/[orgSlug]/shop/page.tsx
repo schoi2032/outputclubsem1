@@ -74,6 +74,7 @@ import { AchievementsView, useAchievements } from '@/components/shop/achievement
 import { AuctionsView } from '@/components/shop/auctions'
 import { BundlesView, CreateBundle, MyBundles, useBundleDefs } from '@/components/shop/bundles'
 import { CrateArt, CratesView, CreateCrate, MyCrates, useCrateDefs } from '@/components/shop/crates'
+import { InvestView, useStocks } from '@/components/shop/invest'
 import {
   BUILTIN_ITEMS,
   cosmeticItem,
@@ -123,6 +124,12 @@ const REASON: Record<CoinTransaction['reason'], string> = {
   auction_bid: 'Bid on',
   auction_refund: 'Outbid, coins back for',
   auction_sale: 'Auction sold:',
+  invest_buy: 'Stock Market: bought',
+  invest_sell: 'Stock Market: sold',
+  share_buy: 'Backed',
+  share_sell: 'Sold shares in',
+  dividend: 'Bonus for backing',
+  invest_cut: 'Stock Market cut:',
 }
 
 const POSITION_LABEL: Record<StickerPosition, string> = {
@@ -155,6 +162,7 @@ type Tab =
   | 'plates'
   | 'themes'
   | 'create'
+  | 'invest'
   | 'market'
   | 'auctions'
   | 'trades'
@@ -171,6 +179,7 @@ const TABS: Tab[] = [
   'plates',
   'themes',
   'create',
+  'invest',
   'market',
   'auctions',
   'trades',
@@ -209,10 +218,17 @@ function ShopInner() {
   const [sendCoins, setSendCoins] = useState<string | boolean>(params.get('coins') ?? false)
   const presetGift = params.get('gift')
   const presetTrade = params.get('trade') ?? undefined
+  const presetBack = params.get('back')
   const presetPerson = members.data?.find((m) => m.id === presetGift)
   const urlTab = params.get('tab') as Tab | null
   const [tab, setTab] = useState<Tab>(
-    presetTrade ? 'trades' : urlTab && TABS.includes(urlTab) ? urlTab : 'all',
+    presetTrade
+      ? 'trades'
+      : presetBack
+        ? 'invest'
+        : urlTab && TABS.includes(urlTab)
+          ? urlTab
+          : 'all',
   )
   const events = liveEvents()
   const trades = useTrades()
@@ -234,7 +250,16 @@ function ShopInner() {
   const communityList = community.data ?? []
   const ownedSet = useMemo(() => new Set(w?.owned ?? []), [w?.owned])
 
-  const allItems = [...catalog.values()]
+  // Shop prices follow the Stock Market: they go up as more people hold an item.
+  const stocks = useStocks()
+  const liveCatalog = useMemo(() => {
+    if (!stocks.data) return catalog
+    const now = new Map(stocks.data.map((q) => [q.key, q.price]))
+    return new Map(
+      [...catalog].map(([id, it]) => [id, now.has(id) ? { ...it, price: now.get(id)! } : it]),
+    )
+  }, [catalog, stocks.data])
+  const allItems = [...liveCatalog.values()]
   // Seasonal items only show in their tabs while the event is on (or if you own them).
   const shown = (it: ShopItem) => it.live || ownedSet.has(it.itemId)
   const byKind = (k: ItemKind, community: boolean) =>
@@ -747,6 +772,7 @@ function ShopInner() {
               <TabsTrigger value="plates">Name plates</TabsTrigger>
               <TabsTrigger value="themes">Themes</TabsTrigger>
               <TabsTrigger value="create">Create</TabsTrigger>
+              <TabsTrigger value="invest">📈 Invest</TabsTrigger>
               <TabsTrigger value="market">Market</TabsTrigger>
               <TabsTrigger value="auctions">Auctions</TabsTrigger>
               <TabsTrigger value="trades">
@@ -964,11 +990,14 @@ function ShopInner() {
             </TabsContent>
             <TabsContent value="market" className="pt-4">
               <MarketView
-                catalog={catalog}
+                catalog={liveCatalog}
                 owned={w?.owned ?? []}
                 coins={w?.coins ?? 0}
                 onChange={() => refresh()}
               />
+            </TabsContent>
+            <TabsContent value="invest" className="pt-4">
+              <InvestView wallet={w} person={params.get('back') ?? undefined} />
             </TabsContent>
             <TabsContent value="auctions" className="pt-4">
               <AuctionsView wallet={w} />
@@ -1018,6 +1047,14 @@ function ShopInner() {
                             h.reason === 'bundle_sale') &&
                             h.ref &&
                             ` ${bundleDefs.byId(h.ref)?.name ?? 'bundle'}`}
+                          {(h.reason === 'share_buy' ||
+                            h.reason === 'share_sell' ||
+                            h.reason === 'dividend') &&
+                            h.ref &&
+                            (() => {
+                              const m = members.data?.find((x) => x.id === h.ref)
+                              return ` ${m ? displayName(m) : 'someone'}`
+                            })()}
                           {(h.reason === 'coins_sent' || h.reason === 'coins_received') &&
                             h.ref &&
                             (() => {
@@ -1029,7 +1066,9 @@ function ShopInner() {
                           {(h.reason === 'trade_up' ||
                             h.reason === 'auction_bid' ||
                             h.reason === 'auction_refund' ||
-                            h.reason === 'auction_sale') &&
+                            h.reason === 'auction_sale' ||
+                            h.reason === 'invest_buy' ||
+                            h.reason === 'invest_sell') &&
                             h.ref &&
                             ` ${itemName(h.ref, communityList)}`}
                           {h.reason === 'achievement' &&
@@ -1542,6 +1581,7 @@ function useAvailability() {
   const [visibility, setVisibility] = useState<'public' | 'private'>('public')
   const [limited, setLimited] = useState(false)
   const [stock, setStock] = useState(25)
+  const [dynamic, setDynamic] = useState(false)
   return {
     visibility,
     setVisibility,
@@ -1549,7 +1589,13 @@ function useAvailability() {
     setLimited,
     stock,
     setStock,
-    body: { visibility, stock: limited ? stock : null },
+    dynamic,
+    setDynamic,
+    body: {
+      visibility,
+      stock: limited ? stock : null,
+      dynamic: dynamic && !limited && visibility === 'public',
+    },
   }
 }
 
@@ -1611,6 +1657,23 @@ function AvailabilityFields({ a }: { a: ReturnType<typeof useAvailability> }) {
           Each copy gets a number (#1, #2…). Once they're gone, they're gone, so people can only get
           one by trading.
         </p>
+      )}
+      {a.visibility === 'public' && !a.limited && (
+        <label className="mt-1 flex flex-col gap-0.5 text-[13px]">
+          <span className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={a.dynamic}
+              onChange={(e) => a.setDynamic(e.target.checked)}
+            />
+            📈 Put it on the Stock Market
+          </span>
+          <span className="pl-6 text-2xs text-fg-subtle">
+            The price goes up as more people buy it and down when they sell. You still get{' '}
+            {Math.round(CREATOR_SHARE * 100)}% of your price on every buy; anything above your price
+            is what investors can earn.
+          </span>
+        </label>
       )}
     </div>
   )

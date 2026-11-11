@@ -43,6 +43,7 @@ import { achievementRoutes } from './modules/coins/achievements'
 import { auctionRoutes } from './modules/coins/auctions'
 import { bundleRoutes } from './modules/coins/bundles'
 import { crateRoutes } from './modules/coins/crates'
+import { investRoutes } from './modules/coins/invest'
 import { marketRoutes } from './modules/coins/market'
 import { profileRoutes } from './modules/coins/profile'
 import { coinRoutes } from './modules/coins/routes'
@@ -332,6 +333,7 @@ export async function buildApp(config: Config, opts: BuildOptions = {}) {
   await achievementRoutes(app, ctx)
   await tradeUpRoutes(app, ctx)
   await auctionRoutes(app, ctx)
+  await investRoutes(app, ctx)
   await complianceRoutes(app, ctx)
   await pluginRoutes(app, ctx)
   await productivityRoutes(app, ctx)

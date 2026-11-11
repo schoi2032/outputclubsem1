@@ -2,17 +2,18 @@
  * WickyChat: Wicky Coins. The balance lives on `users.coins`; every change is also written to
  * `coin_transactions` so people can see their history.
  */
-import { coinTransactions, cosmetics, users } from '@quid/db'
+import { coinTransactions, cosmetics, personShares, users } from '@quid/db'
 import {
   COINS,
   type CoinTransaction,
   cosmeticDecoration,
   customImageValue,
+  INVEST,
   type Me,
   themeById,
   themeCss,
 } from '@quid/shared'
-import { and, eq, gte, sql } from 'drizzle-orm'
+import { and, eq, gt, gte, sql } from 'drizzle-orm'
 import { uuidv7 } from 'uuidv7'
 import type { AppContext } from '../../core/context'
 
@@ -49,7 +50,56 @@ export async function changeCoins(
   if (delta === 0) return next
   await db.update(users).set({ coins: next }).where(eq(users.id, userId))
   await db.insert(coinTransactions).values({ id: uuidv7(), userId, amount: delta, reason, ref })
+  if (delta > 0 && EARNINGS.has(reason)) await payDividends(db, userId, delta)
   return next
+}
+
+/**
+ * Coins someone earned themselves (not gifts, trades or sales of things they bought). Their
+ * shareholders get a bonus on these.
+ */
+const EARNINGS = new Set<CoinTransaction['reason']>([
+  'daily',
+  'message',
+  'poll',
+  'quiz',
+  'sale',
+  'crate_sale',
+  'bundle_sale',
+  'achievement',
+])
+
+/** Rounds randomly so small amounts still pay out fairly on average. */
+const roundFair = (x: number) => Math.floor(x) + (Math.random() < x - Math.floor(x) ? 1 : 0)
+
+/**
+ * When someone earns coins, the people holding shares in them split INVEST.dividend of it
+ * extra (new coins, nothing is taken from the earner), up to a daily cap each.
+ */
+async function payDividends(db: Db | Tx, earnerId: string, earned: number) {
+  const holders = await db
+    .select({ holderId: personShares.holderId, qty: personShares.qty })
+    .from(personShares)
+    .where(and(eq(personShares.targetId, earnerId), gt(personShares.qty, 0)))
+  if (!holders.length) return
+  const total = holders.reduce((n, h) => n + h.qty, 0)
+  const pool = earned * INVEST.dividend
+  for (const h of holders) {
+    let n = roundFair((pool * h.qty) / total)
+    if (n <= 0) continue
+    const [today] = await db
+      .select({ n: sql<number>`coalesce(sum(${coinTransactions.amount}), 0)::int` })
+      .from(coinTransactions)
+      .where(
+        and(
+          eq(coinTransactions.userId, h.holderId),
+          eq(coinTransactions.reason, 'dividend'),
+          gte(coinTransactions.createdAt, startOfSchoolDay()),
+        ),
+      )
+    n = Math.min(n, INVEST.dividendDailyMax - Number(today?.n ?? 0))
+    if (n > 0) await changeCoins(db, h.holderId, n, 'dividend', earnerId)
+  }
 }
 
 /** Coins earned from messages since the start of today. */
