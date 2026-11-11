@@ -51,7 +51,13 @@ function ChannelIntro({ channel }: { channel: Channel }) {
     return (
       <div className="px-4 pt-10 pb-4 md:px-5">
         {channel.kind === 'dm' && partner && (
-          <Avatar name={partner.name} id={partner.id} src={partner.avatarUrl} size="xl" />
+          <Avatar
+            name={partner.name}
+            id={partner.id}
+            src={partner.avatarUrl}
+            decoration={partner.decoration}
+            size="xl"
+          />
         )}
         <h2 className="mt-3 text-lg font-semibold">{channelTitle(channel, me.id)}</h2>
         <p className="mt-1 text-[13px] text-fg-muted">

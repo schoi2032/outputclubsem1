@@ -477,6 +477,7 @@ export function CanvasTab({ channel, canEdit }: { channel: Channel; canEdit: boo
                         name={c.updatedBy.name}
                         id={c.updatedBy.id}
                         src={c.updatedBy.avatarUrl}
+                        decoration={c.updatedBy.decoration}
                         size="xs"
                       />
                     )}

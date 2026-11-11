@@ -53,6 +53,7 @@ function Profile({ m, onClose }: { m: Member | null; onClose: () => void }) {
             name={m.name}
             id={m.id}
             src={m.avatarUrl}
+            decoration={m.decoration}
             size="xl"
             presence={p?.status ?? m.presence}
           />
@@ -210,6 +211,7 @@ function People() {
                         name={m.name}
                         id={m.id}
                         src={m.avatarUrl}
+                        decoration={m.decoration}
                         size="lg"
                         presence={p?.status ?? m.presence}
                       />

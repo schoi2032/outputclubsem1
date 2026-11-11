@@ -61,6 +61,38 @@ Code:
   - `GET /api/orgs/:orgId/moderation/events?userId=&before=&limit=`
 - **Privacy.** DMs and private chats are logged too, and the Help page tells students that. Deleting a user deletes their incidents. Deleting a message keeps the incident, but its link is removed.
 
+## Profiles, Wicky Coins and the Shop
+
+Code:
+- `packages/shared/src/wicky.ts`: coin rules, the decoration catalog and banner colours
+- `apps/api/src/modules/coins/`: the server side
+- `packages/ui/src/styles.css`: the `.q-deco-*` animations
+- `apps/web/src/components/profile/profile-card.tsx`: the profile card
+- `apps/web/src/app/(app)/[orgSlug]/shop/page.tsx`: the shop page
+
+- **Profile card.** Click a name or avatar in chat to open it. It shows a banner colour, the avatar with its decoration, display name, pronouns, role (🍎 Teacher for admins and owners), status, "About me" (190 characters, swear-filtered) and join date, plus a Message button. Edit it in Settings → Profile; the page has a live preview.
+- **Wicky Coins.** The balance is in `users.coins`. Every change is written to `coin_transactions` with a reason (`daily`, `message`, `swear`, `purchase` or `gift`). The rules are in `COINS`:
+
+  | How | Coins |
+  |---|---|
+  | Daily bonus | +25 |
+  | Each message | +2 |
+  | Message cap | 50 a day |
+  | Each swear | −5 |
+
+  "Today" means midnight to midnight Korea time. The balance never goes below 0. Edits never earn coins, but editing a swear in still costs 5.
+- **Teacher rewards.** Admins and owners can gift 1–1000 coins from someone's profile card (`POST /api/orgs/:orgId/members/:id/coins`). Each gift is written to the audit log.
+- **Shop.** In the left menu. It has eight animated decorations, from Neon Pulse (60) to Royal Crown (800). Buying one equips it straight away. Owned items are in `user_items`, and the equipped one is in `users.decoration`, which travels with every `UserSummary`, so the `Avatar` component draws it everywhere. Decorations are hidden at the smallest avatar size. They stop animating for people who have "reduce motion" turned on.
+- **Adding a decoration.**
+  1. Add an entry to `DECORATIONS` in `wicky.ts`.
+  2. Add `.q-deco-<id>` CSS in `styles.css`. `::before` is the ring and `::after` is the extra.
+- **The API:**
+  - `GET /api/me/wallet`
+  - `POST /api/me/wallet/daily`
+  - `POST /api/me/shop/:itemId/buy`
+  - `PUT /api/me/decoration` with `{ itemId | null }`
+  - `PATCH /api/me` with `bio`, `pronouns` and `bannerColor`
+
 ## Email check switch (temporary)
 
 `SKIP_EMAIL_VERIFICATION=true` is **on in production right now**, because there's no email service yet.

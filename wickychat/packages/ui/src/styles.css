@@ -335,3 +335,272 @@
 :root:not([data-animate-avatars="never"]) .group:hover .q-ava > .q-ava-anim {
   display: block;
 }
+
+/* ---------------------------------------------------------------------------
+ * WickyChat avatar decorations (bought with Wicky Coins).
+ * .q-deco sits just outside the avatar. ::before draws the ring, ::after the
+ * little extra (moon, star, heart, flame, kite, crown).
+ * ------------------------------------------------------------------------- */
+@property --q-deco-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.q-deco {
+  position: absolute;
+  inset: -14%;
+  border-radius: 34%;
+  pointer-events: none;
+  z-index: 1;
+  --q-deco-w: 2px;
+}
+.q-ava[data-size="lg"] .q-deco,
+.q-ava[data-size="xl"] .q-deco {
+  --q-deco-w: 3px;
+}
+.q-ava[data-size="xl"] .q-deco {
+  inset: -9%;
+}
+.q-ava[data-size="sm"] .q-deco {
+  font-size: 12px;
+}
+.q-ava[data-size="md"] .q-deco {
+  font-size: 15px;
+}
+.q-ava[data-size="lg"] .q-deco {
+  font-size: 18px;
+}
+.q-ava[data-size="xl"] .q-deco {
+  font-size: 28px;
+}
+.q-deco::before,
+.q-deco::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  line-height: 1;
+}
+.q-deco::before {
+  inset: 0;
+  border-radius: inherit;
+}
+
+/* Gradient rings: a conic gradient masked down to a thin border, turning slowly. */
+.q-deco-rainbow::before,
+.q-deco-fire::before,
+.q-deco-crown::before,
+.q-deco-kite::before {
+  padding: var(--q-deco-w);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+  animation: q-deco-angle 2.5s linear infinite;
+}
+
+/* Neon Pulse */
+.q-deco-pulse::before {
+  border: var(--q-deco-w) solid #9471ff;
+  box-shadow:
+    0 0 6px #8052ff,
+    inset 0 0 4px #8052ff;
+  animation: q-deco-pulse 2.2s ease-in-out infinite;
+}
+@keyframes q-deco-pulse {
+  50% {
+    border-color: #15c39a;
+    box-shadow:
+      0 0 12px #15c39a,
+      inset 0 0 6px #15c39a;
+    transform: scale(1.04);
+  }
+}
+
+/* Orbit: a little moon circling the avatar */
+.q-deco-orbit {
+  border-radius: 50%;
+  animation: q-deco-spin 4s linear infinite;
+}
+.q-deco-orbit::before {
+  border: 1.5px dashed color-mix(in oklab, #8052ff 60%, transparent);
+}
+.q-deco-orbit::after {
+  width: 24%;
+  height: 24%;
+  top: -8%;
+  left: 38%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff6d6, #ffb829 60%, #c27a00);
+  box-shadow: 0 0 6px #ffb829;
+}
+
+/* Sparkles: a golden ring with a twinkling star */
+.q-deco-sparkle::before {
+  border: 1.5px solid color-mix(in oklab, #ffd36b 75%, transparent);
+  box-shadow: 0 0 8px color-mix(in oklab, #ffd36b 60%, transparent);
+  animation: q-deco-glow 1.6s ease-in-out infinite;
+}
+.q-deco-sparkle::after {
+  content: "✦";
+  color: #ffd36b;
+  font-size: 0.85em;
+  top: -18%;
+  right: -14%;
+  text-shadow: 0 0 6px #ffb829;
+  animation: q-deco-twinkle 1.6s ease-in-out infinite;
+}
+@keyframes q-deco-twinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.6) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2) rotate(45deg);
+  }
+}
+@keyframes q-deco-glow {
+  50% {
+    box-shadow: 0 0 14px #ffd36b;
+  }
+}
+
+/* Rainbow Spin */
+.q-deco-rainbow::before {
+  background: conic-gradient(
+    from var(--q-deco-angle),
+    #ff4d6d,
+    #ffb829,
+    #f6ff4d,
+    #3ddc84,
+    #3b8fc9,
+    #8052ff,
+    #ff4d6d
+  );
+}
+
+/* Floating Hearts */
+.q-deco-hearts::before {
+  border: 1.5px solid color-mix(in oklab, #ff5c9a 65%, transparent);
+  box-shadow: 0 0 6px color-mix(in oklab, #ff5c9a 50%, transparent);
+}
+.q-deco-hearts::after {
+  content: "♥";
+  color: #ff5c9a;
+  font-size: 0.8em;
+  bottom: 0;
+  right: -10%;
+  animation: q-deco-float 2.2s ease-in infinite;
+}
+@keyframes q-deco-float {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.6);
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-160%) scale(1.15);
+  }
+}
+
+/* On Fire */
+.q-deco-fire::before {
+  background: conic-gradient(from var(--q-deco-angle), #ff3d00, #ffb800, #ff6a00, #ffe066, #ff3d00);
+  animation: q-deco-angle 1.2s linear infinite;
+}
+.q-deco-fire {
+  filter: drop-shadow(0 0 4px #ff6a00);
+  animation: q-deco-flicker 0.35s ease-in-out infinite alternate;
+}
+.q-deco-fire::after {
+  content: "🔥";
+  font-size: 0.8em;
+  bottom: -16%;
+  right: -16%;
+}
+@keyframes q-deco-flicker {
+  from {
+    opacity: 0.85;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Wicky Kite: the Output Club kite soaring by */
+.q-deco-kite::before {
+  background: conic-gradient(from var(--q-deco-angle), #8052ff, #15846e, #ffb829, #8052ff);
+  animation-duration: 3s;
+}
+.q-deco-kite::after {
+  width: 40%;
+  height: 40%;
+  top: -22%;
+  right: -22%;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%238052ff'/%3E%3Cstop offset='1' stop-color='%2315846e'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M3 5 L29 9 L12 28 Z' fill='url(%23g)'/%3E%3Cpath d='M17 3 L28 4 L22 11 Z' fill='%23ffb829'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.35));
+  animation: q-deco-soar 2.6s ease-in-out infinite;
+}
+@keyframes q-deco-soar {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(-8deg);
+  }
+  50% {
+    transform: translate(-12%, -20%) rotate(12deg);
+  }
+}
+
+/* Royal Crown */
+.q-deco-crown::before {
+  background: conic-gradient(from var(--q-deco-angle), #b8860b, #ffe27a, #fff6c9, #d4a017, #b8860b);
+  animation-duration: 3s;
+}
+.q-deco-crown {
+  filter: drop-shadow(0 0 3px #ffcf3f);
+}
+.q-deco-crown::after {
+  content: "👑";
+  font-size: 0.95em;
+  top: -38%;
+  left: 50%;
+  animation: q-deco-bob 2s ease-in-out infinite;
+}
+@keyframes q-deco-bob {
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0) rotate(-12deg);
+  }
+  50% {
+    transform: translateX(-50%) translateY(-14%) rotate(-4deg);
+  }
+}
+
+@keyframes q-deco-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes q-deco-angle {
+  to {
+    --q-deco-angle: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .q-deco,
+  .q-deco::before,
+  .q-deco::after {
+    animation: none !important;
+  }
+}

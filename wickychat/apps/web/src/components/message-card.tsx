@@ -34,7 +34,13 @@ export function MessageCard({
         <span className="ml-auto">{formatFull(m.createdAt)}</span>
       </div>
       <div className="flex gap-2.5">
-        <Avatar name={m.author.name} id={m.author.id} src={m.author.avatarUrl} size="md" />
+        <Avatar
+          name={m.author.name}
+          id={m.author.id}
+          src={m.author.avatarUrl}
+          decoration={m.author.decoration}
+          size="md"
+        />
         <div className="min-w-0 flex-1">
           <p className="text-[13.5px] font-semibold">{displayName(m.author)}</p>
           {highlight ? (

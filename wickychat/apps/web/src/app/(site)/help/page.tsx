@@ -152,9 +152,34 @@ export default function HelpPage() {
               In any channel, open <strong>Notifications</strong> to choose "All new messages",
               "Mentions and threads" or "Nothing". Or <strong>Mute</strong> it.
             </li>
+            <li>
+              Click anyone's name or picture to see their <strong>profile card</strong>. Set up
+              yours in <strong>Settings → Profile</strong>: pronouns, an "About me" and a banner
+              colour.
+            </li>
           </ul>
 
-          <h3>7. The rules</h3>
+          <h3>7. Wicky Coins and the Shop 🪙</h3>
+          <ul>
+            <li>
+              Open <strong>Shop</strong> in the left menu. Claim <strong>25 free coins</strong>{' '}
+              every day.
+            </li>
+            <li>
+              Every message earns <strong>2 coins</strong>, up to 50 a day, so spamming doesn't
+              help. Teachers can also reward you with bonus coins.
+            </li>
+            <li>
+              Spend coins on <strong>animated decorations</strong> around your picture, from a
+              glowing ring to fire, the Wicky kite or a golden crown. Everyone sees them next to
+              your messages.
+            </li>
+            <li>
+              Swearing <strong>costs you 5 coins</strong> each time the filter catches it.
+            </li>
+          </ul>
+
+          <h3>8. The rules</h3>
           <ul>
             <li>
               WickyChat is a school space. Treat it like a classroom: be kind, no bullying, no spam.
@@ -262,7 +287,16 @@ export default function HelpPage() {
             </li>
           </ul>
 
-          <h3>5. Handy tools</h3>
+          <h3>5. Reward students with coins</h3>
+          <ul>
+            <li>
+              Click a student's name, type an amount and press <strong>Reward</strong> to give them
+              Wicky Coins (up to 1000 at a time) for good work or helping out. They spend coins on
+              avatar decorations in the Shop. Every reward is recorded in the audit log.
+            </li>
+          </ul>
+
+          <h3>6. Handy tools</h3>
           <ul>
             <li>
               <strong>Tasks:</strong> turn a message into a task with a due date and assign it.

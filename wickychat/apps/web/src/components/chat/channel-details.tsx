@@ -272,6 +272,7 @@ export function ChannelDetails({
                       name={m.name}
                       id={m.id}
                       src={m.avatarUrl}
+                      decoration={m.decoration}
                       size="md"
                       presence={m.isBot ? undefined : m.presence}
                     />

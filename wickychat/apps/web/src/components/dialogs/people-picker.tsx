@@ -98,7 +98,14 @@ export function PeoplePicker({
                   selected && 'bg-bg-muted',
                 )}
               >
-                <Avatar name={m.name} id={m.id} src={m.avatarUrl} size="sm" presence={m.presence} />
+                <Avatar
+                  name={m.name}
+                  id={m.id}
+                  src={m.avatarUrl}
+                  decoration={m.decoration}
+                  size="sm"
+                  presence={m.presence}
+                />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[13px] font-medium">{displayName(m)}</span>
                   <span className="block truncate text-xs text-fg-subtle">

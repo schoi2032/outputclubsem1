@@ -29,6 +29,7 @@ export function IncomingCall({ call }: { call: Call }) {
             name={caller.name}
             id={caller.id}
             src={caller.avatarUrl}
+            decoration={caller.decoration}
             size="lg"
             className="relative"
           />

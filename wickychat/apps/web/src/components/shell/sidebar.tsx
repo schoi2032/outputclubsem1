@@ -137,7 +137,13 @@ function ChannelRow({ c }: { c: Channel }) {
   if (c.kind === 'dm' && partner) {
     icon = (
       <span className="relative">
-        <Avatar name={partner.name} id={partner.id} src={partner.avatarUrl} size="xs" />
+        <Avatar
+          name={partner.name}
+          id={partner.id}
+          src={partner.avatarUrl}
+          decoration={partner.decoration}
+          size="xs"
+        />
         {!partner.isBot && (
           <PresenceDot
             state={presence.data?.[partner.id]?.status ?? 'offline'}

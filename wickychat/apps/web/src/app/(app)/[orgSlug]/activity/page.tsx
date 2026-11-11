@@ -152,6 +152,7 @@ export default function ActivityPage() {
                         name={n.actor.name}
                         id={n.actor.id}
                         src={n.actor.avatarUrl}
+                        decoration={n.actor.decoration}
                         size="md"
                       />
                     ) : (

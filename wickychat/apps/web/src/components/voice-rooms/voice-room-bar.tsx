@@ -131,7 +131,13 @@ function Person({
         speaking && 'ring-success',
       )}
     >
-      <Avatar name={p.user.name} id={p.user.id} src={p.user.avatarUrl} size="md" />
+      <Avatar
+        name={p.user.name}
+        id={p.user.id}
+        src={p.user.avatarUrl}
+        decoration={p.user.decoration}
+        size="md"
+      />
       {p.handRaised && (
         <span className="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-warning text-black ring-2 ring-bg-overlay">
           <Hand className="size-2.5" />

@@ -13,9 +13,20 @@ export interface UserSummary {
   displayName: string | null
   avatarUrl: string | null
   isBot: boolean
+  /** WickyChat: equipped animated avatar decoration (an id from DECORATIONS), if any. */
+  decoration?: string | null
 }
 
-export interface Me extends UserSummary {
+/** WickyChat profile card details. */
+export interface ProfileExtras {
+  bio: string
+  pronouns: string
+  bannerColor: string | null
+}
+
+export interface Me extends UserSummary, ProfileExtras {
+  /** Wicky Coins balance. */
+  coins: number
   email: string
   emailVerified: boolean
   timezone: string | null
@@ -52,7 +63,7 @@ export interface Org extends OrgSummary {
   memberCount: number
 }
 
-export interface Member extends UserSummary {
+export interface Member extends UserSummary, ProfileExtras {
   email: string
   role: OrgRole
   title: string | null

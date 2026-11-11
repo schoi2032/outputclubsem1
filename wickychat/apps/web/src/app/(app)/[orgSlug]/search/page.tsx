@@ -158,6 +158,7 @@ function SearchInner() {
                             name={p.name}
                             id={p.id}
                             src={p.avatarUrl}
+                            decoration={p.decoration}
                             size="md"
                             presence={p.presence}
                           />

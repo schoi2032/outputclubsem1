@@ -159,7 +159,13 @@ export function CallBar({ state }: { state: CallState }) {
                     !present && 'opacity-50',
                   )}
                 >
-                  <Avatar name={p.user.name} id={p.user.id} src={p.user.avatarUrl} size="md" />
+                  <Avatar
+                    name={p.user.name}
+                    id={p.user.id}
+                    src={p.user.avatarUrl}
+                    decoration={p.user.decoration}
+                    size="md"
+                  />
                   {muted && (
                     <span className="absolute -right-1 -bottom-1 flex size-4 items-center justify-center rounded-full bg-danger text-white ring-2 ring-bg-overlay">
                       <MicOff className="size-2.5" />

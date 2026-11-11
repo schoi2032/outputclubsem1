@@ -1,6 +1,6 @@
 'use client'
-import type { Attachment } from '@quid/shared'
-import { Avatar, Button, Field, Input, Select, Skeleton, toast } from '@quid/ui'
+import { type Attachment, BANNER_COLORS } from '@quid/shared'
+import { Avatar, Button, cn, Field, Input, Select, Skeleton, Textarea, toast } from '@quid/ui'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Monitor } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
@@ -46,7 +46,7 @@ function device(ua: string | null) {
 }
 
 export default function ProfileSettings() {
-  const { me, api } = useOrgContext()
+  const { me, api, base } = useOrgContext()
   const qc = useQueryClient()
   const [name, setName] = useState(me.name)
   const [displayName, setDisplayName] = useState(me.displayName ?? '')
@@ -54,6 +54,9 @@ export default function ProfileSettings() {
     me.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
   )
   const [saving, setSaving] = useState(false)
+  const [bio, setBio] = useState(me.bio)
+  const [pronouns, setPronouns] = useState(me.pronouns)
+  const [banner, setBanner] = useState<string | null>(me.bannerColor)
   const [current, setCurrent] = useState('')
   const [next, setNext] = useState('')
   const [pwBusy, setPwBusy] = useState(false)
@@ -88,7 +91,13 @@ export default function ProfileSettings() {
       />
       <SettingsCard title="Profile">
         <div className="mb-5 flex items-center gap-4">
-          <Avatar name={me.name} id={me.id} src={me.avatarUrl} size="xl" />
+          <Avatar
+            name={me.name}
+            id={me.id}
+            src={me.avatarUrl}
+            decoration={me.decoration}
+            size="xl"
+          />
           <div className="flex flex-wrap items-center gap-2">
             <Button size="sm" onClick={() => fileRef.current?.click()}>
               Upload photo
@@ -169,6 +178,114 @@ export default function ProfileSettings() {
             </Button>
           </div>
         </form>
+      </SettingsCard>
+
+      <SettingsCard title="Profile card">
+        <p className="mb-4 text-[13px] text-fg-muted">
+          What people see when they click your name. Want an animated decoration around your
+          picture? Get one in the{' '}
+          <a className="text-accent-text underline" href={`${base}/shop`}>
+            Wicky Shop
+          </a>
+          .
+        </p>
+        <div className="flex flex-col gap-6 md:flex-row">
+          <form
+            className="flex flex-1 flex-col gap-4"
+            onSubmit={(e) => {
+              e.preventDefault()
+              void save({ bio, pronouns, bannerColor: banner })
+            }}
+          >
+            <Field label="Pronouns" hint="Optional, e.g. she/her, he/him, they/them.">
+              {(p) => (
+                <Input
+                  {...p}
+                  maxLength={40}
+                  value={pronouns}
+                  onChange={(e) => setPronouns(e.target.value)}
+                />
+              )}
+            </Field>
+            <Field label="About me" hint={`${bio.length}/190 · Swear words are filtered here too.`}>
+              {(p) => (
+                <Textarea
+                  {...p}
+                  rows={3}
+                  maxLength={190}
+                  value={bio}
+                  placeholder="Clubs, hobbies, favourite subject…"
+                  onChange={(e) => setBio(e.target.value)}
+                />
+              )}
+            </Field>
+            <div>
+              <p className="mb-1.5 text-[13px] font-medium">Banner colour</p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  aria-label="Default gradient"
+                  aria-pressed={banner === null}
+                  onClick={() => setBanner(null)}
+                  className={cn(
+                    'size-8 rounded-full ring-offset-2 ring-offset-bg',
+                    banner === null && 'ring-2 ring-fg',
+                  )}
+                  style={{ background: 'linear-gradient(135deg, #8052ff, #15846e)' }}
+                />
+                {BANNER_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    aria-label={`Banner colour ${c}`}
+                    aria-pressed={banner === c}
+                    onClick={() => setBanner(c)}
+                    className={cn(
+                      'size-8 rounded-full ring-offset-2 ring-offset-bg',
+                      banner === c && 'ring-2 ring-fg',
+                    )}
+                    style={{ background: c }}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <Button type="submit" variant="primary" loading={saving}>
+                Save profile card
+              </Button>
+            </div>
+          </form>
+          <div className="w-full shrink-0 md:w-[260px]">
+            <p className="mb-1.5 text-2xs font-semibold text-fg-subtle uppercase">Preview</p>
+            <div className="overflow-hidden rounded-lg border border-border bg-bg-overlay">
+              <div
+                className="h-16"
+                style={{ background: banner ?? 'linear-gradient(135deg, #8052ff, #15846e)' }}
+              />
+              <div className="px-4 pb-4">
+                <span className="-mt-8 mb-2 inline-block rounded-2xl bg-bg-overlay p-1">
+                  <Avatar
+                    name={me.name}
+                    id={me.id}
+                    src={me.avatarUrl}
+                    decoration={me.decoration}
+                    size="xl"
+                  />
+                </span>
+                <p className="text-[16px] leading-tight font-semibold">{displayName || me.name}</p>
+                <p className="text-[13px] text-fg-muted">
+                  {me.name}
+                  {pronouns ? ` · ${pronouns}` : ''}
+                </p>
+                <div className="my-3 h-px bg-border" />
+                <p className="mb-1 text-2xs font-semibold text-fg-subtle uppercase">About me</p>
+                <p className="text-[13px] break-words whitespace-pre-wrap">
+                  {bio || <span className="text-fg-subtle">Nothing here yet.</span>}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </SettingsCard>
 
       <OrgProfileCard />

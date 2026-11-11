@@ -224,7 +224,15 @@ export default function StructureSettings() {
                 const m = members.data?.find((x) => x.id === tm.userId)
                 return (
                   <li key={tm.userId} className="flex items-center gap-2 py-2">
-                    {m && <Avatar name={m.name} id={m.id} src={m.avatarUrl} size="sm" />}
+                    {m && (
+                      <Avatar
+                        name={m.name}
+                        id={m.id}
+                        src={m.avatarUrl}
+                        decoration={m.decoration}
+                        size="sm"
+                      />
+                    )}
                     <span className="flex-1 text-[13px]">{memberName(tm.userId)}</span>
                     <Button
                       size="sm"

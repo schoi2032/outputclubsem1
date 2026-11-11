@@ -146,7 +146,13 @@ export default function ModerationSettings() {
                   <td className="px-3 py-2 text-fg-subtle tabular-nums">{i + 1}</td>
                   <td className="px-3 py-2">
                     <div className="flex items-center gap-2">
-                      <Avatar name={o.user.name} id={o.user.id} src={o.user.avatarUrl} size="sm" />
+                      <Avatar
+                        name={o.user.name}
+                        id={o.user.id}
+                        src={o.user.avatarUrl}
+                        decoration={o.user.decoration}
+                        size="sm"
+                      />
                       <div className="min-w-0">
                         <p className="truncate font-medium">{displayName(o.user)}</p>
                         <p className="truncate text-2xs text-fg-subtle">{o.user.email}</p>
@@ -191,7 +197,13 @@ export default function ModerationSettings() {
         <ul className="divide-y divide-border rounded-lg border border-border">
           {list.map((e) => (
             <li key={e.id} className="flex items-start gap-3 p-3">
-              <Avatar name={e.user.name} id={e.user.id} src={e.user.avatarUrl} size="sm" />
+              <Avatar
+                name={e.user.name}
+                id={e.user.id}
+                src={e.user.avatarUrl}
+                decoration={e.user.decoration}
+                size="sm"
+              />
               <div className="min-w-0 flex-1">
                 <p className="text-[13px]">
                   <button

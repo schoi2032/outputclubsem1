@@ -120,7 +120,13 @@ export default function MembersSettings() {
                   key={m.id}
                   className={`flex flex-wrap items-center gap-3 py-2.5 ${m.deactivated ? 'opacity-50' : ''}`}
                 >
-                  <Avatar name={m.name} id={m.id} src={m.avatarUrl} size="md" />
+                  <Avatar
+                    name={m.name}
+                    id={m.id}
+                    src={m.avatarUrl}
+                    decoration={m.decoration}
+                    size="md"
+                  />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[13px] font-medium">
                       {displayName(m)}{' '}

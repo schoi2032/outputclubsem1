@@ -135,7 +135,11 @@ export function CommandPalette() {
     const chanIcon = (c: (typeof all)[number]) => {
       if (c.kind === 'dm') {
         const p = dmPartner(c, me.id)
-        return p ? <Avatar name={p.name} id={p.id} src={p.avatarUrl} size="xs" /> : <Hash />
+        return p ? (
+          <Avatar name={p.name} id={p.id} src={p.avatarUrl} decoration={p.decoration} size="xs" />
+        ) : (
+          <Hash />
+        )
       }
       return c.kind === 'private' ? <Lock /> : <Hash />
     }
@@ -249,7 +253,9 @@ export function CommandPalette() {
       group: 'People',
       label: displayName(p),
       detail: p.title || undefined,
-      icon: <Avatar name={p.name} id={p.id} src={p.avatarUrl} size="xs" />,
+      icon: (
+        <Avatar name={p.name} id={p.id} src={p.avatarUrl} decoration={p.decoration} size="xs" />
+      ),
       run: () => go(`${base}/people?user=${p.id}`),
     }))
     const remoteChannels: Item[] = (r?.channels ?? [])

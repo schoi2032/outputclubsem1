@@ -11,6 +11,7 @@ import {
 } from '@quid/db'
 import type { Me, OrgSummary } from '@quid/shared'
 import {
+  censorText,
   changePasswordSchema,
   forgotPasswordSchema,
   loginSchema,
@@ -128,6 +129,11 @@ export async function loadMe(
       displayName: u.displayName,
       avatarUrl: avatarUrl(u.avatarKey, u.avatarAnimated),
       isBot: false,
+      decoration: u.decoration,
+      bio: u.bio,
+      pronouns: u.pronouns,
+      bannerColor: u.bannerColor,
+      coins: u.coins,
       emailVerified: u.emailVerifiedAt !== null,
       timezone: u.timezone,
       createdAt: u.createdAt.toISOString(),
@@ -347,7 +353,7 @@ export async function authRoutes(app: App, ctx: AppContext) {
 
   app.patch('/api/me', { schema: { body: updateProfileSchema } }, async (req) => {
     const me = requireUser(req)
-    const { name, displayName, timezone, avatarFileId } = req.body
+    const { name, displayName, timezone, avatarFileId, bio, pronouns, bannerColor } = req.body
     let avatarAnimated = false
     if (avatarFileId) {
       const f = await ctx.db.query.files.findFirst({
@@ -367,6 +373,10 @@ export async function authRoutes(app: App, ctx: AppContext) {
         ...(displayName !== undefined && { displayName: displayName || null }),
         ...(timezone !== undefined && { timezone }),
         ...(avatarFileId !== undefined && { avatarKey: avatarFileId, avatarAnimated }),
+        // WickyChat profile card. The bio goes through the swear filter like messages do.
+        ...(bio !== undefined && { bio: censorText(bio).text }),
+        ...(pronouns !== undefined && { pronouns: censorText(pronouns).text }),
+        ...(bannerColor !== undefined && { bannerColor }),
         updatedAt: new Date(),
       })
       .where(eq(users.id, me.id))

@@ -183,6 +183,7 @@ function CallBanner({ channel }: { channel: Channel }) {
             name={p.user.name}
             id={p.user.id}
             src={p.user.avatarUrl}
+            decoration={p.user.decoration}
             size="xs"
             className="ring-2 ring-bg"
           />
@@ -245,6 +246,7 @@ function Header({
               name={partner.name}
               id={partner.id}
               src={partner.avatarUrl}
+              decoration={partner.decoration}
               size="sm"
               presence={partner.isBot ? undefined : (partnerPresence?.status ?? 'offline')}
             />

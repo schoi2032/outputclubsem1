@@ -30,6 +30,7 @@ import { badRequest, notFound } from '../../core/errors'
 import { emitHook } from '../../core/hooks'
 import { publishChannelJoined } from '../channels/events'
 import type { ChannelRow } from '../channels/service'
+import { coinsForMessage } from '../coins/service'
 import { serializeFiles } from '../files/serialize'
 import { enqueueOutgoingWebhooks } from '../integrations/outgoing'
 import { notifyForMessage } from '../notifications/service'
@@ -451,6 +452,7 @@ export async function createMessage(
   })
 
   if (input.kind !== 'bot') {
+    await coinsForMessage(ctx, scope.userId, !!swears)
     await recordSwears(
       ctx,
       {

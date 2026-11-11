@@ -4,7 +4,7 @@ import type { UserSummary } from '@quid/shared'
 type UserRow = Pick<
   typeof users.$inferSelect,
   'id' | 'name' | 'displayName' | 'avatarKey' | 'avatarAnimated' | 'isBot'
->
+> & { decoration?: string | null }
 
 /** Columns needed for `toUserSummary`, for use in `select()`. */
 export const userCols = {
@@ -14,6 +14,7 @@ export const userCols = {
   avatarKey: users.avatarKey,
   avatarAnimated: users.avatarAnimated,
   isBot: users.isBot,
+  decoration: users.decoration,
 }
 
 /**
@@ -31,6 +32,7 @@ export function toUserSummary(u: UserRow): UserSummary {
     displayName: u.displayName,
     avatarUrl: avatarUrl(u.avatarKey, u.avatarAnimated),
     isBot: u.isBot,
+    decoration: u.decoration ?? null,
   }
 }
 

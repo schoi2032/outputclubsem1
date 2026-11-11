@@ -61,6 +61,16 @@ export const users = pgTable(
     termsAcceptedAt: ts('terms_accepted_at'),
     /** Personal preferences (appearance, messages, composer, sidebar). See @quid/shared. */
     preferences: jsonb('preferences').$type<Record<string, unknown>>().notNull().default({}),
+    /** WickyChat profile: short "About me", pronouns and the colour of the profile card banner. */
+    bio: text('bio').notNull().default(''),
+    pronouns: text('pronouns').notNull().default(''),
+    bannerColor: text('banner_color'),
+    /** Equipped avatar decoration (an id from DECORATIONS in @quid/shared), if any. */
+    decoration: text('decoration'),
+    /** Wicky Coins balance. Every change is also written to `coin_transactions`. */
+    coins: integer('coins').notNull().default(0),
+    /** Last time the daily coin bonus was claimed. */
+    dailyClaimedAt: ts('daily_claimed_at'),
     createdAt: createdAt(),
     updatedAt: ts('updated_at').notNull().defaultNow(),
   },
@@ -896,6 +906,37 @@ export const auditLogs = pgTable(
     createdAt: createdAt(),
   },
   (t) => [index('audit_logs_org_idx').on(t.orgId, t.id.desc())],
+)
+
+/** WickyChat: Wicky Coins ledger. Positive amounts are earned, negative are spent or lost. */
+export const coinTransactions = pgTable(
+  'coin_transactions',
+  {
+    id: pk(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    amount: integer('amount').notNull(),
+    /** daily | message | swear | purchase | gift */
+    reason: text('reason').notNull(),
+    /** What it was for, e.g. the decoration id that was bought. */
+    ref: text('ref'),
+    createdAt: createdAt(),
+  },
+  (t) => [index('coin_transactions_user_idx').on(t.userId, t.id.desc())],
+)
+
+/** WickyChat: avatar decorations someone owns. */
+export const userItems = pgTable(
+  'user_items',
+  {
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    itemId: text('item_id').notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.itemId] })],
 )
 
 /**

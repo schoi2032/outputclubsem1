@@ -186,6 +186,9 @@ export async function orgRoutes(app: App, ctx: AppContext) {
         .select({
           user: userCols,
           email: users.email,
+          bio: users.bio,
+          pronouns: users.pronouns,
+          bannerColor: users.bannerColor,
           role: orgMemberships.role,
           title: orgMemberships.title,
           departmentId: orgMemberships.departmentId,
@@ -242,6 +245,9 @@ export async function orgRoutes(app: App, ctx: AppContext) {
           statusEmoji: p?.statusEmoji ?? null,
           lastActiveAt: p?.lastActiveAt ?? null,
           profile: r.profile,
+          bio: r.bio,
+          pronouns: r.pronouns,
+          bannerColor: r.bannerColor,
         }
       })
     },

@@ -38,6 +38,13 @@ export const updateProfileSchema = z.object({
   displayName: trimmed(0, 80).optional(),
   timezone: z.string().max(64).optional(),
   avatarFileId: id.nullable().optional(),
+  bio: z.string().trim().max(190).optional(),
+  pronouns: z.string().trim().max(40).optional(),
+  bannerColor: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/)
+    .nullable()
+    .optional(),
 })
 
 // --- Organizations ----------------------------------------------------------

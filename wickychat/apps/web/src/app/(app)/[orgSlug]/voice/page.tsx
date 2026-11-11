@@ -96,6 +96,7 @@ export default function VoicePage() {
                             name={p.user.name}
                             id={p.user.id}
                             src={p.user.avatarUrl}
+                            decoration={p.user.decoration}
                             size="sm"
                             className="ring-2 ring-bg"
                           />
@@ -228,6 +229,7 @@ export default function VoicePage() {
                             name={p.user.name}
                             id={p.user.id}
                             src={p.user.avatarUrl}
+                            decoration={p.user.decoration}
                             size="sm"
                             className="ring-2 ring-bg"
                           />

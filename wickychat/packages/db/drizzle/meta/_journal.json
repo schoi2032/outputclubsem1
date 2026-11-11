@@ -169,6 +169,13 @@
       "when": 1794305435560,
       "tag": "0023_moderation_events",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794365053217,
+      "tag": "0024_profiles_and_coins",
+      "breakpoints": true
     }
   ]
 }

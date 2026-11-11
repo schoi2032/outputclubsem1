@@ -1,6 +1,15 @@
 'use client'
 import { Avatar, Count, cn, Tooltip } from '@quid/ui'
-import { Bell, FolderOpen, Headphones, House, MessagesSquare, Search, Video } from 'lucide-react'
+import {
+  Bell,
+  FolderOpen,
+  Headphones,
+  House,
+  MessagesSquare,
+  Search,
+  Store,
+  Video,
+} from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useChannels, useUnreadCount } from '@/lib/queries'
@@ -31,6 +40,7 @@ export function useNavItems() {
     { href: `${base}/activity`, label: 'Activity', icon: Bell, count: unread.data?.count ?? 0 },
     { href: `${base}/files`, label: 'Files', icon: FolderOpen },
     { href: `${base}/search`, label: 'Search', icon: Search },
+    { href: `${base}/shop`, label: 'Shop', icon: Store },
   ]
 }
 

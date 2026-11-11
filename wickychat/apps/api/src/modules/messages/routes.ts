@@ -19,6 +19,7 @@ import type { AppContext } from '../../core/context'
 import { badRequest, forbidden, notFound } from '../../core/errors'
 import { type App, orgIdParams, orgParams } from '../../core/http'
 import { check, getChannelAccess, requireChannel } from '../channels/service'
+import { coinsForMessage } from '../coins/service'
 import { enqueueOutgoingWebhooks } from '../integrations/outgoing'
 import {
   createMessage,
@@ -136,6 +137,8 @@ export async function messageRoutes(app: App, ctx: AppContext) {
         },
         swears,
       )
+      // Editing a swear into a message still costs coins (but edits never earn any).
+      if (swears) await coinsForMessage(ctx, scope.userId, true)
       const message = await serializeMessage(ctx, scope.userId, updated!)
       await ctx.bus.publish(topics.channel(row.channelId), {
         type: 'message.updated',

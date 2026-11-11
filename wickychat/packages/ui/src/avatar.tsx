@@ -45,6 +45,7 @@ export function Avatar({
   id,
   size = 'md',
   presence,
+  decoration,
   className,
 }: {
   name: string
@@ -52,13 +53,15 @@ export function Avatar({
   id?: string
   size?: keyof typeof SIZES
   presence?: PresenceState
+  /** WickyChat: an animated decoration id (see DECORATIONS in @quid/shared). */
+  decoration?: string | null
   className?: string
 }) {
   const color = PALETTE[hash(id ?? name) % PALETTE.length]
   // Animated avatars (`anim=1`) show a still frame and play on hover; see styles.css.
   const animated = !!src?.includes('anim=1')
   return (
-    <span className={cn('q-ava relative inline-flex shrink-0', className)}>
+    <span className={cn('q-ava relative inline-flex shrink-0', className)} data-size={size}>
       {src && animated ? (
         <>
           <img src={`${src}&thumb=1`} alt="" className={cn('object-cover', SIZES[size])} />
@@ -82,6 +85,9 @@ export function Avatar({
         >
           {initials(name)}
         </span>
+      )}
+      {decoration && size !== 'xs' && (
+        <span aria-hidden="true" className={`q-deco q-deco-${decoration}`} />
       )}
       {presence && <PresenceDot state={presence} className="absolute -right-0.5 -bottom-0.5" />}
     </span>

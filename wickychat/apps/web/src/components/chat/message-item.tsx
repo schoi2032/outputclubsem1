@@ -45,6 +45,7 @@ import { reminderChoices, whenLabel } from '@/lib/productivity'
 import { useMembers } from '@/lib/queries'
 import { useOrgContext } from '../org-context'
 import { TaskDialog } from '../productivity/tasks'
+import { ProfilePopover } from '../profile/profile-card'
 import { Attachments } from './attachments'
 import { Composer } from './composer'
 import { EmojiValue, isEmojiOnly } from './custom-emoji'
@@ -219,20 +220,25 @@ export const MessageItem = memo(function MessageItem({
             </time>
           </Tooltip>
         ) : prefs.avatars ? (
-          <Avatar
-            name={m.author.name}
-            id={m.author.id}
-            src={m.author.avatarUrl}
-            size="lg"
-            className={cn('mt-0.5', compact ? '[&>span]:size-8' : '[&>span]:size-9')}
-          />
+          <ProfilePopover user={m.author}>
+            <Avatar
+              name={m.author.name}
+              id={m.author.id}
+              src={m.author.avatarUrl}
+              decoration={m.author.decoration}
+              size="lg"
+              className={cn('mt-0.5', compact ? '[&>span]:size-8' : '[&>span]:size-9')}
+            />
+          </ProfilePopover>
         ) : null}
       </div>
 
       <div className="min-w-0 flex-1">
         {!grouped && (
           <div className="flex items-baseline gap-2">
-            <span className="text-[14px] font-semibold">{author}</span>
+            <ProfilePopover user={m.author}>
+              <span className="text-[14px] font-semibold">{author}</span>
+            </ProfilePopover>
             {m.author.isBot && (
               <span className="rounded bg-bg-emphasis px-1 text-2xs font-semibold text-fg-muted">
                 BOT
@@ -468,6 +474,7 @@ function ThreadSummary({ m, onOpen }: { m: Message; onOpen: () => void }) {
             name={u.name}
             id={u.id}
             src={u.avatarUrl}
+            decoration={u.decoration}
             size="xs"
             className="ring-2 ring-bg"
           />

@@ -316,6 +316,7 @@ export function TaskCard({
             name={task.assignee.name}
             id={task.assignee.id}
             src={task.assignee.avatarUrl}
+            decoration={task.assignee.decoration}
             size="xs"
           />
         )}

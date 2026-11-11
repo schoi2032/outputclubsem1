@@ -47,6 +47,7 @@ function MeetingRow({ m, action }: { m: Meeting; action: React.ReactNode }) {
             name={p.user.name}
             id={p.user.id}
             src={p.user.avatarUrl}
+            decoration={p.user.decoration}
             size="xs"
             className="ring-2 ring-bg"
           />

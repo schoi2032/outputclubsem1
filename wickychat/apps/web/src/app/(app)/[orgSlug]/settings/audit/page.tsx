@@ -50,7 +50,13 @@ export default function AuditSettings() {
           {entries.map((e) => (
             <li key={e.id} className="flex items-start gap-3 p-3">
               {e.actor ? (
-                <Avatar name={e.actor.name} id={e.actor.id} src={e.actor.avatarUrl} size="sm" />
+                <Avatar
+                  name={e.actor.name}
+                  id={e.actor.id}
+                  src={e.actor.avatarUrl}
+                  decoration={e.actor.decoration}
+                  size="sm"
+                />
               ) : (
                 <span className="size-6" />
               )}

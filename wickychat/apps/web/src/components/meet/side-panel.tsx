@@ -227,7 +227,13 @@ export function PeoplePanel({
             </h3>
             {waiting.map((p) => (
               <div key={p.user.id} className="flex items-center gap-2 rounded-md px-1 py-1.5">
-                <Avatar name={p.user.name} id={p.user.id} src={p.user.avatarUrl} size="sm" />
+                <Avatar
+                  name={p.user.name}
+                  id={p.user.id}
+                  src={p.user.avatarUrl}
+                  decoration={p.user.decoration}
+                  size="sm"
+                />
                 <span className="min-w-0 flex-1 truncate text-[13px]">{displayName(p.user)}</span>
                 <Button
                   size="sm"
@@ -265,7 +271,13 @@ export function PeoplePanel({
               key={p.user.id}
               className="group flex items-center gap-2 rounded-md px-1 py-1.5 hover:bg-bg-muted"
             >
-              <Avatar name={p.user.name} id={p.user.id} src={p.user.avatarUrl} size="sm" />
+              <Avatar
+                name={p.user.name}
+                id={p.user.id}
+                src={p.user.avatarUrl}
+                decoration={p.user.decoration}
+                size="sm"
+              />
               <span className="min-w-0 flex-1 truncate text-[13px]">
                 {displayName(p.user)}
                 {p.user.id === me.id && <span className="text-fg-subtle"> (you)</span>}
@@ -358,7 +370,13 @@ export function PeoplePanel({
             <ul>
               {invited.map((p) => (
                 <li key={p.user.id} className="flex items-center gap-2 px-1 py-1.5 opacity-70">
-                  <Avatar name={p.user.name} id={p.user.id} src={p.user.avatarUrl} size="sm" />
+                  <Avatar
+                    name={p.user.name}
+                    id={p.user.id}
+                    src={p.user.avatarUrl}
+                    decoration={p.user.decoration}
+                    size="sm"
+                  />
                   <span className="truncate text-[13px]">{displayName(p.user)}</span>
                 </li>
               ))}

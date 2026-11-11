@@ -76,6 +76,7 @@ export function UserMenu({ side = 'right' }: { side?: 'right' | 'bottom' }) {
             name={me.name}
             id={me.id}
             src={me.avatarUrl}
+            decoration={me.decoration}
             size="md"
             presence={mine?.status ?? 'active'}
             className="[--presence-ring:var(--q-bg-rail)]"
@@ -83,7 +84,13 @@ export function UserMenu({ side = 'right' }: { side?: 'right' | 'bottom' }) {
         </MenuTrigger>
         <MenuContent side={side} align="end" className="w-64">
           <div className="flex items-center gap-2.5 px-2 py-2">
-            <Avatar name={me.name} id={me.id} src={me.avatarUrl} size="lg" />
+            <Avatar
+              name={me.name}
+              id={me.id}
+              src={me.avatarUrl}
+              decoration={me.decoration}
+              size="lg"
+            />
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold">{displayName(me)}</p>
               <p className="truncate text-xs text-fg-subtle">{me.email}</p>

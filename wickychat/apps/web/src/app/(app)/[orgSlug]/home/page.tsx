@@ -348,6 +348,7 @@ export default function HomePage() {
                             name={displayName(n.actor)}
                             id={n.actor.id}
                             src={n.actor.avatarUrl}
+                            decoration={n.actor.decoration}
                             size="sm"
                           />
                         ) : (
@@ -496,6 +497,7 @@ export default function HomePage() {
                               name={displayName(p.user)}
                               id={p.user.id}
                               src={p.user.avatarUrl}
+                              decoration={p.user.decoration}
                               size="xs"
                               className="ring-2 ring-bg"
                             />
