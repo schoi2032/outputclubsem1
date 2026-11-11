@@ -371,6 +371,7 @@ export interface CoinTransaction {
     | 'bundle'
     | 'bundle_gift'
     | 'bundle_sale'
+    | 'achievement'
   ref: string | null
   createdAt: string
 }
@@ -1236,4 +1237,68 @@ export interface Shelf {
   showcase: { itemId: string; serial: number | null }[]
   /** Items they want and don't own yet. */
   wishlist: string[]
+}
+
+// --- Achievements ------------------------------------------------------------------------
+
+/** Things the server counts for achievements. */
+export type AchievementStat =
+  | 'messages'
+  | 'crates'
+  | 'trades'
+  | 'gifts'
+  | 'items'
+  | 'sold'
+  | 'streak'
+  | 'quiz'
+  | 'serialOne'
+  | 'coinsSent'
+
+export interface AchievementDef {
+  id: string
+  emoji: string
+  name: string
+  how: string
+  stat: AchievementStat
+  goal: number
+  /** Coins you get when you claim it. */
+  reward: number
+}
+
+const ach = (
+  id: string,
+  emoji: string,
+  name: string,
+  how: string,
+  stat: AchievementStat,
+  goal: number,
+  reward: number,
+): AchievementDef => ({ id, emoji, name, how, stat, goal, reward })
+
+export const ACHIEVEMENTS: AchievementDef[] = [
+  ach('chat-100', '💬', 'Say hi', 'Send 100 messages', 'messages', 100, 20),
+  ach('chat-1000', '🗣️', 'Chatterbox', 'Send 1,000 messages', 'messages', 1000, 100),
+  ach('crate-1', '📦', 'Unboxer', 'Open your first crate', 'crates', 1, 10),
+  ach('crate-25', '🎰', 'Crate addict', 'Open 25 crates', 'crates', 25, 75),
+  ach('trade-1', '🤝', 'Deal!', 'Finish your first trade', 'trades', 1, 15),
+  ach('trade-10', '📈', 'Trader', 'Finish 10 trades', 'trades', 10, 60),
+  ach('gift-1', '🎁', 'Thoughtful', 'Gift someone an item, crate or bundle', 'gifts', 1, 15),
+  ach('gift-10', '🎅', 'Secret Santa', 'Send 10 gifts', 'gifts', 10, 80),
+  ach('own-10', '🧺', 'Collector', 'Own 10 items', 'items', 10, 30),
+  ach('own-40', '🏛️', 'Museum', 'Own 40 items', 'items', 40, 150),
+  ach('sell-1', '💰', 'First sale', 'Sell one of your creations', 'sold', 1, 20),
+  ach('sell-25', '🏪', 'Shopkeeper', 'Sell 25 of your creations', 'sold', 25, 150),
+  ach('streak-7', '🔥', 'On fire', 'Claim daily coins 7 days in a row', 'streak', 7, 30),
+  ach('streak-30', '☄️', 'Unstoppable', 'Claim daily coins 30 days in a row', 'streak', 30, 200),
+  ach('quiz-10', '🧠', 'Quiz whiz', 'Answer 10 quiz questions right', 'quiz', 10, 50),
+  ach('serial-1', '🥇', 'Number one', 'Own copy #001 of a limited item', 'serialOne', 1, 50),
+  ach('send-500', '💸', 'Generous', 'Send 500 coins to friends in total', 'coinsSent', 500, 25),
+]
+export const achievementById = (id: string) => ACHIEVEMENTS.find((a) => a.id === id)
+
+export interface AchievementProgress {
+  id: string
+  progress: number
+  done: boolean
+  claimed: boolean
 }

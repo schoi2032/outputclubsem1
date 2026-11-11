@@ -4,6 +4,7 @@
  * student-made cosmetics (create them from a form or a cosmetic.json pack), and gifting.
  */
 import {
+  ACHIEVEMENTS,
   type Attachment,
   COINS,
   COSMETIC_PRICE,
@@ -69,6 +70,7 @@ import { useOrgContext } from '@/components/org-context'
 import { PageHeader } from '@/components/page-header'
 import { NamePlate } from '@/components/profile/cosmetics-fx'
 import { useMyShelf } from '@/components/profile/shelf'
+import { AchievementsView, useAchievements } from '@/components/shop/achievements'
 import { BundlesView, CreateBundle, MyBundles, useBundleDefs } from '@/components/shop/bundles'
 import { CrateArt, CratesView, CreateCrate, MyCrates, useCrateDefs } from '@/components/shop/crates'
 import {
@@ -114,6 +116,7 @@ const REASON: Record<CoinTransaction['reason'], string> = {
   bundle: 'Bought the',
   bundle_gift: 'Gifted the',
   bundle_sale: 'Someone bought your',
+  achievement: 'Achievement:',
 }
 
 const POSITION_LABEL: Record<StickerPosition, string> = {
@@ -149,6 +152,7 @@ type Tab =
   | 'market'
   | 'trades'
   | 'leaderboard'
+  | 'achievements'
   | 'mine'
 const TABS: Tab[] = [
   'all',
@@ -163,6 +167,7 @@ const TABS: Tab[] = [
   'market',
   'trades',
   'leaderboard',
+  'achievements',
   'mine',
 ]
 
@@ -316,6 +321,8 @@ function ShopInner() {
 
   const equippedKey = w?.equipped?.split('|')[0] ?? null
   const shelf = useMyShelf()
+  const achievements = useAchievements()
+  const claimable = (achievements.data ?? []).filter((x) => x.done && !x.claimed).length
 
   const card = (it: ShopItem) => {
     const owned = ownedSet.has(it.itemId)
@@ -742,6 +749,14 @@ function ShopInner() {
                 )}
               </TabsTrigger>
               <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
+              <TabsTrigger value="achievements">
+                Achievements
+                {claimable > 0 && (
+                  <span className="ml-1.5 rounded-full bg-accent px-1.5 text-2xs text-accent-fg">
+                    {claimable}
+                  </span>
+                )}
+              </TabsTrigger>
               <TabsTrigger value="mine">My stuff</TabsTrigger>
             </TabsList>
 
@@ -949,6 +964,9 @@ function ShopInner() {
             <TabsContent value="trades" className="pt-4">
               <TradesView wallet={w} catalog={catalog} presetTo={presetTrade} />
             </TabsContent>
+            <TabsContent value="achievements" className="pt-4">
+              <AchievementsView />
+            </TabsContent>
             <TabsContent value="leaderboard" className="pt-4">
               <LeaderboardView />
             </TabsContent>
@@ -995,6 +1013,9 @@ function ShopInner() {
                               return ` ${m ? displayName(m) : 'someone'}${note ? ` · “${note}”` : ''}`
                             })()}
                           {h.reason === 'gift' && h.ref && ` · “${h.ref}”`}
+                          {h.reason === 'achievement' &&
+                            h.ref &&
+                            ` ${ACHIEVEMENTS.find((x) => x.id === h.ref)?.name ?? ''}`}
                         </span>
                         <span className="text-xs text-fg-subtle">{relative(h.createdAt)}</span>
                         <span

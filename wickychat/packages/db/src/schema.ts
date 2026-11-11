@@ -959,6 +959,19 @@ export const wishlist = pgTable(
   (t) => [primaryKey({ columns: [t.userId, t.itemId] })],
 )
 
+/** WickyChat: achievements whose coin reward someone has claimed. */
+export const achievementClaims = pgTable(
+  'achievement_claims',
+  {
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    achievementId: text('achievement_id').notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.achievementId] })],
+)
+
 /** WickyChat: avatar decorations someone owns. */
 export const userItems = pgTable(
   'user_items',

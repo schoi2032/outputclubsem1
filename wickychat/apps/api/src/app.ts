@@ -39,6 +39,7 @@ import { authRoutes } from './modules/auth/routes'
 import { callRoutes } from './modules/calls/routes'
 import { leaveAllCalls } from './modules/calls/service'
 import { channelRoutes } from './modules/channels/routes'
+import { achievementRoutes } from './modules/coins/achievements'
 import { bundleRoutes } from './modules/coins/bundles'
 import { crateRoutes } from './modules/coins/crates'
 import { marketRoutes } from './modules/coins/market'
@@ -326,6 +327,7 @@ export async function buildApp(config: Config, opts: BuildOptions = {}) {
   await bundleRoutes(app, ctx)
   await tradeRoutes(app, ctx)
   await profileRoutes(app, ctx)
+  await achievementRoutes(app, ctx)
   await complianceRoutes(app, ctx)
   await pluginRoutes(app, ctx)
   await productivityRoutes(app, ctx)

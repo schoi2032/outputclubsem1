@@ -225,6 +225,13 @@
       "when": 1794401435382,
       "tag": "0031_shelf_wishlist",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1794401616007,
+      "tag": "0032_achievements",
+      "breakpoints": true
     }
   ]
 }
