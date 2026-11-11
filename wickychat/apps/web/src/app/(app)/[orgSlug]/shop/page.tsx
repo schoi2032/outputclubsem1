@@ -71,6 +71,7 @@ import { PageHeader } from '@/components/page-header'
 import { NamePlate } from '@/components/profile/cosmetics-fx'
 import { useMyShelf } from '@/components/profile/shelf'
 import { AchievementsView, useAchievements } from '@/components/shop/achievements'
+import { ArtistsView } from '@/components/shop/artists'
 import { AuctionsView } from '@/components/shop/auctions'
 import { BundlesView, CreateBundle, MyBundles, useBundleDefs } from '@/components/shop/bundles'
 import { ClassWarView } from '@/components/shop/classwar'
@@ -141,6 +142,9 @@ const REASON: Record<CoinTransaction['reason'], string> = {
   sticker_sale: 'Someone bought your sticker pack',
   quest: 'Daily quest done',
   class_war: 'Class vs Class reward',
+  commission_hold: 'Art request (held)',
+  commission_refund: 'Art request refunded',
+  commission_pay: 'Paid for your art 🎨',
 }
 
 const POSITION_LABEL: Record<StickerPosition, string> = {
@@ -182,6 +186,7 @@ type Tab =
   | 'achievements'
   | 'quests'
   | 'classwar'
+  | 'artists'
   | 'mine'
 const TABS: Tab[] = [
   'all',
@@ -202,6 +207,7 @@ const TABS: Tab[] = [
   'achievements',
   'quests',
   'classwar',
+  'artists',
   'mine',
 ]
 
@@ -227,7 +233,7 @@ const GROUPS: { id: string; label: string; tabs: Tab[] }[] = [
   },
   { id: 'trade', label: '🎒 My stuff & trading', tabs: ['mine', 'trades', 'auctions', 'market'] },
   { id: 'invest', label: '📈 Invest', tabs: ['invest'] },
-  { id: 'create', label: '🎨 Create', tabs: ['create'] },
+  { id: 'create', label: '🎨 Create & artists', tabs: ['create', 'artists'] },
   {
     id: 'goals',
     label: '🏆 Quests & goals',
@@ -255,6 +261,7 @@ const TAB_LABEL: Record<Tab, string> = {
   achievements: 'Achievements',
   quests: 'Daily quests',
   classwar: '⚔️ Class vs Class',
+  artists: '🎨 Official Artists',
   mine: 'My stuff',
 }
 
@@ -296,9 +303,11 @@ function ShopInner() {
       ? 'trades'
       : presetBack
         ? 'invest'
-        : urlTab && TABS.includes(urlTab)
-          ? urlTab
-          : 'all',
+        : params.get('artist')
+          ? 'artists'
+          : urlTab && TABS.includes(urlTab)
+            ? urlTab
+            : 'all',
   )
   const events = liveEvents()
   const group = groupOf(tab)
@@ -1111,6 +1120,9 @@ function ShopInner() {
             </TabsContent>
             <TabsContent value="quests" className="pt-4">
               <QuestsView />
+            </TabsContent>
+            <TabsContent value="artists" className="pt-4">
+              <ArtistsView wallet={w} preset={params.get('artist') ?? undefined} />
             </TabsContent>
             <TabsContent value="classwar" className="pt-4">
               <ClassWarView />

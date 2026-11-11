@@ -40,6 +40,7 @@ import { callRoutes } from './modules/calls/routes'
 import { leaveAllCalls } from './modules/calls/service'
 import { channelRoutes } from './modules/channels/routes'
 import { achievementRoutes } from './modules/coins/achievements'
+import { artistRoutes } from './modules/coins/artists'
 import { auctionRoutes } from './modules/coins/auctions'
 import { bundleRoutes } from './modules/coins/bundles'
 import { classWarRoutes } from './modules/coins/classwar'
@@ -344,6 +345,7 @@ export async function buildApp(config: Config, opts: BuildOptions = {}) {
   await questRoutes(app, ctx)
   await classWarRoutes(app, ctx)
   await economyRoutes(app, ctx)
+  await artistRoutes(app, ctx)
   await complianceRoutes(app, ctx)
   await pluginRoutes(app, ctx)
   await productivityRoutes(app, ctx)

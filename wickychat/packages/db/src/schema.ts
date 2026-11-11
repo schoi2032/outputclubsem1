@@ -1794,10 +1794,7 @@ export const dataLog = pgTable(
     old: jsonb('old'),
     new: jsonb('new'),
   },
-  (t) => [
-    index('data_log_tbl_idx').on(t.tbl, t.at),
-    index('data_log_user_idx').on(t.userId, t.at),
-  ],
+  (t) => [index('data_log_tbl_idx').on(t.tbl, t.at), index('data_log_user_idx').on(t.userId, t.at)],
 )
 
 /** WickyChat: daily quest rewards someone has claimed (`bonus` = all 3 done). */
@@ -1826,4 +1823,52 @@ export const classWarWeeks = pgTable(
     settledAt: createdAt(),
   },
   (t) => [primaryKey({ columns: [t.orgId, t.week] })],
+)
+
+/** WickyChat: official artists (students a teacher approved to take art requests). */
+export const artists = pgTable(
+  'artists',
+  {
+    orgId: orgRef(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /** pending | approved | rejected | revoked */
+    status: text('status').notNull().default('pending'),
+    bio: text('bio').notNull().default(''),
+    open: boolean('open').notNull().default(true),
+    minPrice: integer('min_price').notNull().default(50),
+    reviewedBy: uuid('reviewed_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.orgId, t.userId] })],
+)
+
+/** WickyChat: a request for custom art. The offer's coins are held until it's done. */
+export const commissions = pgTable(
+  'commissions',
+  {
+    id: pk(),
+    orgId: orgRef(),
+    requesterId: uuid('requester_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    artistId: uuid('artist_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    kind: text('kind').notNull(),
+    description: text('description').notNull(),
+    offer: integer('offer').notNull(),
+    /** requested | accepted | delivered | declined | cancelled */
+    status: text('status').notNull().default('requested'),
+    note: text('note').notNull().default(''),
+    itemId: text('item_id'),
+    acceptedAt: ts('accepted_at'),
+    deliveredAt: ts('delivered_at'),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index('commissions_artist_idx').on(t.artistId, t.status),
+    index('commissions_requester_idx').on(t.requesterId, t.status),
+  ],
 )

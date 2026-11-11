@@ -62,7 +62,15 @@ function Person({ u }: { u?: UserSummary }) {
   )
 }
 
-function FlowChart({ daily }: { daily: Economy['daily'] }) {
+function FlowChart({ daily: raw }: { daily: Economy['daily'] }) {
+  // Every one of the last 14 days, even quiet ones.
+  const byDay = new Map(raw.map((d) => [d.day, d]))
+  const daily = Array.from({ length: 14 }, (_, i) => {
+    const day = new Date(Date.now() + 9 * 3_600_000 - (13 - i) * 86_400_000)
+      .toISOString()
+      .slice(0, 10)
+    return byDay.get(day) ?? { day, earned: 0, spent: 0 }
+  })
   const max = Math.max(1, ...daily.flatMap((d) => [d.earned, d.spent]))
   return (
     <div>

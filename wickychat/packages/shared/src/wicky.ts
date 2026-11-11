@@ -392,6 +392,9 @@ export interface CoinTransaction {
     | 'sticker_sale'
     | 'quest'
     | 'class_war'
+    | 'commission_hold'
+    | 'commission_refund'
+    | 'commission_pay'
   ref: string | null
   createdAt: string
 }
@@ -1490,4 +1493,55 @@ export interface ClassWar {
   standings: ClassWarRow[]
   /** Last week's top 3. */
   lastWeek: { name: string; score: number; place: number }[]
+}
+
+// --- Official artists and commissions ----------------------------------------------------
+
+export const ARTIST = {
+  /** The artist gets this share of the offer; the rest is the school's fee. */
+  share: 0.9,
+  offer: { min: 10, max: 5000 },
+  /** Requests waiting at once, per person. */
+  maxOpen: 5,
+  /** After accepting, the artist has this long before the requester can cancel. */
+  deliverDays: 7,
+}
+
+export type CommissionKind = 'decoration' | 'effect' | 'plate' | 'theme'
+
+export interface Artist {
+  user: import('./types').UserSummary
+  status: 'pending' | 'approved' | 'rejected' | 'revoked'
+  bio: string
+  /** Taking requests right now. */
+  open: boolean
+  minPrice: number
+  delivered: number
+  waiting: number
+}
+
+export interface Commission {
+  id: string
+  requester: import('./types').UserSummary
+  artist: import('./types').UserSummary
+  kind: CommissionKind
+  description: string
+  offer: number
+  status: 'requested' | 'accepted' | 'delivered' | 'declined' | 'cancelled'
+  note: string
+  /** What was delivered (a cosmetic made by the artist). */
+  itemId: string | null
+  createdAt: string
+  acceptedAt: string | null
+  deliveredAt: string | null
+}
+
+export interface ArtistsPage {
+  artists: Artist[]
+  /** Your own artist status, if you've applied. */
+  me: Artist | null
+  /** Teachers: applications to review. */
+  pending: Artist[]
+  sent: Commission[]
+  received: Commission[]
 }

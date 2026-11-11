@@ -21,12 +21,14 @@ import {
   Gift,
   Link2,
   MessageSquare,
+  Palette,
   TrendingUp,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { TimeoutMenu } from '@/components/moderation/timeout-menu'
 import { useOrgContext } from '@/components/org-context'
+import { useArtists } from '@/components/shop/artists'
 import { errorMessage, post } from '@/lib/api'
 import { displayName } from '@/lib/format'
 import { keys, useMembers } from '@/lib/queries'
@@ -204,6 +206,8 @@ export function ProfileCard({ user, panel }: { user: UserSummary; panel?: boolea
   const isTeacher = (r?: string) => r === 'owner' || r === 'admin'
   const canGift = isTeacher(org.role) && user.id !== me.id && !user.isBot
   const style = cleanProfileStyle(m?.profileStyle)
+  const artists = useArtists()
+  const artist = artists.data?.artists.find((a) => a.user.id === user.id)
   const merged: UserSummary = {
     ...user,
     decoration: m?.decoration ?? user.decoration,
@@ -285,6 +289,11 @@ export function ProfileCard({ user, panel }: { user: UserSummary; panel?: boolea
                 {isTeacher(m.role) ? '🍎 Teacher' : ROLE_LABEL[m.role]}
               </span>
             )}
+            {artist && (
+              <span className="rounded-md bg-[#ff7a00]/15 px-1.5 py-0.5 text-2xs font-semibold text-[#c2410c]">
+                🎨 Official Artist
+              </span>
+            )}
             {m.title && (
               <span className="rounded-md bg-bg-muted px-1.5 py-0.5 text-2xs text-fg-muted">
                 {m.title}
@@ -344,6 +353,15 @@ export function ProfileCard({ user, panel }: { user: UserSummary; panel?: boolea
             >
               <ArrowLeftRight />
             </Button>
+            {artist?.open && (
+              <Button
+                title="Request custom art"
+                aria-label="Request custom art"
+                onClick={() => router.push(`${base}/shop?artist=${user.id}`)}
+              >
+                <Palette />
+              </Button>
+            )}
             <Button
               title="Back them on the Stock Market"
               aria-label="Back them on the Stock Market"

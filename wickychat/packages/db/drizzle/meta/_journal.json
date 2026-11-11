@@ -288,6 +288,20 @@
       "when": 1794407344651,
       "tag": "0040_class_war",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1794407746606,
+      "tag": "0041_artists",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1794407747962,
+      "tag": "0042_data_log_more",
+      "breakpoints": true
     }
   ]
 }
