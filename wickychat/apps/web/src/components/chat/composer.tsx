@@ -61,6 +61,7 @@ import { DuelButton } from './duel'
 import { ALL_EMOJI } from './emoji'
 import { EmojiPicker } from './emoji-picker'
 import { PollButton } from './poll'
+import { StickerButton } from './stickers'
 
 // ---------------------------------------------------------------------------
 // Wire format <-> editor format
@@ -804,6 +805,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               </Tooltip>
               {!parentId && <PollButton channel={channel} />}
               {!parentId && <DuelButton channel={channel} />}
+              <StickerButton channel={channel} parentId={parentId} />
               <input
                 ref={fileInput}
                 type="file"

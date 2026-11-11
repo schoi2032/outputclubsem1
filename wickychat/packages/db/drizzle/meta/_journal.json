@@ -253,6 +253,13 @@
       "when": 1794403071075,
       "tag": "0035_duels",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1794403315622,
+      "tag": "0036_stickers",
+      "breakpoints": true
     }
   ]
 }

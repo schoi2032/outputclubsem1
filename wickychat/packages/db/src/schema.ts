@@ -1712,3 +1712,62 @@ export const duels = pgTable(
   },
   (t) => [uniqueIndex('duels_message_uq').on(t.messageId)],
 )
+
+/** WickyChat: a sticker pack a student made. A teacher approves it before it's sold. */
+export const stickerPacks = pgTable(
+  'sticker_packs',
+  {
+    id: pk(),
+    orgId: orgRef(),
+    creatorId: uuid('creator_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    description: text('description').notNull().default(''),
+    price: integer('price').notNull(),
+    /** pending | approved | rejected */
+    status: text('status').notNull().default('pending'),
+    reviewNote: text('review_note'),
+    sales: integer('sales').notNull().default(0),
+    createdAt: createdAt(),
+  },
+  (t) => [index('sticker_packs_org_idx').on(t.orgId, t.status)],
+)
+
+export const stickers = pgTable(
+  'stickers',
+  {
+    id: pk(),
+    packId: uuid('pack_id')
+      .notNull()
+      .references(() => stickerPacks.id, { onDelete: 'cascade' }),
+    fileId: uuid('file_id')
+      .notNull()
+      .references(() => files.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    position: integer('position').notNull().default(0),
+  },
+  (t) => [index('stickers_pack_idx').on(t.packId)],
+)
+
+/** WickyChat: sticker packs someone owns (`b:<id>` built-in or a student pack's id). */
+export const userStickerPacks = pgTable(
+  'user_sticker_packs',
+  {
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    packKey: text('pack_key').notNull(),
+    giftedBy: uuid('gifted_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.packKey] })],
+)
+
+/** WickyChat: the sticker a message is. */
+export const messageStickers = pgTable('message_stickers', {
+  messageId: uuid('message_id')
+    .primaryKey()
+    .references(() => messages.id, { onDelete: 'cascade' }),
+  stickerKey: text('sticker_key').notNull(),
+})

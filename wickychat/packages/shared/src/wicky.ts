@@ -387,6 +387,9 @@ export interface CoinTransaction {
     | 'duel_bet'
     | 'duel_win'
     | 'duel_refund'
+    | 'sticker_pack'
+    | 'sticker_gift'
+    | 'sticker_sale'
   ref: string | null
   createdAt: string
 }
@@ -1273,6 +1276,7 @@ export type AchievementStat =
   | 'invested'
   | 'dividends'
   | 'duelsWon'
+  | 'stickerPacks'
 
 export interface AchievementDef {
   id: string
@@ -1319,6 +1323,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   ach('dividend-100', '🏦', 'Believer', 'Earn 100 coins from backing people', 'dividends', 100, 50),
   ach('duel-1', '🪙', 'Heads or tails', 'Win a coinflip duel', 'duelsWon', 1, 10),
   ach('duel-10', '🎲', 'Lucky streak', 'Win 10 coinflip duels', 'duelsWon', 10, 60),
+  ach('sticker-1', '🖼️', 'Sticker artist', 'Get a sticker pack approved', 'stickerPacks', 1, 30),
   ach('send-500', '💸', 'Generous', 'Send 500 coins to friends in total', 'coinsSent', 500, 25),
 ]
 export const achievementById = (id: string) => ACHIEVEMENTS.find((a) => a.id === id)

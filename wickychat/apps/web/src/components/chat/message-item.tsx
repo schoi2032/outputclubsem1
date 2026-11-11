@@ -57,6 +57,7 @@ import { PollCard } from './poll'
 import { ReportDialog } from './report-dialog'
 import { RichText } from './rich-text'
 import { SeenBy } from './seen-by'
+import { StickerView } from './stickers'
 
 export interface MessageItemProps {
   m: LocalMessage
@@ -294,6 +295,10 @@ export const MessageItem = memo(function MessageItem({
                 setEditing(false)
               }}
             />
+          </div>
+        ) : m.sticker ? (
+          <div className="mt-1">
+            <StickerView sticker={m.sticker} />
           </div>
         ) : (
           <div

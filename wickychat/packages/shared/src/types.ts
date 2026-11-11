@@ -207,6 +207,8 @@ export interface Message {
   pollId?: string | null
   /** WickyChat: the coinflip duel in this message, if it has one. */
   duelId?: string | null
+  /** WickyChat: a sticker sent as this message. */
+  sticker?: import('./stickers').Sticker | null
 }
 
 export interface MessagePage {

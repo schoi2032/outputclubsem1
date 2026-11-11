@@ -89,6 +89,7 @@ import {
   useMakers,
 } from '@/components/shop/items'
 import { SendCoinsDialog } from '@/components/shop/send-coins'
+import { StickersView } from '@/components/shop/sticker-shop'
 import { ThemeSwatch } from '@/components/shop/theme-swatch'
 import { TradesView, useTrades } from '@/components/shop/trades'
 import { TradeUpPanel } from '@/components/shop/tradeup'
@@ -133,6 +134,9 @@ const REASON: Record<CoinTransaction['reason'], string> = {
   duel_bet: 'Coinflip duel bet',
   duel_win: 'Won a coinflip duel 🎉',
   duel_refund: 'Coinflip duel refunded',
+  sticker_pack: 'Bought a sticker pack',
+  sticker_gift: 'Gifted a sticker pack',
+  sticker_sale: 'Someone bought your sticker pack',
 }
 
 const POSITION_LABEL: Record<StickerPosition, string> = {
@@ -164,6 +168,7 @@ type Tab =
   | 'effects'
   | 'plates'
   | 'themes'
+  | 'stickers'
   | 'create'
   | 'invest'
   | 'market'
@@ -181,6 +186,7 @@ const TABS: Tab[] = [
   'effects',
   'plates',
   'themes',
+  'stickers',
   'create',
   'invest',
   'market',
@@ -774,6 +780,7 @@ function ShopInner() {
               <TabsTrigger value="effects">Effects</TabsTrigger>
               <TabsTrigger value="plates">Name plates</TabsTrigger>
               <TabsTrigger value="themes">Themes</TabsTrigger>
+              <TabsTrigger value="stickers">Stickers</TabsTrigger>
               <TabsTrigger value="create">Create</TabsTrigger>
               <TabsTrigger value="invest">📈 Invest</TabsTrigger>
               <TabsTrigger value="market">Market</TabsTrigger>
@@ -998,6 +1005,9 @@ function ShopInner() {
                 coins={w?.coins ?? 0}
                 onChange={() => refresh()}
               />
+            </TabsContent>
+            <TabsContent value="stickers" className="pt-4">
+              <StickersView wallet={w} />
             </TabsContent>
             <TabsContent value="invest" className="pt-4">
               <InvestView wallet={w} person={params.get('back') ?? undefined} />

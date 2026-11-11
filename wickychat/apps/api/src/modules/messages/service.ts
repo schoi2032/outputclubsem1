@@ -6,6 +6,7 @@ import {
   duels,
   files,
   mentions,
+  messageStickers,
   messages,
   moderationEvents,
   pins,
@@ -13,7 +14,7 @@ import {
   reactions,
   users,
 } from '@quid/db'
-import type { DocNode, Message, ReactionGroup, UserSummary } from '@quid/shared'
+import type { DocNode, Message, ReactionGroup, Sticker, UserSummary } from '@quid/shared'
 import {
   censorDocReport,
   docToText,
@@ -33,6 +34,7 @@ import { emitHook } from '../../core/hooks'
 import { publishChannelJoined } from '../channels/events'
 import type { ChannelRow } from '../channels/service'
 import { coinsForMessage } from '../coins/service'
+import { resolveStickers } from '../coins/sticker-lookup'
 import { serializeFiles } from '../files/serialize'
 import { enqueueOutgoingWebhooks } from '../integrations/outgoing'
 import { assertNotTimedOut } from '../moderation/school'
@@ -145,7 +147,7 @@ export async function serializeMessages(
     if (r.forwardSnapshot?.authorId) userIds.add(r.forwardSnapshot.authorId)
   }
 
-  const [userRows, reactionMap, fileRows, pinRows, bookmarkRows, pollRows, duelRows] =
+  const [userRows, reactionMap, fileRows, pinRows, bookmarkRows, pollRows, duelRows, stickerRows] =
     await Promise.all([
       userIds.size
         ? ctx.db
@@ -172,9 +174,17 @@ export async function serializeMessages(
         .select({ id: duels.id, messageId: duels.messageId })
         .from(duels)
         .where(inArray(duels.messageId, ids)),
+      ctx.db.select().from(messageStickers).where(inArray(messageStickers.messageId, ids)),
     ])
   const pollBy = new Map(pollRows.map((p) => [p.messageId, p.id]))
   const duelBy = new Map(duelRows.map((d) => [d.messageId, d.id]))
+  const stickerOf = stickerRows.length
+    ? await resolveStickers(
+        ctx.db,
+        stickerRows.map((s) => s.stickerKey),
+      )
+    : new Map<string, Sticker>()
+  const stickerBy = new Map(stickerRows.map((s) => [s.messageId, stickerOf.get(s.stickerKey)]))
   const userMap = new Map(userRows.map((u) => [u.id, toUserSummary(u)]))
   const pinned = new Set(pinRows.map((p) => p.messageId))
   const bookmarked = new Set(bookmarkRows.map((b) => b.messageId))
@@ -226,6 +236,7 @@ export async function serializeMessages(
       ...(r.clientId && { clientId: r.clientId }),
       ...(pollBy.has(r.id) && !deleted && { pollId: pollBy.get(r.id) }),
       ...(duelBy.has(r.id) && !deleted && { duelId: duelBy.get(r.id) }),
+      ...(stickerBy.get(r.id) && !deleted && { sticker: stickerBy.get(r.id) }),
     }
   })
 }

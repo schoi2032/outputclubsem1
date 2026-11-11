@@ -49,6 +49,7 @@ import { marketRoutes } from './modules/coins/market'
 import { profileRoutes } from './modules/coins/profile'
 import { coinRoutes } from './modules/coins/routes'
 import { socialRoutes } from './modules/coins/social'
+import { stickerRoutes } from './modules/coins/stickers'
 import { tradeRoutes } from './modules/coins/trades'
 import { tradeUpRoutes } from './modules/coins/tradeup'
 import { connectedAppRoutes } from './modules/connected-apps/routes'
@@ -336,6 +337,7 @@ export async function buildApp(config: Config, opts: BuildOptions = {}) {
   await auctionRoutes(app, ctx)
   await investRoutes(app, ctx)
   await duelRoutes(app, ctx)
+  await stickerRoutes(app, ctx)
   await complianceRoutes(app, ctx)
   await pluginRoutes(app, ctx)
   await productivityRoutes(app, ctx)

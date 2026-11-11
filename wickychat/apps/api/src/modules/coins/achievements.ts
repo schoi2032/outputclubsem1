@@ -11,6 +11,7 @@ import {
   messages,
   polls,
   pollVotes,
+  stickerPacks,
   trades,
   userCrates,
   userItems,
@@ -52,6 +53,7 @@ export async function achievementStats(ctx: AppContext, userId: string): Promise
     inv,
     div,
     duelsWon,
+    packs,
   ] = await Promise.all([
     db.query.users.findFirst({ where: eq(users.id, userId), columns: { bestStreak: true } }),
     db
@@ -123,6 +125,10 @@ export async function achievementStats(ctx: AppContext, userId: string): Promise
       .from(coinTransactions)
       .where(and(eq(coinTransactions.userId, userId), eq(coinTransactions.reason, 'dividend'))),
     db.select({ n: count() }).from(duels).where(eq(duels.winnerId, userId)),
+    db
+      .select({ n: count() })
+      .from(stickerPacks)
+      .where(and(eq(stickerPacks.creatorId, userId), eq(stickerPacks.status, 'approved'))),
   ])
   return {
     messages: num(msgs),
@@ -140,6 +146,7 @@ export async function achievementStats(ctx: AppContext, userId: string): Promise
     invested: num(inv),
     dividends: num(div),
     duelsWon: num(duelsWon),
+    stickerPacks: num(packs),
   }
 }
 

@@ -648,3 +648,15 @@
     animation: none;
   }
 }
+
+/* WickyChat: built-in stickers get a white die-cut outline */
+.q-sticker > span:first-child {
+  filter: drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 2px 0 #fff)
+    drop-shadow(0 -2px 0 #fff) drop-shadow(0 3px 4px rgb(0 0 0 / 0.25));
+}
+.q-sticker-text {
+  box-shadow:
+    0 0 0 2px #fff,
+    0 3px 6px rgb(0 0 0 / 0.2);
+  transform: rotate(-4deg);
+}
