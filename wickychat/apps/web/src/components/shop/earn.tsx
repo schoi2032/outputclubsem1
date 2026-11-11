@@ -1,6 +1,6 @@
 'use client'
 /**
- * WickyChat Earn tab: the free daily spin, daily trivia, the bring-a-friend bonus and a list of
+ * WickyChat Earn tab: the daily spin (plus spin tickets from crates), daily trivia and a list of
  * every way to earn coins.
  */
 import {
@@ -9,7 +9,6 @@ import {
   type EarnStatus,
   LIKES,
   QUEST_BONUS,
-  REFERRAL,
   TRIVIA_REWARD,
   type TriviaDay,
   type Wallet,
@@ -18,7 +17,6 @@ import {
 import { Button, cn, Skeleton, toast } from '@quid/ui'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { PeoplePicker } from '@/components/dialogs/people-picker'
 import { useOrgContext } from '@/components/org-context'
 import { errorMessage, get, post } from '@/lib/api'
 
@@ -82,7 +80,7 @@ function Wheel() {
     const a1 = (((i + 1) * SLICE - 90) * Math.PI) / 180
     return `M ${r} ${r} L ${r + r * Math.cos(a0)} ${r + r * Math.sin(a0)} A ${r} ${r} 0 0 1 ${r + r * Math.cos(a1)} ${r + r * Math.sin(a1)} Z`
   }
-  const can = earn.data?.spinAvailable && !spinning
+  const can = !!earn.data && (earn.data.spinAvailable || earn.data.spinTickets > 0) && !spinning
 
   return (
     <section className="flex flex-col items-center gap-3 rounded-xl border border-border p-5">
@@ -134,10 +132,16 @@ function Wheel() {
         {won != null && !spinning ? `You won 🪙 ${won}!` : ''}
       </p>
       <Button variant="primary" disabled={!can} loading={spinning} onClick={spin}>
-        {earn.data && !earn.data.spinAvailable && !spinning
-          ? 'Come back tomorrow'
-          : 'Spin for free'}
+        {!earn.data || earn.data.spinAvailable
+          ? 'Spin for free'
+          : earn.data.spinTickets > 0
+            ? `Use a 🎟️ ticket (${earn.data.spinTickets} left)`
+            : 'Come back tomorrow'}
       </Button>
+      <p className="text-2xs text-fg-subtle">
+        🎟️ {earn.data?.spinTickets ?? 0} spin ticket{earn.data?.spinTickets === 1 ? '' : 's'}. Get
+        more from crates.
+      </p>
     </section>
   )
 }
@@ -194,51 +198,6 @@ function Trivia() {
   )
 }
 
-function Referral() {
-  const { api, me, org } = useOrgContext()
-  const qc = useQueryClient()
-  const earn = useEarn()
-  const [who, setWho] = useState<string[]>([])
-  const [busy, setBusy] = useState(false)
-  const r = earn.data?.referral
-  if (!r) return null
-  const claim = async () => {
-    setBusy(true)
-    try {
-      qc.setQueryData(
-        ['wallet'],
-        await post<Wallet>(`${api}/earn/referral`, { referrerId: who[0] }),
-      )
-      void qc.invalidateQueries({ queryKey: ['earn', org.id] })
-      toast.success(`+${REFERRAL.reward} Wicky Coins for you and your friend! 🤝`)
-    } catch (e) {
-      toast.error(errorMessage(e))
-    } finally {
-      setBusy(false)
-    }
-  }
-  return (
-    <section className="flex flex-col gap-2 rounded-xl border border-border p-5">
-      <p className="text-[15px] font-bold">🤝 Bring a friend · 🪙 {REFERRAL.reward} each</p>
-      <p className="text-[13px] text-fg-muted">
-        When a friend joins WickyChat, they name you here in their first {REFERRAL.withinDays} days
-        and you both get 🪙 {REFERRAL.reward}.{' '}
-        {r.referredCount > 0 && `You've brought ${r.referredCount} so far!`}
-      </p>
-      {r.canClaim && (
-        <div className="flex flex-col gap-2">
-          <p className="text-[13px] font-medium">New here? Who got you to join?</p>
-          <PeoplePicker value={who} onChange={(ids) => setWho(ids.slice(-1))} exclude={[me.id]} />
-          <Button variant="primary" disabled={!who[0]} loading={busy} onClick={claim}>
-            Claim 🪙 {REFERRAL.reward}
-          </Button>
-        </div>
-      )}
-      {r.claimed && <p className="text-xs text-success">✓ You've claimed your welcome bonus.</p>}
-    </section>
-  )
-}
-
 const WAYS: { emoji: string; title: string; how: string; tab?: string }[] = [
   {
     emoji: '🎁',
@@ -247,6 +206,7 @@ const WAYS: { emoji: string; title: string; how: string; tab?: string }[] = [
     tab: 'all',
   },
   { emoji: '🎡', title: 'Daily spin', how: '5 to 250 coins, free once a day' },
+  { emoji: '🎟️', title: 'Spin tickets', how: 'Extra spins that drop from crates', tab: 'crates' },
   { emoji: '🧠', title: 'Daily trivia', how: `${TRIVIA_REWARD} coins for the right answer` },
   {
     emoji: '✅',
@@ -305,7 +265,6 @@ const WAYS: { emoji: string; title: string; how: string; tab?: string }[] = [
     how: 'Sell rare and limited items to other students',
     tab: 'auctions',
   },
-  { emoji: '🤝', title: 'Bring a friend', how: `${REFERRAL.reward} coins each` },
   { emoji: '📊', title: 'Polls and quizzes', how: 'Teachers can reward taking part' },
   { emoji: '🍎', title: 'Teacher rewards', how: 'For helping, kindness and great work' },
 ]
@@ -336,7 +295,6 @@ export function EarnView({ onGo }: { onGo: (tab: string) => void }) {
           )}
         </div>
       </div>
-      <Referral />
       <section>
         <h3 className="mb-3 text-[14px] font-semibold">💰 Every way to earn</h3>
         <ul className="grid gap-2 sm:grid-cols-2">

@@ -1,32 +1,24 @@
 /**
- * WickyChat: more ways to earn. A free daily spin, daily trivia, a bonus for bringing a friend,
- * and coins when people react to your messages (see `payForReaction`).
+ * WickyChat: more ways to earn. A free daily spin (plus spin tickets from crates), daily
+ * trivia, and coins when people react to your messages (see `payForReaction`).
  */
 
 import { randomInt } from 'node:crypto'
-import {
-  coinTransactions,
-  messages,
-  orgMemberships,
-  referrals,
-  triviaAnswers,
-  users,
-} from '@quid/db'
+import { coinTransactions, messages, orgMemberships, triviaAnswers, users } from '@quid/db'
 import {
   type EarnStatus,
   LIKES,
-  REFERRAL,
   TRIVIA_REWARD,
   type TriviaDay,
   triviaFor,
   WHEEL,
   wheelSlice,
 } from '@quid/shared'
-import { and, count, eq, gte, isNull, sql } from 'drizzle-orm'
+import { and, count, eq, gte, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { requireOrg } from '../../core/auth'
 import type { AppContext } from '../../core/context'
-import { badRequest, conflict, notFound } from '../../core/errors'
+import { badRequest, conflict } from '../../core/errors'
 import { type App, orgParams } from '../../core/http'
 import { loadWallet } from './routes'
 import { changeCoins, startOfSchoolDay } from './service'
@@ -79,6 +71,22 @@ export async function payForReaction(ctx: AppContext, messageId: string, reactor
   }
 }
 
+/** Free spins used today (ticket spins don't count). */
+async function freeSpinsToday(db: Db, userId: string) {
+  const [r] = await db
+    .select({ n: count() })
+    .from(coinTransactions)
+    .where(
+      and(
+        eq(coinTransactions.userId, userId),
+        eq(coinTransactions.reason, 'spin'),
+        sql`${coinTransactions.ref} not like '%|ticket'`,
+        gte(coinTransactions.createdAt, startOfSchoolDay()),
+      ),
+    )
+  return Number(r?.n ?? 0)
+}
+
 async function trivia(ctx: AppContext, orgId: string, userId: string): Promise<TriviaDay> {
   const day = dayKey()
   const q = triviaFor(day)
@@ -116,42 +124,51 @@ export async function earnRoutes(app: App, ctx: AppContext) {
     { schema: { params: orgParams } },
     async (req): Promise<EarnStatus> => {
       const scope = await requireOrg(ctx, req, req.params.orgId)
-      const [spin, likes, member, mine, brought] = await Promise.all([
-        countToday(ctx.db, scope.userId, 'spin'),
+      const [spin, likes, u] = await Promise.all([
+        freeSpinsToday(ctx.db, scope.userId),
         countToday(ctx.db, scope.userId, 'liked'),
-        ctx.db.query.orgMemberships.findFirst({
-          where: and(
-            eq(orgMemberships.orgId, scope.orgId),
-            eq(orgMemberships.userId, scope.userId),
-          ),
-          columns: { joinedAt: true },
+        ctx.db.query.users.findFirst({
+          where: eq(users.id, scope.userId),
+          columns: { spinTickets: true },
         }),
-        ctx.db.query.referrals.findFirst({ where: eq(referrals.userId, scope.userId) }),
-        ctx.db.select({ n: count() }).from(referrals).where(eq(referrals.referrerId, scope.userId)),
       ])
-      const fresh =
-        !!member && Date.now() - member.joinedAt.getTime() < REFERRAL.withinDays * 86_400_000
       return {
-        spinAvailable: spin.n === 0,
+        spinAvailable: spin === 0,
+        spinTickets: u?.spinTickets ?? 0,
         likesToday: likes.sum,
-        referral: {
-          canClaim: fresh && !mine,
-          claimed: !!mine,
-          referredCount: Number(brought[0]?.n ?? 0),
-        },
       }
     },
   )
 
-  /** One free spin a day. */
+  /** One free spin a day; after that, each spin uses a 🎟️ spin ticket from a crate. */
   app.post('/api/orgs/:orgId/earn/spin', { schema: { params: orgParams } }, async (req) => {
     const scope = await requireOrg(ctx, req, req.params.orgId)
     const slice = await ctx.db.transaction(async (tx) => {
-      await tx.select({ id: users.id }).from(users).where(eq(users.id, scope.userId)).for('update')
-      if ((await countToday(tx, scope.userId, 'spin')).n)
-        throw conflict('You already spun today. Come back tomorrow!')
+      const [u] = await tx
+        .select({ tickets: users.spinTickets })
+        .from(users)
+        .where(eq(users.id, scope.userId))
+        .for('update')
+      const free = (await freeSpinsToday(tx, scope.userId)) === 0
+      if (!free) {
+        if (!u?.tickets)
+          throw conflict(
+            'You already spun today. Get 🎟️ spin tickets from crates, or come back tomorrow!',
+          )
+        await tx
+          .update(users)
+          .set({ spinTickets: u.tickets - 1 })
+          .where(eq(users.id, scope.userId))
+      }
       const i = wheelSlice(randomInt(0, 100))
-      await changeCoins(tx, scope.userId, WHEEL[i]!.coins, 'spin', String(i))
+      // The ref says which slice, and whether it was the free spin or a ticket.
+      await changeCoins(
+        tx,
+        scope.userId,
+        WHEEL[i]!.coins,
+        'spin',
+        `${i}|${free ? 'free' : 'ticket'}`,
+      )
       return i
     })
     return { slice, coins: WHEEL[slice]!.coins, wallet: await loadWallet(ctx, scope.userId) }
@@ -184,54 +201,6 @@ export async function earnRoutes(app: App, ctx: AppContext) {
         trivia: await trivia(ctx, scope.orgId, scope.userId),
         wallet: await loadWallet(ctx, scope.userId),
       }
-    },
-  )
-
-  /** A new member names the friend who brought them. Both get REFERRAL.reward, once. */
-  app.post(
-    '/api/orgs/:orgId/earn/referral',
-    { schema: { params: orgParams, body: z.object({ referrerId: z.uuid() }) } },
-    async (req) => {
-      const scope = await requireOrg(ctx, req, req.params.orgId)
-      const { referrerId } = req.body
-      if (referrerId === scope.userId) throw badRequest("You can't name yourself.")
-      const [me, them] = await Promise.all([
-        ctx.db.query.orgMemberships.findFirst({
-          where: and(
-            eq(orgMemberships.orgId, scope.orgId),
-            eq(orgMemberships.userId, scope.userId),
-          ),
-          columns: { joinedAt: true },
-        }),
-        ctx.db
-          .select({ joinedAt: orgMemberships.joinedAt, isBot: users.isBot })
-          .from(orgMemberships)
-          .innerJoin(users, eq(users.id, orgMemberships.userId))
-          .where(
-            and(
-              eq(orgMemberships.orgId, scope.orgId),
-              eq(orgMemberships.userId, referrerId),
-              isNull(orgMemberships.deactivatedAt),
-            ),
-          ),
-      ])
-      if (!me || Date.now() - me.joinedAt.getTime() > REFERRAL.withinDays * 86_400_000)
-        throw badRequest(`This is only for people in their first ${REFERRAL.withinDays} days.`)
-      const friend = them[0]
-      if (!friend || friend.isBot) throw notFound('Person')
-      // They must have been here before you (so two new accounts can't name each other).
-      if (friend.joinedAt >= me.joinedAt) throw badRequest('Name someone who was here before you.')
-      await ctx.db.transaction(async (tx) => {
-        const [row] = await tx
-          .insert(referrals)
-          .values({ userId: scope.userId, orgId: scope.orgId, referrerId })
-          .onConflictDoNothing()
-          .returning()
-        if (!row) throw conflict('You already named who brought you.')
-        await changeCoins(tx, scope.userId, REFERRAL.reward, 'referral', referrerId)
-        await changeCoins(tx, referrerId, REFERRAL.reward, 'referral', scope.userId)
-      })
-      return loadWallet(ctx, scope.userId)
     },
   )
 }

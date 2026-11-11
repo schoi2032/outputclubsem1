@@ -92,7 +92,9 @@ export function CrateArt({ crate, size = 'md' }: { crate: CrateDef; size?: 'sm' 
 }
 
 export function dropName(d: CrateDrop | CrateResult, catalog: Catalog) {
-  return 'item' in d ? (catalog.get(d.item)?.name ?? d.item) : `${d.coins.toLocaleString()} coins`
+  if ('item' in d) return catalog.get(d.item)?.name ?? d.item
+  if ('tickets' in d) return `${d.tickets} spin ticket${d.tickets === 1 ? '' : 's'}`
+  return `${d.coins.toLocaleString()} coins`
 }
 
 /** One square in the reel or the odds list. */
@@ -122,6 +124,8 @@ export function DropTile({
       <div className="flex flex-1 items-center justify-center">
         {'coins' in drop ? (
           <span className={big ? 'text-6xl' : 'text-4xl'}>🪙</span>
+        ) : 'tickets' in drop ? (
+          <span className={big ? 'text-6xl' : 'text-4xl'}>🎟️</span>
         ) : !it ? (
           <span className="text-3xl">❔</span>
         ) : it.kind === 'decoration' ? (
@@ -427,7 +431,9 @@ function OpenDialog({
                 <p className="text-lg font-bold">
                   {'coins' in result
                     ? `+${result.coins.toLocaleString()} Wicky Coins!`
-                    : `You got ${dropName(result, catalog)}!`}
+                    : 'tickets' in result
+                      ? `+${result.tickets} 🎟️ spin ticket${result.tickets === 1 ? '' : 's'}! Use it in Earn.`
+                      : `You got ${dropName(result, catalog)}!`}
                 </p>
                 {result.tier === 'legendary' && <p className="text-2xl">🎉🎉🎉</p>}
               </div>
@@ -1210,6 +1216,7 @@ function OpenManyDialog({
       setResults(r.results)
       qc.setQueryData(['wallet'], r.wallet)
       void qc.invalidateQueries({ queryKey: ['crates-opened'] })
+      void qc.invalidateQueries({ queryKey: ['earn'] })
       void qc.invalidateQueries({ queryKey: ['achievements'] })
     } catch (e) {
       toast.error(errorMessage(e))

@@ -153,7 +153,12 @@ async function openRow(
     // You own it now, so no crate gives it again.
     for (const set of cache?.values() ?? []) set.add(drop.item)
     blocked.add(drop.item)
-  } else await changeCoins(tx, userId, drop.coins, 'crate_coins', crate.id)
+  } else if ('tickets' in drop)
+    await tx
+      .update(users)
+      .set({ spinTickets: sql`${users.spinTickets} + ${drop.tickets}` })
+      .where(eq(users.id, userId))
+  else await changeCoins(tx, userId, drop.coins, 'crate_coins', crate.id)
   await tx
     .update(userCrates)
     .set({ openedAt: new Date(), result: drop })

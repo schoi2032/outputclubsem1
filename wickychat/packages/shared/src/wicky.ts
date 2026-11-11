@@ -410,6 +410,8 @@ export interface CoinTransaction {
 
 export interface Wallet {
   coins: number
+  /** Extra daily-wheel spins (from crates). */
+  spinTickets: number
   /** Built-in decoration ids and `u:<id>` for student-made ones. */
   owned: string[]
   /** Who gave you which item, for items that were gifts. */

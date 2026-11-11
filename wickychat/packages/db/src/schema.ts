@@ -78,6 +78,8 @@ export const users = pgTable(
     /** Equipped profile card effect and name plate (built-in id or `u:<cosmetic id>`). */
     profileEffect: text('profile_effect'),
     namePlate: text('name_plate'),
+    /** WickyChat: extra daily-wheel spins (from crates). */
+    spinTickets: integer('spin_tickets').notNull().default(0),
     /** WickyChat: up to 6 owned item ids pinned on their profile shelf. */
     showcase: text('showcase').array().notNull().default(sql`'{}'::text[]`),
     /** Days in a row the daily bonus was claimed, and the best run. */
@@ -1912,15 +1914,3 @@ export const triviaAnswers = pgTable(
   },
   (t) => [primaryKey({ columns: [t.userId, t.day] })],
 )
-
-/** WickyChat: who brought whom (each person can name one friend, once). */
-export const referrals = pgTable('referrals', {
-  userId: uuid('user_id')
-    .primaryKey()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  orgId: orgRef(),
-  referrerId: uuid('referrer_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  createdAt: createdAt(),
-})

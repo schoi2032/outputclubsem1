@@ -1,6 +1,6 @@
 /**
- * WickyChat: more ways to earn coins. A free daily spin, coins when people react to what you
- * post, Q&A bounties, daily trivia and a bonus for bringing a friend.
+ * WickyChat: more ways to earn coins. A free daily spin (plus 🎟️ spin tickets from crates),
+ * coins when people react to what you post, Q&A bounties and daily trivia.
  */
 
 /** Daily free spin. `weight` is out of 100. */
@@ -46,9 +46,6 @@ export interface Bounty {
   winner: import('./types').UserSummary | null
   answerMessageId: string | null
 }
-
-/** Bringing a friend: both of you get this, once. */
-export const REFERRAL = { reward: 50, withinDays: 7 }
 
 /** Daily trivia: one question for everyone, coins for the right answer. */
 export const TRIVIA_REWARD = 15
@@ -176,7 +173,9 @@ export interface TriviaDay {
 }
 
 export interface EarnStatus {
+  /** Today's free spin is still there. */
   spinAvailable: boolean
+  /** Extra spins from crates. */
+  spinTickets: number
   likesToday: number
-  referral: { canClaim: boolean; claimed: boolean; referredCount: number }
 }

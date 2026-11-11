@@ -116,6 +116,7 @@ export async function loadWallet(ctx: AppContext, userId: string): Promise<Walle
         dailyStreak: true,
         profileEffect: true,
         namePlate: true,
+        spinTickets: true,
       },
     }),
     ctx.db
@@ -174,6 +175,7 @@ export async function loadWallet(ctx: AppContext, userId: string): Promise<Walle
     serials,
     coinsSentToday: sent,
     coins: u.coins,
+    spinTickets: u.spinTickets,
     owned: valid.map((o) => o.itemId),
     giftedBy,
     equipped: u.decoration,

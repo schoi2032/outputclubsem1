@@ -7,8 +7,12 @@ import { decorationById, effectById, plateById, themeById } from './wicky'
 
 export type CrateTier = 'common' | 'rare' | 'epic' | 'legendary'
 
-/** One possible drop: an item, or a pile of coins. */
-export type CrateDrop = { tier: CrateTier } & ({ item: string } | { coins: number })
+/** One possible drop: an item, a pile of coins, or spin tickets (extra daily spins). */
+export type CrateDrop = { tier: CrateTier } & (
+  | { item: string }
+  | { coins: number }
+  | { tickets: number }
+)
 
 export interface CrateDef {
   id: string
@@ -43,18 +47,21 @@ export const TIER_STYLE: Record<CrateTier, { label: string; color: string }> = {
 
 const i = (tier: CrateTier, item: string): CrateDrop => ({ tier, item })
 const c = (tier: CrateTier, coins: number): CrateDrop => ({ tier, coins })
+const tk = (tier: CrateTier, tickets: number): CrateDrop => ({ tier, tickets })
 
 export const CRATES: CrateDef[] = [
   {
     id: 'c-wicky',
     name: 'Wicky Crate',
     emoji: '📦',
-    description: 'Decorations, effects, name plates or coins. Small chance of a crown!',
+    description:
+      'Decorations, effects, name plates, coins or 🎟️ spin tickets. Small chance of a crown!',
     price: 120,
     colors: ['#8052ff', '#15846e'],
     drops: [
       c('common', 40),
       c('common', 70),
+      tk('common', 1),
       i('common', 'p-mint'),
       i('common', 'p-sunset'),
       i('common', 'p-ocean'),
@@ -62,6 +69,7 @@ export const CRATES: CrateDef[] = [
       i('common', 'clover'),
       i('common', 'e-bubbles'),
       c('rare', 150),
+      tk('rare', 3),
       i('rare', 'e-snow'),
       i('rare', 'e-sparkle'),
       i('rare', 'p-matrix'),
@@ -88,6 +96,7 @@ export const CRATES: CrateDef[] = [
     drops: [
       c('common', 60),
       c('common', 100),
+      tk('common', 1),
       i('common', 't-solarized'),
       i('common', 't-latte'),
       i('rare', 't-nord'),
@@ -168,7 +177,9 @@ function seasonCrate(
       drops: [
         c('common', 50),
         c('common', 90),
+        tk('common', 1),
         c('rare', 200),
+        tk('rare', 2),
         c('epic', 500),
         c('legendary', 2000),
         ...items,
@@ -183,7 +194,8 @@ export const crateById = (id: string | null | undefined) => CRATES.find((x) => x
 /** Every 7th day of a streak gives a free crate. */
 export const STREAK_CRATE = { every: 7, crateId: 'c-wicky' } as const
 
-export const dropKey = (d: CrateDrop) => ('item' in d ? d.item : `coins:${d.coins}`)
+export const dropKey = (d: CrateDrop) =>
+  'item' in d ? d.item : 'coins' in d ? `coins:${d.coins}` : `tickets:${d.tickets}`
 
 /** Name of a built-in item, for crate contents. */
 export function builtinName(id: string) {
@@ -220,7 +232,7 @@ export function rollCrate(crate: CrateDef, owned: Set<string>, rand: number): Cr
 }
 
 /** What a crate gave you, as stored and sent to the app. */
-export type CrateResult = { tier: CrateTier } & ({ item: string } | { coins: number })
+export type CrateResult = CrateDrop
 
 // --- Trading ---------------------------------------------------------------------------
 
