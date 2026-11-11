@@ -13,7 +13,6 @@ import {
   type CosmeticManifest,
   CRATES,
   CREATOR_SHARE,
-  crateById,
   eventEndsAt,
   eventStartsAt,
   type ItemKind,
@@ -58,7 +57,7 @@ import { PeoplePicker } from '@/components/dialogs/people-picker'
 import { useOrgContext } from '@/components/org-context'
 import { PageHeader } from '@/components/page-header'
 import { NamePlate } from '@/components/profile/cosmetics-fx'
-import { CrateArt, CratesView } from '@/components/shop/crates'
+import { CrateArt, CratesView, CreateCrate, MyCrates, useCrateDefs } from '@/components/shop/crates'
 import {
   cosmeticItem,
   ItemPreview,
@@ -96,6 +95,7 @@ const REASON: Record<CoinTransaction['reason'], string> = {
   coins_sent: 'Sent coins to',
   coins_received: 'Coins from',
   trade: 'Trade',
+  crate_sale: 'Someone bought your',
 }
 
 const POSITION_LABEL: Record<StickerPosition, string> = {
@@ -193,6 +193,9 @@ function ShopInner() {
   })
   const community = useCommunity()
   const catalog = useCatalog()
+  const crateDefs = useCrateDefs()
+  const isTeacher = org.role === 'owner' || org.role === 'admin'
+  const [selfCoins, setSelfCoins] = useState('')
   const w = wallet.data
   const communityList = community.data ?? []
   const ownedSet = useMemo(() => new Set(w?.owned ?? []), [w?.owned])
@@ -458,7 +461,7 @@ function ShopInner() {
             ? a.name.localeCompare(b.name)
             : Number(b.live) - Number(a.live) || (b.sales ?? 0) - (a.sales ?? 0),
     )
-  const crateList = CRATES.filter(
+  const crateList = [...CRATES, ...crateDefs.custom.filter((c) => !c.removed)].filter(
     (c) =>
       (kind === 'all' || kind === 'crate') &&
       (source === 'all' || (source === 'event' ? !!c.event : source === 'builtin' && !c.event)) &&
@@ -557,6 +560,46 @@ function ShopInner() {
                   <Button size="sm" onClick={() => setTab('trades')}>
                     <ArrowLeftRight /> Trade
                   </Button>
+                  {isTeacher && (
+                    <form
+                      className="flex gap-1.5"
+                      onSubmit={(e) => {
+                        e.preventDefault()
+                        const amount = Number.parseInt(selfCoins, 10)
+                        if (!amount || amount < 1) return
+                        void act(
+                          'self-coins',
+                          async () => {
+                            await post(`${api}/members/${me.id}/coins`, {
+                              amount,
+                              note: 'Teacher top-up',
+                            })
+                            return get<Wallet>('/api/me/wallet')
+                          },
+                          `Added 🪙 ${amount} to your wallet`,
+                        ).then((ok) => ok && setSelfCoins(''))
+                      }}
+                    >
+                      <Input
+                        type="number"
+                        min={1}
+                        max={10000}
+                        placeholder="Coins"
+                        aria-label="Coins to add to your own wallet"
+                        value={selfCoins}
+                        onChange={(e) => setSelfCoins(e.target.value)}
+                        className="h-8 w-24"
+                      />
+                      <Button
+                        type="submit"
+                        size="sm"
+                        disabled={!selfCoins}
+                        loading={busy === 'self-coins'}
+                      >
+                        🍎 Add coins
+                      </Button>
+                    </form>
+                  )}
                   {!!w?.crates.length && (
                     <Button size="sm" onClick={() => setTab('crates')}>
                       📦 {w.crates.length} crate{w.crates.length === 1 ? '' : 's'} to open
@@ -841,12 +884,13 @@ function ShopInner() {
               <LeaderboardView />
             </TabsContent>
             <TabsContent value="create" className="pt-4">
-              <CreatePicker />
+              <CreatePicker catalog={catalog} />
             </TabsContent>
             <TabsContent value="mine" className="pt-4">
               <h3 className="mb-3 text-[14px] font-semibold">Your collection</h3>
               {grid(ownedItems, "You don't own anything yet.")}
               <MyCreations />
+              <MyCrates />
               {!!w?.history.length && (
                 <section className="mt-10">
                   <h3 className="mb-3 text-[14px] font-semibold">Recent coins</h3>
@@ -863,10 +907,11 @@ function ShopInner() {
                             h.ref &&
                             ` ${itemName(h.ref, communityList)}`}
                           {(h.reason === 'crate' ||
+                            h.reason === 'crate_sale' ||
                             h.reason === 'crate_gift' ||
                             h.reason === 'crate_coins') &&
                             h.ref &&
-                            ` ${crateById(h.ref)?.name ?? 'crate'}`}
+                            ` ${crateDefs.byId(h.ref)?.name ?? 'crate'}`}
                           {(h.reason === 'coins_sent' || h.reason === 'coins_received') &&
                             h.ref &&
                             (() => {
@@ -1452,12 +1497,12 @@ function AvailabilityFields({ a }: { a: ReturnType<typeof useAvailability> }) {
   )
 }
 
-function CreatePicker() {
-  const [kind, setKind] = useState<ItemKind>('decoration')
+function CreatePicker({ catalog }: { catalog: Map<string, ShopItem> }) {
+  const [kind, setKind] = useState<ItemKind | 'crate'>('decoration')
   return (
     <>
-      <div className="mb-5 inline-flex rounded-lg border border-border p-0.5 text-[13px]">
-        {(['decoration', 'effect', 'plate', 'theme'] as const).map((k) => (
+      <div className="mb-5 inline-flex flex-wrap rounded-lg border border-border p-0.5 text-[13px]">
+        {(['decoration', 'effect', 'plate', 'theme', 'crate'] as const).map((k) => (
           <button
             key={k}
             type="button"
@@ -1468,7 +1513,7 @@ function CreatePicker() {
               kind === k ? 'bg-accent text-accent-fg' : 'text-fg-muted hover:bg-bg-muted',
             )}
           >
-            {KIND_LABEL[k]}
+            {k === 'crate' ? '📦 Crate' : KIND_LABEL[k]}
           </button>
         ))}
       </div>
@@ -1476,6 +1521,8 @@ function CreatePicker() {
         <CreateCosmetic />
       ) : kind === 'theme' ? (
         <CreateTheme />
+      ) : kind === 'crate' ? (
+        <CreateCrate catalog={catalog} />
       ) : (
         <CreateImageItem key={kind} kind={kind} />
       )}

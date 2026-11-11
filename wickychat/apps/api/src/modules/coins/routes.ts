@@ -160,7 +160,7 @@ export async function loadWallet(ctx: AppContext, userId: string): Promise<Walle
   for (const o of valid) if (o.serial) serials[o.itemId] = o.serial
   return {
     crates: crates
-      .filter((c) => CRATE_IDS.includes(c.crateId))
+      .filter((c) => CRATE_IDS.includes(c.crateId) || c.crateId.startsWith('u:'))
       .map((c) => ({
         id: c.id,
         crateId: c.crateId,
@@ -737,7 +737,7 @@ export async function coinRoutes(app: App, ctx: AppContext) {
       schema: {
         params: orgIdParams,
         body: z.object({
-          amount: z.number().int().min(1).max(1000),
+          amount: z.number().int().min(1).max(10_000),
           note: z.string().trim().max(120).optional(),
         }),
       },

@@ -3,14 +3,7 @@
  * WickyChat trading: send someone an offer (your items, crates and coins for some of theirs).
  * Nothing moves until they accept, then it all swaps at once.
  */
-import {
-  crateById,
-  type Inventory,
-  TRADE_LIMITS,
-  type Trade,
-  type TradeSide,
-  type Wallet,
-} from '@quid/shared'
+import { type Inventory, TRADE_LIMITS, type Trade, type TradeSide, type Wallet } from '@quid/shared'
 import {
   Avatar,
   Button,
@@ -30,7 +23,7 @@ import { useOrgContext } from '@/components/org-context'
 import { errorMessage, get, post } from '@/lib/api'
 import { displayName, relative } from '@/lib/format'
 import { keys, useMembers } from '@/lib/queries'
-import { CrateArt } from './crates'
+import { CrateArt, useCrateDefs } from './crates'
 import { cosmeticItem, ItemPreview, type ShopItem } from './items'
 
 type Catalog = Map<string, ShopItem>
@@ -60,7 +53,7 @@ function Chip({
   selected?: boolean
   onClick?: () => void
 }) {
-  const crate = crateById(crateId)
+  const crate = useCrateDefs().byId(crateId)
   const body = (
     <>
       <div className="flex h-16 w-full items-center justify-center overflow-hidden">

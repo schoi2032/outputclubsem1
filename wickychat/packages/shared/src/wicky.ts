@@ -367,6 +367,7 @@ export interface CoinTransaction {
     | 'coins_sent'
     | 'coins_received'
     | 'trade'
+    | 'crate_sale'
   ref: string | null
   createdAt: string
 }

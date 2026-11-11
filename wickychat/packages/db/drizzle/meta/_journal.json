@@ -204,6 +204,13 @@
       "when": 1794396484319,
       "tag": "0028_crates_trades",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1794398013881,
+      "tag": "0029_custom_crates",
+      "breakpoints": true
     }
   ]
 }

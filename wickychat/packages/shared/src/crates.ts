@@ -20,6 +20,10 @@ export interface CrateDef {
   event?: string
   colors: [string, string]
   drops: CrateDrop[]
+  /** Student-made crates: who made it. */
+  creator?: { id: string; name: string; displayName: string | null }
+  /** Student-made crates taken off sale (unopened ones still open). */
+  removed?: boolean
 }
 
 /** Chance of each tier (per cent). Each tier's chance is shared by the drops in it. */
@@ -254,3 +258,43 @@ export interface Inventory {
   crates: { id: string; crateId: string }[]
   cosmetics: import('./wicky').Cosmetic[]
 }
+
+// --- Student-made crates ------------------------------------------------------------------
+
+/** Students pack their own approved cosmetics into a crate and sell it. */
+export const CUSTOM_CRATE = {
+  minItems: 2,
+  maxItems: 12,
+  price: { min: 20, max: 2000 },
+  /** Opening one when you already own everything left in it gives this share back as coins. */
+  refund: 0.5,
+  maxActive: 10,
+} as const
+
+export interface CustomCrate {
+  id: string
+  /** `u:<id>`: what's stored on crates people own. */
+  crateId: string
+  name: string
+  emoji: string
+  description: string
+  colors: [string, string]
+  price: number
+  drops: { item: string; tier: CrateTier }[]
+  creator: { id: string; name: string; displayName: string | null }
+  status: 'active' | 'removed'
+  sales: number
+  createdAt: string
+}
+
+export const customCrateDef = (c: CustomCrate): CrateDef => ({
+  id: c.crateId,
+  name: c.name,
+  emoji: c.emoji,
+  description: c.description,
+  price: c.price,
+  colors: c.colors,
+  drops: c.drops.map((d) => ({ tier: d.tier, item: d.item })),
+  creator: c.creator,
+  removed: c.status === 'removed',
+})

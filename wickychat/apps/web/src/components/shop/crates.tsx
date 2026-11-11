@@ -4,21 +4,39 @@
  * that lands on what the server rolled (like opening a case in a game).
  */
 import {
+  type Cosmetic,
   CRATES,
+  CREATOR_SHARE,
   type CrateDef,
   type CrateDrop,
   type CrateResult,
+  type CrateTier,
+  CUSTOM_CRATE,
+  type CustomCrate,
   crateById,
   crateOdds,
+  customCrateDef,
   dropKey,
   effectById,
   isEventLive,
   STREAK_CRATE,
+  TIER_ODDS,
   TIER_STYLE,
   type UserSummary,
   type Wallet,
 } from '@quid/shared'
-import { Avatar, Button, cn, Dialog, DialogContent, DialogFooter, Skeleton, toast } from '@quid/ui'
+import {
+  Avatar,
+  Button,
+  cn,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  Input,
+  Select,
+  Skeleton,
+  toast,
+} from '@quid/ui'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Gift, Info, Volume2, VolumeX } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -26,12 +44,30 @@ import { PeoplePicker } from '@/components/dialogs/people-picker'
 import { useOrgContext } from '@/components/org-context'
 import { NamePlate } from '@/components/profile/cosmetics-fx'
 import { ThemeSwatch } from '@/components/shop/theme-swatch'
-import { errorMessage, get, post, put } from '@/lib/api'
+import { del, errorMessage, get, post, put } from '@/lib/api'
 import { displayName, relative } from '@/lib/format'
 import { keys, useMembers } from '@/lib/queries'
-import type { ShopItem } from './items'
+import { ItemPreview, type ShopItem } from './items'
 
 type Catalog = Map<string, ShopItem>
+
+/** Built-in and student-made crates. */
+export function useCrateDefs() {
+  const { org, api } = useOrgContext()
+  const q = useQuery({
+    queryKey: ['custom-crates', org.id],
+    queryFn: ({ signal }) => get<CustomCrate[]>(`${api}/crates/custom`, signal),
+    staleTime: 60_000,
+  })
+  return useMemo(() => {
+    const custom = (q.data ?? []).map(customCrateDef)
+    const map = new Map(custom.map((c) => [c.id, c]))
+    return {
+      custom,
+      byId: (id: string | null | undefined) => crateById(id) ?? (id ? map.get(id) : undefined),
+    }
+  }, [q.data])
+}
 
 /** The box itself. */
 export function CrateArt({ crate, size = 'md' }: { crate: CrateDef; size?: 'sm' | 'md' | 'lg' }) {
@@ -276,9 +312,8 @@ function OpenDialog({
 }) {
   const qc = useQueryClient()
   // Kept from the start: once it's opened, the crate leaves the wallet.
-  const [crate] = useState(() =>
-    crateById(wallet.crates.find((c) => c.id === crateRowId)?.crateId),
-  )
+  const defs = useCrateDefs()
+  const [crate] = useState(() => defs.byId(wallet.crates.find((c) => c.id === crateRowId)?.crateId))
   const [owned] = useState(() => new Set(wallet.owned))
   const [phase, setPhase] = useState<'ready' | 'spinning' | 'done'>('ready')
   const [result, setResult] = useState<CrateResult | null>(null)
@@ -556,7 +591,7 @@ export function CratesView({
   /** Just this event's crate (on the event tab). */
   onlyEvent?: string
 }) {
-  const { org, api } = useOrgContext()
+  const { org, api, me } = useOrgContext()
   const qc = useQueryClient()
   const members = useMembers(org.id)
   const [opening, setOpening] = useState<string | null>(null)
@@ -570,17 +605,32 @@ export function CratesView({
     refetchInterval: 60_000,
   })
   const owned = useMemo(() => new Set(wallet?.owned ?? []), [wallet?.owned])
+  const defs = useCrateDefs()
+  const isTeacher = org.role === 'owner' || org.role === 'admin'
   const forSale = CRATES.filter((c) =>
     onlyEvent ? c.event === onlyEvent : !c.event || isEventLive(c.event),
   )
+  const studentCrates = defs.custom.filter((c) => !c.removed)
   const mine = wallet?.crates ?? []
-  const groups = CRATES.map((c) => ({
-    crate: c,
-    rows: mine.filter((r) => r.crateId === c.id),
-  })).filter((g) => g.rows.length && (!onlyEvent || g.crate.event === onlyEvent))
+  const groups = [...CRATES, ...defs.custom]
+    .map((c) => ({
+      crate: c,
+      rows: mine.filter((r) => r.crateId === c.id),
+    }))
+    .filter((g) => g.rows.length && (!onlyEvent || g.crate.event === onlyEvent))
   const nameOf = (id: string) => {
     const m = members.data?.find((x) => x.id === id)
     return m ? displayName(m) : 'them'
+  }
+
+  const takeDown = async (crate: CrateDef) => {
+    try {
+      await del(`${api}/crates/custom/${crate.id.slice(2)}`)
+      toast.success(`${crate.name} is off sale. Crates people already have still open.`)
+      void qc.invalidateQueries({ queryKey: ['custom-crates', org.id] })
+    } catch (e) {
+      toast.error(errorMessage(e))
+    }
   }
 
   const buy = async (crate: CrateDef, count = 1, giftTo?: string) => {
@@ -601,6 +651,69 @@ export function CratesView({
     } finally {
       setBusy(null)
     }
+  }
+
+  const saleCard = (crate: CrateDef) => {
+    const afford = (wallet?.coins ?? 0) >= crate.price
+    return (
+      <li key={crate.id} className="flex gap-4 rounded-xl border border-border p-4">
+        <CrateArt crate={crate} />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <p className="text-[14px] font-semibold">{crate.name}</p>
+          <p className="text-xs text-fg-muted">{crate.description}</p>
+          {crate.creator && (
+            <p className="text-2xs text-fg-subtle">
+              by {displayName(crate.creator)}
+              {(crate.creator.id === me.id || isTeacher) && (
+                <button
+                  type="button"
+                  className="ml-2 text-danger hover:underline"
+                  onClick={() => takeDown(crate)}
+                >
+                  Take off sale
+                </button>
+              )}
+            </p>
+          )}
+          <button
+            type="button"
+            className="mt-1 inline-flex items-center gap-1 self-start text-xs text-accent-text hover:underline"
+            onClick={() => setOdds(crate)}
+          >
+            <Info className="size-3" /> What's inside
+          </button>
+          <div className="mt-auto flex flex-wrap gap-1.5 pt-2">
+            <Button
+              size="sm"
+              variant={afford ? 'primary' : 'secondary'}
+              disabled={!afford || !wallet}
+              loading={busy === `${crate.id}:1`}
+              onClick={() => buy(crate).catch(() => {})}
+            >
+              🪙 {crate.price}
+            </Button>
+            <Button
+              size="sm"
+              disabled={(wallet?.coins ?? 0) < crate.price * 5}
+              loading={busy === `${crate.id}:5`}
+              onClick={() => buy(crate, 5).catch(() => {})}
+              title={`5 for 🪙 ${crate.price * 5}`}
+            >
+              ×5
+            </Button>
+            <Button
+              size="sm"
+              title="Gift one"
+              aria-label={`Gift a ${crate.name}`}
+              disabled={!afford}
+              onClick={() => setGift({ crate })}
+            >
+              <Gift />
+            </Button>
+          </div>
+        </div>
+      </li>
+    )
   }
 
   return (
@@ -662,56 +775,26 @@ export function CratesView({
           </p>
         )}
         <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {forSale.map((crate) => {
-            const afford = (wallet?.coins ?? 0) >= crate.price
-            return (
-              <li key={crate.id} className="flex gap-4 rounded-xl border border-border p-4">
-                <CrateArt crate={crate} />
-                <div className="flex min-w-0 flex-1 flex-col">
-                  <p className="text-[14px] font-semibold">{crate.name}</p>
-                  <p className="text-xs text-fg-muted">{crate.description}</p>
-                  <button
-                    type="button"
-                    className="mt-1 inline-flex items-center gap-1 self-start text-xs text-accent-text hover:underline"
-                    onClick={() => setOdds(crate)}
-                  >
-                    <Info className="size-3" /> What's inside
-                  </button>
-                  <div className="mt-auto flex flex-wrap gap-1.5 pt-2">
-                    <Button
-                      size="sm"
-                      variant={afford ? 'primary' : 'secondary'}
-                      disabled={!afford || !wallet}
-                      loading={busy === `${crate.id}:1`}
-                      onClick={() => buy(crate).catch(() => {})}
-                    >
-                      🪙 {crate.price}
-                    </Button>
-                    <Button
-                      size="sm"
-                      disabled={(wallet?.coins ?? 0) < crate.price * 5}
-                      loading={busy === `${crate.id}:5`}
-                      onClick={() => buy(crate, 5).catch(() => {})}
-                      title={`5 for 🪙 ${crate.price * 5}`}
-                    >
-                      ×5
-                    </Button>
-                    <Button
-                      size="sm"
-                      title="Gift one"
-                      aria-label={`Gift a ${crate.name}`}
-                      disabled={!afford}
-                      onClick={() => setGift({ crate })}
-                    >
-                      <Gift />
-                    </Button>
-                  </div>
-                </div>
-              </li>
-            )
-          })}
+          {forSale.map(saleCard)}
         </ul>
       </section>
+
+      {!onlyEvent && (
+        <section>
+          <h3 className="mb-1 text-[14px] font-semibold">🎨 Student crates</h3>
+          <p className="mb-3 text-xs text-fg-muted">
+            Made by students from their own cosmetics. The maker gets most of what you pay. Make
+            your own in Create → Crate.
+          </p>
+          {!studentCrates.length ? (
+            <p className="text-[13px] text-fg-subtle">No student crates yet. Be the first!</p>
+          ) : (
+            <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {studentCrates.map(saleCard)}
+            </ul>
+          )}
+        </section>
+      )}
 
       {!onlyEvent && (
         <section>
@@ -732,7 +815,7 @@ export function CratesView({
                     <strong style={{ color: TIER_STYLE[f.result.tier].color }}>
                       {dropName(f.result, catalog)}
                     </strong>{' '}
-                    from a {crateById(f.crateId)?.name ?? 'crate'}
+                    from a {defs.byId(f.crateId)?.name ?? 'crate'}
                   </span>
                   <span className="text-xs text-fg-subtle">{relative(f.openedAt)}</span>
                 </li>
@@ -779,5 +862,302 @@ export function CratesView({
         />
       )}
     </div>
+  )
+}
+
+// --- Making a crate ----------------------------------------------------------------------
+
+const TIERS: CrateTier[] = ['common', 'rare', 'epic', 'legendary']
+
+/** Students pack their own approved cosmetics into a crate to sell. */
+export function CreateCrate({ catalog }: { catalog: Catalog }) {
+  const { org, api, me } = useOrgContext()
+  const qc = useQueryClient()
+  const mine = useQuery({
+    queryKey: ['cosmetics', org.id, 'mine'],
+    queryFn: ({ signal }) => get<Cosmetic[]>(`${api}/cosmetics?view=mine`, signal),
+  })
+  const [name, setName] = useState('')
+  const [emoji, setEmoji] = useState('🎁')
+  const [description, setDescription] = useState('')
+  const [colors, setColors] = useState<[string, string]>(['#8052ff', '#ff5c8a'])
+  const [price, setPrice] = useState(100)
+  const [drops, setDrops] = useState<Record<string, CrateTier>>({})
+  const [saving, setSaving] = useState(false)
+  const usable = (mine.data ?? []).filter(
+    (c) => c.status === 'approved' && c.visibility === 'public',
+  )
+  const picked = Object.entries(drops).map(([item, tier]) => ({ item, tier }))
+  const preview: CrateDef = {
+    id: 'preview',
+    name: name || 'Your crate',
+    emoji: emoji || '📦',
+    description,
+    price,
+    colors,
+    drops: picked,
+    creator: { id: me.id, name: me.name, displayName: me.displayName ?? null },
+  }
+  const odds = picked.length ? crateOdds(preview) : []
+
+  const submit = async () => {
+    setSaving(true)
+    try {
+      await post(`${api}/crates/custom`, { name, emoji, description, colors, price, drops: picked })
+      toast.success('Your crate is on sale in the Crates tab! 📦')
+      setName('')
+      setDescription('')
+      setDrops({})
+      void qc.invalidateQueries({ queryKey: ['custom-crates', org.id] })
+    } catch (e) {
+      toast.error(errorMessage(e))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (mine.isLoading) return <Skeleton className="h-60" />
+  if (usable.length < CUSTOM_CRATE.minItems)
+    return (
+      <div className="rounded-xl border border-dashed border-border p-6 text-center text-[13px] text-fg-muted">
+        <p className="text-3xl">📦</p>
+        <p className="mt-2 font-medium text-fg">Make cosmetics first</p>
+        <p className="mt-1">
+          A crate is filled with things <em>you</em> made. You need at least {CUSTOM_CRATE.minItems}{' '}
+          approved cosmetics that are for sale (you have {usable.length}). Make some in the other
+          Create tabs, then come back.
+        </p>
+      </div>
+    )
+
+  return (
+    <div className="grid gap-6 md:grid-cols-[1fr_280px]">
+      <form
+        className="flex flex-col gap-4"
+        onSubmit={(e) => {
+          e.preventDefault()
+          void submit()
+        }}
+      >
+        <div className="flex flex-wrap gap-3">
+          <div className="flex flex-1 flex-col gap-1 text-[13px] font-medium">
+            <span>Name</span>
+            <Input
+              aria-label="Crate name"
+              required
+              minLength={2}
+              maxLength={40}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          <div className="flex w-20 flex-col gap-1 text-[13px] font-medium">
+            <span>Emoji</span>
+            <Input
+              aria-label="Crate emoji"
+              maxLength={4}
+              value={emoji}
+              onChange={(e) => setEmoji(e.target.value)}
+              className="text-center text-lg"
+            />
+          </div>
+        </div>
+        <div className="flex flex-col gap-1 text-[13px] font-medium">
+          <span>Description</span>
+          <Input
+            aria-label="Crate description"
+            maxLength={140}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+        </div>
+        <div className="flex flex-wrap items-end gap-4">
+          <div className="flex flex-col gap-1 text-[13px] font-medium">
+            <span>Colours</span>
+            <span className="flex gap-2">
+              {([0, 1] as const).map((i) => (
+                <input
+                  key={i}
+                  type="color"
+                  aria-label={`Colour ${i + 1}`}
+                  value={colors[i]}
+                  onChange={(e) =>
+                    setColors((c) => (i === 0 ? [e.target.value, c[1]] : [c[0], e.target.value]))
+                  }
+                  className="h-9 w-12 cursor-pointer rounded-md border border-border bg-transparent"
+                />
+              ))}
+            </span>
+          </div>
+          <div className="flex flex-col gap-1 text-[13px] font-medium">
+            <span>Price</span>
+            <Input
+              aria-label="Crate price"
+              type="number"
+              min={CUSTOM_CRATE.price.min}
+              max={CUSTOM_CRATE.price.max}
+              value={price}
+              onChange={(e) => setPrice(Number(e.target.value))}
+              className="w-28"
+            />
+          </div>
+          <p className="pb-2 text-xs text-fg-subtle">
+            You get {Math.round(CREATOR_SHARE * 100)}% of every crate sold.
+          </p>
+        </div>
+
+        <div>
+          <p className="mb-1 text-[13px] font-medium">
+            What's inside ({picked.length}/{CUSTOM_CRATE.maxItems})
+          </p>
+          <p className="mb-2 text-xs text-fg-subtle">
+            Pick your cosmetics and how rare each one is. Rarer tiers drop less often:{' '}
+            {TIERS.map((t) => `${TIER_STYLE[t].label} ${TIER_ODDS[t]}%`).join(' · ')} (shared by the
+            items in each tier).
+          </p>
+          <ul className="flex flex-col gap-2">
+            {usable.map((c) => {
+              const id = `u:${c.id}`
+              const on = id in drops
+              const it = catalog.get(id)
+              return (
+                <li
+                  key={c.id}
+                  className={cn(
+                    'flex items-center gap-3 rounded-lg border p-2',
+                    on ? 'border-accent bg-accent-subtle' : 'border-border',
+                  )}
+                >
+                  <input
+                    type="checkbox"
+                    aria-label={`Put ${c.name} in the crate`}
+                    checked={on}
+                    disabled={!on && picked.length >= CUSTOM_CRATE.maxItems}
+                    onChange={() =>
+                      setDrops((d) => {
+                        const next = { ...d }
+                        if (on) delete next[id]
+                        else next[id] = 'common'
+                        return next
+                      })
+                    }
+                  />
+                  <div className="w-24">{it && <ItemPreview it={it} compact />}</div>
+                  <div className="min-w-0 flex-1 text-[13px]">
+                    <p className="truncate font-medium">{c.name}</p>
+                    <p className="text-xs text-fg-subtle">
+                      🪙 {c.price} in the Shop
+                      {c.stock != null && ` · limited to ${c.stock}`}
+                    </p>
+                  </div>
+                  {on && (
+                    <Select
+                      aria-label={`Rarity of ${c.name}`}
+                      className="w-32"
+                      value={drops[id]}
+                      onChange={(e) =>
+                        setDrops((d) => ({ ...d, [id]: e.target.value as CrateTier }))
+                      }
+                    >
+                      {TIERS.map((t) => (
+                        <option key={t} value={t}>
+                          {TIER_STYLE[t].label}
+                        </option>
+                      ))}
+                    </Select>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+        <p className="text-xs text-fg-subtle">
+          Nobody gets the same thing twice. If someone already owns everything left in your crate,
+          opening it gives them {Math.round(CUSTOM_CRATE.refund * 100)}% of the price back. Teachers
+          can take crates off sale.
+        </p>
+        <div>
+          <Button
+            type="submit"
+            variant="primary"
+            loading={saving}
+            disabled={picked.length < CUSTOM_CRATE.minItems || name.trim().length < 2}
+          >
+            Put it on sale
+          </Button>
+        </div>
+      </form>
+      <div className="flex flex-col items-center gap-3 self-start rounded-xl border border-border p-5">
+        <p className="text-2xs font-semibold text-fg-subtle uppercase">Preview</p>
+        <div className="q-crate-idle">
+          <CrateArt crate={preview} size="lg" />
+        </div>
+        <p className="text-[14px] font-semibold">{preview.name}</p>
+        <p className="text-xs text-fg-muted">🪙 {price}</p>
+        {!!odds.length && (
+          <ul className="w-full text-xs">
+            {odds.map((o) => (
+              <li key={dropKey(o.drop)} className="flex justify-between gap-2">
+                <span className="truncate">{dropName(o.drop, catalog)}</span>
+                <span style={{ color: TIER_STYLE[o.drop.tier].color }}>{o.chance.toFixed(1)}%</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/** Your crates on sale, in My stuff. */
+export function MyCrates() {
+  const { me, org, api } = useOrgContext()
+  const qc = useQueryClient()
+  const defs = useCrateDefs()
+  const q = useQuery({
+    queryKey: ['custom-crates', org.id],
+    queryFn: ({ signal }) => get<CustomCrate[]>(`${api}/crates/custom`, signal),
+  })
+  const mine = (q.data ?? []).filter((c) => c.creator.id === me.id)
+  if (!mine.length) return null
+  return (
+    <section className="mt-10">
+      <h3 className="mb-3 text-[14px] font-semibold">Your crates</h3>
+      <ul className="divide-y divide-border rounded-lg border border-border">
+        {mine.map((c) => {
+          const def = defs.byId(c.crateId)
+          return (
+            <li key={c.id} className="flex items-center gap-4 p-3 text-[13px]">
+              {def && <CrateArt crate={def} size="sm" />}
+              <div className="min-w-0 flex-1">
+                <p className="font-medium">
+                  {c.name} <span className="text-fg-subtle">· 🪙 {c.price}</span>
+                </p>
+                <p className={c.status === 'active' ? 'text-success' : 'text-fg-subtle'}>
+                  {c.status === 'active' ? '✅ On sale' : 'Off sale'} · {c.sales} sold ·{' '}
+                  {c.drops.length} items
+                </p>
+              </div>
+              {c.status === 'active' && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={async () => {
+                    try {
+                      await del(`${api}/crates/custom/${c.id}`)
+                      void qc.invalidateQueries({ queryKey: ['custom-crates', org.id] })
+                    } catch (e) {
+                      toast.error(errorMessage(e))
+                    }
+                  }}
+                >
+                  Take off sale
+                </Button>
+              )}
+            </li>
+          )
+        })}
+      </ul>
+    </section>
   )
 }

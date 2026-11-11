@@ -1515,3 +1515,28 @@ export const trades = pgTable(
     index('trades_from_idx').on(t.fromId, t.status),
   ],
 )
+
+/** WickyChat: loot crates students make from their own cosmetics. */
+export const customCrates = pgTable(
+  'custom_crates',
+  {
+    id: pk(),
+    orgId: orgRef(),
+    creatorId: uuid('creator_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    emoji: text('emoji').notNull().default('📦'),
+    description: text('description').notNull().default(''),
+    colorA: text('color_a').notNull(),
+    colorB: text('color_b').notNull(),
+    price: integer('price').notNull(),
+    /** [{ item: 'u:<cosmetic id>', tier }] */
+    drops: jsonb('drops').$type<{ item: string; tier: string }[]>().notNull(),
+    /** active | removed */
+    status: text('status').notNull().default('active'),
+    sales: integer('sales').notNull().default(0),
+    createdAt: createdAt(),
+  },
+  (t) => [index('custom_crates_org_idx').on(t.orgId, t.status)],
+)
