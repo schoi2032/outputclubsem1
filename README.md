@@ -29,3 +29,38 @@ All Main Tasks have been completed!
 - Better UI/UX
 - Notification System - Designed for checking chats better
 - Add administrator and student roles to chat to incorporate organization
+
+---
+
+## WickyChat (wicky-backend)
+
+The app now lives in `wickychat/`. It replaces the old `wicky/` folder, so the `wicky/...` paths above no longer exist. The features listed there are now in `wickychat/`, like the swear filter, which moved to `wickychat/packages/shared/src/profanity.ts`.
+
+WickyChat is our school chat, built on the Quid monorepo:
+- **School only**: just `@chadwickschool.org` emails, and everyone joins one Chadwick org with `#general` and `#announcements`
+- **Teachers run channels**: only admins and owners (teachers) can create channels, and admins can delete any channel
+- **Group chat rule**: group chats with more than 3 people need a teacher in them
+- **Swear filter**: catches l33t, stretched and spaced-out words, and teachers see who it caught in **Settings → Rule breakers**
+- **Reporting**: report messages to teachers, and teachers can put people in timeouts
+- **Read receipts** on announcements, for teachers
+- **Profiles**: profile cards, round avatars with animated decorations, profile effects and name plates
+- **Wicky Coins**: daily streaks, badges and a leaderboard, plus the **Wicky Shop** with themes, a student cosmetics marketplace (teachers review), gifting and reselling
+- **Polls and quizzes** with coin rewards
+- **Help page** at `/help` with guides for students and teachers
+
+### Where things are
+
+```
+wickychat/   main app: Next.js web + Fastify API + Postgres (see wickychat/README.md)
+wickychat/docs/WICKY.md       what we changed for the school
+wickychat/docs/FRONTEND.md    guide for frontend people
+lite/        small standalone chat server (node lite/server.js)
+api/         AI moderation endpoint (api/moderate.js)
+index.html, script.js, style.css   early Wicky Chat frontend
+```
+
+The files `AI WICKYpedia`, `Customizability`, `Tagging AI Messages` and `Teacher Automaticly Becoming Leader` are prototypes from main and aren't wired into `wickychat/` yet.
+
+### Running it
+
+See `wickychat/README.md` for local setup (`pnpm install`, `pnpm infra:up`, `pnpm db:migrate`, `pnpm dev`).

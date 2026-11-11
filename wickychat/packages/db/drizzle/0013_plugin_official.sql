@@ -1,0 +1,1 @@
+ALTER TABLE "plugins" ADD COLUMN "official" boolean DEFAULT false NOT NULL;

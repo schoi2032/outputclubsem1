@@ -1,0 +1,651 @@
+/*
+ * WickyChat design tokens.
+ * Warm, paper-like neutrals carry the interface; a single terracotta accent marks
+ * interaction and focus. Every color is a CSS variable so light and dark share one system.
+ */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --q-bg: #ffffff;
+  --q-bg-subtle: #faf8f5;
+  --q-bg-rail: #f3efe9;
+  --q-bg-muted: #f2eee8;
+  --q-bg-emphasis: #e9e3da;
+  --q-bg-overlay: #ffffff;
+  --q-border: #ebe5dc;
+  --q-border-strong: #d9d1c5;
+  --q-fg: #1c1917;
+  --q-fg-muted: #625c55;
+  --q-fg-subtle: #8f877e;
+  /* Keep in sync with DEFAULT_ACCENT in packages/shared/src/preferences.ts. */
+  --q-accent: #b8492f;
+  --q-accent-hover: #a33f28;
+  --q-accent-subtle: #fbefeb;
+  --q-accent-fg: #ffffff;
+  --q-accent-text: #a33f28;
+  --q-danger: #c0283f;
+  --q-danger-subtle: #fdecef;
+  --q-success: #1d9a57;
+  --q-warning: #c68a0c;
+  --q-mention-bg: #fff6dc;
+  --q-mention-border: #f0d68a;
+  --q-shadow-color: 25 20% 20%;
+  color-scheme: light;
+}
+
+.dark {
+  --q-bg: #181614;
+  --q-bg-subtle: #13110f;
+  --q-bg-rail: #0e0d0b;
+  --q-bg-muted: #201d1a;
+  --q-bg-emphasis: #2a2622;
+  --q-bg-overlay: #1d1a17;
+  --q-border: #2a2622;
+  --q-border-strong: #3a3530;
+  --q-fg: #efebe6;
+  --q-fg-muted: #a8a29a;
+  --q-fg-subtle: #7a746c;
+  --q-accent: #d06248;
+  --q-accent-hover: #da7358;
+  --q-accent-subtle: #3a231b;
+  --q-accent-fg: #ffffff;
+  --q-accent-text: #f0a58f;
+  --q-danger: #ef6070;
+  --q-danger-subtle: #3a1a20;
+  --q-success: #3cc47c;
+  --q-warning: #e5a92e;
+  --q-mention-bg: #3a3218;
+  --q-mention-border: #6b5a22;
+  --q-shadow-color: 0 0% 0%;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--q-bg);
+  --color-bg-subtle: var(--q-bg-subtle);
+  --color-bg-rail: var(--q-bg-rail);
+  --color-bg-muted: var(--q-bg-muted);
+  --color-bg-emphasis: var(--q-bg-emphasis);
+  --color-bg-overlay: var(--q-bg-overlay);
+  --color-border: var(--q-border);
+  --color-border-strong: var(--q-border-strong);
+  --color-fg: var(--q-fg);
+  --color-fg-muted: var(--q-fg-muted);
+  --color-fg-subtle: var(--q-fg-subtle);
+  --color-accent: var(--q-accent);
+  --color-accent-hover: var(--q-accent-hover);
+  --color-accent-subtle: var(--q-accent-subtle);
+  --color-accent-fg: var(--q-accent-fg);
+  --color-accent-text: var(--q-accent-text);
+  --color-danger: var(--q-danger);
+  --color-danger-subtle: var(--q-danger-subtle);
+  --color-success: var(--q-success);
+  --color-warning: var(--q-warning);
+  --color-mention: var(--q-mention-bg);
+  --color-mention-border: var(--q-mention-border);
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+
+  --shadow-pop:
+    0 1px 2px hsl(var(--q-shadow-color) / 0.06), 0 8px 24px -4px hsl(var(--q-shadow-color) / 0.14);
+  --shadow-dialog:
+    0 2px 4px hsl(var(--q-shadow-color) / 0.06), 0 24px 48px -8px hsl(var(--q-shadow-color) / 0.24);
+
+  --animate-in: q-in 140ms cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-overlay: q-fade 160ms ease-out;
+}
+
+/* Not inline: utilities read these variables, so the radius preference can change them. */
+@theme {
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+}
+
+/*
+ * Personal preferences, set as attributes on <html> (see apps/web lib/preferences.ts).
+ */
+
+/* Accent: every accent token is derived from one base color. */
+:root[data-accent] {
+  --q-accent: var(--q-accent-base);
+  --q-accent-hover: color-mix(in oklab, var(--q-accent-base) 85%, black);
+  --q-accent-subtle: color-mix(in oklab, var(--q-accent-base) 10%, white);
+  --q-accent-text: color-mix(in oklab, var(--q-accent-base) 88%, black);
+}
+:root.dark[data-accent] {
+  --q-accent: color-mix(in oklab, var(--q-accent-base) 82%, white);
+  --q-accent-hover: color-mix(in oklab, var(--q-accent-base) 70%, white);
+  --q-accent-subtle: color-mix(in oklab, var(--q-accent-base) 22%, #181614);
+  --q-accent-text: color-mix(in oklab, var(--q-accent-base) 55%, white);
+}
+
+:root[data-contrast="high"] {
+  --q-border: #c2b9ad;
+  --q-border-strong: #948a7e;
+  --q-fg: #000000;
+  --q-fg-muted: #3d3833;
+  --q-fg-subtle: #5d5751;
+}
+:root.dark[data-contrast="high"] {
+  --q-border: #4a443e;
+  --q-border-strong: #635c55;
+  --q-fg: #ffffff;
+  --q-fg-muted: #d9d4ce;
+  --q-fg-subtle: #b0aaa2;
+}
+
+/* Fonts: override the Geist variable that everything resolves through. */
+:root[data-font="system"] {
+  --font-geist-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+:root[data-font="serif"] {
+  --font-geist-sans: ui-serif, Charter, Georgia, Cambria, serif;
+}
+:root[data-font="mono"] {
+  --font-geist-sans: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+/* Message text size (messages and the composer). */
+:root {
+  --q-msg-size: 14.5px;
+}
+:root[data-text-size="sm"] {
+  --q-msg-size: 13px;
+}
+:root[data-text-size="lg"] {
+  --q-msg-size: 16px;
+}
+:root[data-text-size="xl"] {
+  --q-msg-size: 18px;
+}
+
+:root[data-radius="square"] {
+  --radius-xs: 2px;
+  --radius-sm: 3px;
+  --radius-md: 4px;
+  --radius-lg: 5px;
+  --radius-xl: 6px;
+}
+:root[data-radius="round"] {
+  --radius-xs: 6px;
+  --radius-sm: 9px;
+  --radius-md: 12px;
+  --radius-lg: 15px;
+  --radius-xl: 20px;
+}
+
+@keyframes q-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes q-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes q-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+@keyframes q-twinkle {
+  0%,
+  100% {
+    opacity: 1;
+    scale: 1;
+  }
+  50% {
+    opacity: 0.45;
+    scale: 0.7;
+  }
+}
+@keyframes q-wiggle {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-8deg);
+  }
+  75% {
+    transform: rotate(8deg);
+  }
+}
+@keyframes q-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/*
+ * Hand-drawn touches, used sparingly to soften the grid.
+ * .q-squiggle: wavy underline under a heading. .q-sketch: wobbly, hand-drawn outline.
+ */
+@layer components {
+  .q-squiggle {
+    position: relative;
+  }
+  .q-squiggle::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -5px;
+    height: 5px;
+    background: var(--q-accent);
+    opacity: 0.5;
+    pointer-events: none;
+    --q-wave: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 5'%3E%3Cpath d='M0 2.5Q2.5 0.5 5 2.5T10 2.5' fill='none' stroke='black' stroke-width='1.3' stroke-linecap='round'/%3E%3C/svg%3E");
+    -webkit-mask: var(--q-wave) repeat-x 0 0 / 10px 5px;
+    mask: var(--q-wave) repeat-x 0 0 / 10px 5px;
+  }
+  .q-sketch {
+    border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  }
+
+  /* Clickable cards: lift a little on hover, settle back when pressed. */
+  .q-lift {
+    transition:
+      background-color 150ms ease-out,
+      border-color 150ms ease-out,
+      box-shadow 200ms ease-out,
+      transform 200ms cubic-bezier(0.34, 1.3, 0.64, 1);
+  }
+  .q-lift:hover {
+    transform: translateY(-1px) scale(1.02);
+    box-shadow:
+      0 1px 2px hsl(var(--q-shadow-color) / 0.05),
+      0 8px 20px -6px hsl(var(--q-shadow-color) / 0.18);
+  }
+  .q-lift:active {
+    transform: scale(0.99);
+  }
+}
+
+@layer base {
+  html,
+  body {
+    height: 100%;
+  }
+  body {
+    background: var(--q-bg);
+    color: var(--q-fg);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "cv11", "ss01";
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--q-accent) 25%, transparent);
+  }
+  :focus-visible {
+    outline: 2px solid var(--q-accent);
+    outline-offset: 2px;
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--q-border-strong) transparent;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :root:not([data-motion="full"]) *,
+    :root:not([data-motion="full"]) *::before,
+    :root:not([data-motion="full"]) *::after {
+      animation-duration: 1ms !important;
+      transition-duration: 1ms !important;
+    }
+  }
+  :root[data-motion="reduced"] *,
+  :root[data-motion="reduced"] *::before,
+  :root[data-motion="reduced"] *::after {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Animated avatars: hidden (so not even downloaded) until they should play. */
+.q-ava-anim {
+  display: none;
+}
+:root[data-animate-avatars="always"] .q-ava-anim,
+:root:not([data-animate-avatars="never"]) .q-ava:hover > .q-ava-anim,
+:root:not([data-animate-avatars="never"]) .group:hover .q-ava > .q-ava-anim {
+  display: block;
+}
+
+/* ---------------------------------------------------------------------------
+ * WickyChat avatar decorations (Wicky Shop).
+ * .q-deco sits just outside the round avatar. ::before draws the ring; the
+ * <img class="q-deco-art"> is an animated sticker (Google Noto Animated Emoji,
+ * CC BY 4.0) perched on the edge. Student-made ones use .q-deco-custom with
+ * their own frame and sticker images.
+ * ------------------------------------------------------------------------- */
+/* biome-ignore-start lint/style/noDescendingSpecificity: per-decoration sticker spots intentionally override the generic positions */
+@property --q-deco-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.q-deco {
+  --q-deco-w: 2px;
+  --q-ring: transparent;
+  position: absolute;
+  inset: -12%;
+  /* Some screens resize avatars with `[&>span]:size-9`, which would also hit this layer and
+     pin it to the top-left. Its size always comes from `inset` instead. */
+  width: auto !important;
+  height: auto !important;
+  border-radius: 9999px;
+  pointer-events: none;
+  z-index: 1;
+}
+.q-ava[data-size="lg"] .q-deco,
+.q-ava[data-size="xl"] .q-deco {
+  --q-deco-w: 2.5px;
+}
+.q-ava[data-size="xl"] .q-deco {
+  inset: -9%;
+}
+.q-deco::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: var(--q-deco-w) solid var(--q-ring);
+  box-shadow:
+    0 0 8px color-mix(in oklab, var(--q-ring) 70%, transparent),
+    inset 0 0 6px color-mix(in oklab, var(--q-ring) 45%, transparent);
+}
+
+/* The animated sticker. Default spot: top-right, overlapping the ring. */
+.q-deco-art {
+  position: absolute;
+  width: 52%;
+  height: 52%;
+  object-fit: contain;
+  top: -14%;
+  right: -16%;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.25));
+  user-select: none;
+}
+.q-ava[data-size="sm"] .q-deco-art {
+  width: 62%;
+  height: 62%;
+}
+.q-deco-at-tl,
+.q-deco-sakura .q-deco-art,
+.q-deco-orbit .q-deco-art,
+.q-deco-butterfly .q-deco-art,
+.q-deco-ghost .q-deco-art,
+.q-deco-snow .q-deco-art {
+  top: -14%;
+  right: auto;
+  left: -16%;
+}
+.q-deco-at-t,
+.q-deco-crown .q-deco-art {
+  top: -36%;
+  right: auto;
+  left: 50%;
+  translate: -50% 0;
+}
+.q-deco-crown .q-deco-art {
+  width: 60%;
+  height: 60%;
+  rotate: -8deg;
+}
+.q-deco-at-r {
+  top: 50%;
+  right: -26%;
+  translate: 0 -50%;
+}
+.q-deco-at-l {
+  top: 50%;
+  left: -26%;
+  right: auto;
+  translate: 0 -50%;
+}
+.q-deco-at-br,
+.q-deco-fire .q-deco-art,
+.q-deco-pumpkin .q-deco-art,
+.q-deco-guitar .q-deco-art,
+.q-deco-cool .q-deco-art {
+  top: auto;
+  bottom: -14%;
+  right: -16%;
+}
+.q-deco-at-b,
+.q-deco-rainbow .q-deco-art,
+.q-deco-wave .q-deco-art {
+  top: auto;
+  bottom: -30%;
+  right: auto;
+  left: 50%;
+  translate: -50% 0;
+}
+.q-deco-at-bl,
+.q-deco-clover .q-deco-art,
+.q-deco-cat .q-deco-art {
+  top: auto;
+  bottom: -14%;
+  right: auto;
+  left: -16%;
+}
+
+/* Student-made frames cover the whole decoration area (transparent in the middle). */
+.q-deco-custom::before {
+  display: none;
+}
+.q-deco-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+}
+
+/* Ring colours */
+.q-deco-party {
+  --q-ring: #ff5c9a;
+}
+.q-deco-ghost {
+  --q-ring: #b9b4ff;
+}
+.q-deco-pumpkin {
+  --q-ring: #ff8a1f;
+}
+.q-deco-clover {
+  --q-ring: #3ddc84;
+}
+.q-deco-wave {
+  --q-ring: #2fa6ff;
+}
+.q-deco-sparkle {
+  --q-ring: #ffd36b;
+}
+.q-deco-cat {
+  --q-ring: #ffb26b;
+}
+.q-deco-cool {
+  --q-ring: #3b8fc9;
+}
+.q-deco-sakura {
+  --q-ring: #ffb3cf;
+}
+.q-deco-rocket {
+  --q-ring: #6aa8ff;
+}
+.q-deco-boom {
+  --q-ring: #ff6a3d;
+}
+.q-deco-robot {
+  --q-ring: #8fa3b8;
+}
+.q-deco-butterfly {
+  --q-ring: #5fd0ff;
+}
+.q-deco-hearts {
+  --q-ring: #ff5c9a;
+}
+.q-deco-guitar {
+  --q-ring: #c4483e;
+}
+.q-deco-unicorn {
+  --q-ring: #d39bff;
+}
+.q-deco-star {
+  --q-ring: #ffcc33;
+}
+.q-deco-orbit {
+  --q-ring: #8052ff;
+}
+
+/* Animated rings */
+.q-deco-pulse {
+  --q-ring: #9471ff;
+}
+.q-deco-pulse::before {
+  animation: q-deco-pulse 2.2s ease-in-out infinite;
+}
+@keyframes q-deco-pulse {
+  50% {
+    border-color: #15c39a;
+    box-shadow:
+      0 0 14px #15c39a,
+      inset 0 0 8px #15c39a;
+    scale: 1.04;
+  }
+}
+.q-deco-orbit::before {
+  border-style: dashed;
+  animation: q-deco-spin 6s linear infinite;
+}
+.q-deco-star::before,
+.q-deco-sparkle::before,
+.q-deco-hearts::before {
+  animation: q-deco-glow 1.8s ease-in-out infinite;
+}
+@keyframes q-deco-glow {
+  50% {
+    box-shadow:
+      0 0 16px var(--q-ring),
+      inset 0 0 8px color-mix(in oklab, var(--q-ring) 60%, transparent);
+  }
+}
+.q-deco-snow::before {
+  border: var(--q-deco-w) solid #bfe9ff;
+  box-shadow:
+    0 0 10px #8fd6ff,
+    inset 0 0 10px rgb(191 233 255 / 0.7);
+}
+
+/* Gradient rings: a conic gradient masked down to a thin border, turning. */
+.q-deco-rainbow::before,
+.q-deco-fire::before,
+.q-deco-crown::before,
+.q-deco-kite::before,
+.q-deco-unicorn::before {
+  border: 0;
+  padding: var(--q-deco-w);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+  box-shadow: none;
+  animation: q-deco-angle 2.5s linear infinite;
+}
+.q-deco-rainbow::before {
+  background: conic-gradient(
+    from var(--q-deco-angle),
+    #ff4d6d,
+    #ffb829,
+    #f6ff4d,
+    #3ddc84,
+    #3b8fc9,
+    #8052ff,
+    #ff4d6d
+  );
+}
+.q-deco-unicorn::before {
+  background: conic-gradient(from var(--q-deco-angle), #ffb3e6, #d39bff, #9fd8ff, #ffe7a3, #ffb3e6);
+}
+.q-deco-fire::before {
+  background: conic-gradient(from var(--q-deco-angle), #ff3d00, #ffb800, #ff6a00, #ffe066, #ff3d00);
+  animation-duration: 1.2s;
+}
+.q-deco-fire {
+  filter: drop-shadow(0 0 5px #ff6a00);
+}
+.q-deco-kite::before {
+  background: conic-gradient(from var(--q-deco-angle), #8052ff, #15846e, #ffb829, #8052ff);
+  animation-duration: 3s;
+}
+.q-deco-kite .q-deco-art {
+  animation: q-deco-soar 2.6s ease-in-out infinite;
+}
+.q-deco-crown::before {
+  background: conic-gradient(from var(--q-deco-angle), #b8860b, #ffe27a, #fff6c9, #d4a017, #b8860b);
+  animation-duration: 3s;
+}
+.q-deco-crown {
+  filter: drop-shadow(0 0 4px #ffcf3f);
+}
+@keyframes q-deco-soar {
+  0%,
+  100% {
+    translate: 0 0;
+    rotate: -6deg;
+  }
+  50% {
+    translate: -8% -14%;
+    rotate: 8deg;
+  }
+}
+@keyframes q-deco-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+@keyframes q-deco-angle {
+  to {
+    --q-deco-angle: 360deg;
+  }
+}
+
+/* biome-ignore-end lint/style/noDescendingSpecificity: end of decoration rules */
+
+@media (prefers-reduced-motion: reduce) {
+  .q-deco,
+  .q-deco::before,
+  .q-deco-art {
+    animation: none !important;
+  }
+}

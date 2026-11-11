@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Lint, typecheck, test, build
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env: { POSTGRES_USER: quid, POSTGRES_PASSWORD: quid, POSTGRES_DB: quid_test }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U quid" --health-interval 2s --health-timeout 3s --health-retries 30
+    env:
+      TEST_DATABASE_URL: postgres://quid:quid@localhost:5432/quid_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version-file: .nvmrc, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm --filter @quid/shared test
+      - run: pnpm --filter @quid/api test
+      - run: pnpm build
+        env: { API_URL: http://localhost:4000 }
+
+  e2e:
+    name: End-to-end
+    runs-on: ubuntu-latest
+    needs: check
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env: { POSTGRES_USER: quid, POSTGRES_PASSWORD: quid, POSTGRES_DB: quid }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U quid" --health-interval 2s --health-timeout 3s --health-retries 30
+      mailpit:
+        image: axllent/mailpit:latest
+        ports: ['1025:1025', '8025:8025']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version-file: .nvmrc, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: docker run -d --name livekit -p 7880:7880 -p 7881:7881 -p 7882:7882/udp livekit/livekit-server:latest --dev --bind 0.0.0.0
+      - run: cp .env.example .env
+      - run: pnpm db:migrate
+      - run: pnpm db:seed
+      - run: pnpm --filter @quid/e2e exec playwright install --with-deps chromium
+      - run: pnpm e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with: { name: playwright-traces, path: apps/e2e/test-results, retention-days: 7 }

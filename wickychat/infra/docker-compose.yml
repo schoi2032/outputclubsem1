@@ -1,0 +1,36 @@
+# Local development services. Production uses managed GCP services (see docs/DEPLOYMENT.md).
+name: quid
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: quid
+      POSTGRES_PASSWORD: quid
+      POSTGRES_DB: quid
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U quid"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports: ["1025:1025", "8025:8025"]
+
+  # Optional: enables the Redis event bus instead of the in-process one.
+  redis:
+    image: redis:7-alpine
+    profiles: [redis]
+    ports: ["6379:6379"]
+
+  # Optional: LiveKit dev server for Stage C/D (Voice/Meet).
+  livekit:
+    image: livekit/livekit-server:latest
+    profiles: [media]
+    command: --dev --bind 0.0.0.0
+    ports: ["7880:7880", "7881:7881", "7882:7882/udp"]
+
+volumes:
+  pgdata:

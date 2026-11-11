@@ -1,0 +1,11 @@
+packages:
+  - apps/*
+  - packages/*
+onlyBuiltDependencies:
+  - "@node-rs/argon2"
+  - electron
+  - esbuild
+  - sharp
+# Only used for Squirrel.Windows installers; Quid ships NSIS on Windows.
+ignoredBuiltDependencies:
+  - electron-winstaller

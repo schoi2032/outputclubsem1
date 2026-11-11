@@ -1,0 +1,30 @@
+{
+  "name": "quid",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.34.6",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "turbo run dev --parallel --filter=@quid/web --filter=@quid/api --filter=@quid/plugins",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "e2e": "pnpm --filter @quid/e2e e2e",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "db:generate": "pnpm --filter @quid/db generate",
+    "db:migrate": "pnpm --filter @quid/db migrate",
+    "db:seed": "pnpm --filter @quid/db seed",
+    "infra:up": "docker compose -f infra/docker-compose.yml up -d",
+    "infra:down": "docker compose -f infra/docker-compose.yml down",
+    "email:test": "pnpm --filter @quid/api email:test",
+    "billing:setup": "pnpm --filter @quid/api billing:setup"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.15",
+    "turbo": "^2.11.7",
+    "typescript": "~6.0.3"
+  }
+}

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wicky</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+
+  <canvas id="world"></canvas>
+  <div class="vignette"></div>
+
+  <header class="nav">
+    <a href="#top" class="logo">
+      <svg viewBox="0 0 32 32" width="26" height="26">
+        <defs>
+          <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#8052ff"/>
+            <stop offset="1" stop-color="#15846e"/>
+          </linearGradient>
+        </defs>
+        <path d="M3 5 L29 9 L12 28 Z" fill="url(#lg)"/>
+        <path d="M17 3 L28 4 L22 11 Z" fill="#ffb829"/>
+      </svg>
+      wicky
+    </a>
+    <nav class="links">
+      <a href="#small">Features</a>
+      <a href="#safe">Safety</a>
+      <a href="#wickypedia">WICKYpedia</a>
+      <a href="#more">The small stuff</a>
+    </nav>
+    <a href="chat.html" class="pill">Log in</a>
+  </header>
+
+  <div class="dots" id="dots"></div>
+
+  <div class="hud">
+    <span id="hudNum">00</span>
+    <span id="hudName">Wicky</span>
+  </div>
+
+  <main>
+    <section class="scene left" id="top" data-name="Wicky">
+      <div class="inner">
+        <div class="copy">
+          <span class="label">For CI students and teachers</span>
+          <h1 class="jumble">School chat, finally calm.</h1>
+          <p class="fade">Wicky replaces Google Chat with something smaller, safer and alot more thoughtful. Built by students in Output Club, for the people who actually use it every day.</p>
+          <div class="actions fade">
+            <a href="chat.html" class="pill">Log in with school Google</a>
+            <a href="#small" class="ghost">Scroll to explore</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="scene right" id="small" data-name="Small by design">
+      <div class="inner">
+        <div class="copy">
+          <span class="label">01 / Small by design</span>
+          <h2 class="jumble">Three people. Thats the whole chat.</h2>
+          <p class="fade">Every chat caps at three students, so nobody gets lost in a 40 person thread. When a teacher joins the limit lifts, and the teacher is always the owner of the chat.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="scene left" id="safe" data-name="Moderated quietly">
+      <div class="inner">
+        <div class="copy">
+          <span class="label">02 / Moderated quietly</span>
+          <h2 class="jumble">Safe without feeling watched.</h2>
+          <p class="fade">Swear words get censored before they land. AI moderation catches what a word list cant, the same message sent three or four times gets stopped, and any message or user can be reported in two taps.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="scene right" id="wickypedia" data-name="WICKYpedia">
+      <div class="inner">
+        <div class="copy">
+          <span class="label">03 / WICKYpedia</span>
+          <h2 class="jumble">Ask CI anything.</h2>
+          <p class="fade">Our own AI knows the schedule, the clubs and where room 3204 is hiding. Every AI written message carries a tag, so you always know weather a real person said it.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="scene left" id="stickers" data-name="Made by people">
+      <div class="inner">
+        <div class="copy">
+          <span class="label">04 / Made by people</span>
+          <h2 class="jumble">Stickers drawn by hand, not prompts.</h2>
+          <p class="fade">Every Wicky sticker and GIF is drawn by someone in our club. No AI slop, ever. Emoji reactions are limited too, so a conversation stays a conversation and not a pile of thumbs.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="scene wide" id="more" data-name="The small stuff">
+      <div class="inner">
+        <div class="copy">
+          <span class="label">05 / The small stuff</span>
+          <h2 class="jumble">And the small stuff that makes it work.</h2>
+          <div class="list">
+            <div class="item fade">
+              <span class="num">A</span>
+              <h3>Teachers come first</h3>
+              <p>Messages from teachers get higher notification priority, so the important ones never get burried.</p>
+            </div>
+            <div class="item fade">
+              <span class="num">B</span>
+              <h3>A chat with yourself</h3>
+              <p>Links, reminders, half finished thoughts. Your own private space thats always there.</p>
+            </div>
+            <div class="item fade">
+              <span class="num">C</span>
+              <h3>Chats always on the side</h3>
+              <p>Your chats never disappear. Go home to see every new message at once or search to find an old one.</p>
+            </div>
+            <div class="item fade">
+              <span class="num">D</span>
+              <h3>Make it yours</h3>
+              <p>Themes, colors and layout are yours to change. Its your chat after all.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="scene center" id="join" data-name="Join">
+      <div class="inner">
+        <div class="copy">
+          <span class="label">06 / Join</span>
+          <h2 class="jumble big">Leave Google Chat behind.</h2>
+          <p class="fade">Sign in with your CI Google account. No new password, no setup, nothing to download.</p>
+          <a href="chat.html" class="pill big fade">Log in with school Google</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>Wicky, made by Output Club at CI</span>
+    <div>
+      <a href="#safe">Rules</a>
+      <a href="#">Feedback</a>
+      <a href="#">Join the club</a>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrambleTextPlugin.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

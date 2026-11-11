@@ -1,0 +1,32 @@
+{
+  "name": "@quid/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema.ts",
+    "./migrate": "./src/migrate.ts"
+  },
+  "scripts": {
+    "generate": "drizzle-kit generate",
+    "migrate": "tsx src/migrate.ts",
+    "seed": "tsx src/seed.ts",
+    "studio": "drizzle-kit studio",
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@quid/shared": "workspace:*",
+    "drizzle-orm": "^0.45.3",
+    "postgres": "^3.4.9",
+    "uuidv7": "^1.2.1"
+  },
+  "devDependencies": {
+    "@node-rs/argon2": "^2.2.1",
+    "@quid/config": "workspace:*",
+    "@types/node": "^24",
+    "drizzle-kit": "^0.31.11",
+    "tsx": "^4.23.15",
+    "typescript": "~6.0.3"
+  }
+}
