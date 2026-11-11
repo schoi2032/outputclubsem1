@@ -47,6 +47,7 @@ import { profileRoutes } from './modules/coins/profile'
 import { coinRoutes } from './modules/coins/routes'
 import { socialRoutes } from './modules/coins/social'
 import { tradeRoutes } from './modules/coins/trades'
+import { tradeUpRoutes } from './modules/coins/tradeup'
 import { connectedAppRoutes } from './modules/connected-apps/routes'
 import { expressionRoutes } from './modules/expressions/routes'
 import { fileRoutes } from './modules/files/routes'
@@ -328,6 +329,7 @@ export async function buildApp(config: Config, opts: BuildOptions = {}) {
   await tradeRoutes(app, ctx)
   await profileRoutes(app, ctx)
   await achievementRoutes(app, ctx)
+  await tradeUpRoutes(app, ctx)
   await complianceRoutes(app, ctx)
   await pluginRoutes(app, ctx)
   await productivityRoutes(app, ctx)

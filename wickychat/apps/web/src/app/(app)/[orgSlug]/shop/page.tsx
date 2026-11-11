@@ -89,6 +89,7 @@ import {
 import { SendCoinsDialog } from '@/components/shop/send-coins'
 import { ThemeSwatch } from '@/components/shop/theme-swatch'
 import { TradesView, useTrades } from '@/components/shop/trades'
+import { TradeUpPanel } from '@/components/shop/tradeup'
 import { del, errorMessage, get, post, put, upload } from '@/lib/api'
 import { applyAppTheme } from '@/lib/app-theme'
 import { displayName, relative } from '@/lib/format'
@@ -117,6 +118,7 @@ const REASON: Record<CoinTransaction['reason'], string> = {
   bundle_gift: 'Gifted the',
   bundle_sale: 'Someone bought your',
   achievement: 'Achievement:',
+  trade_up: 'Trade-up gave you',
 }
 
 const POSITION_LABEL: Record<StickerPosition, string> = {
@@ -976,6 +978,7 @@ function ShopInner() {
             <TabsContent value="mine" className="pt-4">
               <h3 className="mb-3 text-[14px] font-semibold">Your collection</h3>
               {grid(ownedItems, "You don't own anything yet.")}
+              <TradeUpPanel wallet={w} />
               <MyCreations />
               <MyCrates />
               <MyBundles />
@@ -1013,6 +1016,7 @@ function ShopInner() {
                               return ` ${m ? displayName(m) : 'someone'}${note ? ` · “${note}”` : ''}`
                             })()}
                           {h.reason === 'gift' && h.ref && ` · “${h.ref}”`}
+                          {h.reason === 'trade_up' && h.ref && ` ${itemName(h.ref, communityList)}`}
                           {h.reason === 'achievement' &&
                             h.ref &&
                             ` ${ACHIEVEMENTS.find((x) => x.id === h.ref)?.name ?? ''}`}
@@ -1021,11 +1025,15 @@ function ShopInner() {
                         <span
                           className={cn(
                             'w-14 text-right font-semibold tabular-nums',
-                            h.amount > 0 ? 'text-success' : 'text-danger',
+                            h.amount > 0
+                              ? 'text-success'
+                              : h.amount < 0
+                                ? 'text-danger'
+                                : 'text-fg-subtle',
                           )}
                         >
                           {h.amount > 0 ? '+' : ''}
-                          {h.amount}
+                          {h.amount || '—'}
                         </span>
                       </li>
                     ))}

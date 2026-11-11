@@ -199,7 +199,7 @@ function useTick(enabled: boolean) {
   }
 }
 
-function Reel({
+export function Reel({
   crate,
   result,
   owned,

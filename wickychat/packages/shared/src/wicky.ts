@@ -372,6 +372,7 @@ export interface CoinTransaction {
     | 'bundle_gift'
     | 'bundle_sale'
     | 'achievement'
+    | 'trade_up'
   ref: string | null
   createdAt: string
 }
@@ -1253,6 +1254,7 @@ export type AchievementStat =
   | 'quiz'
   | 'serialOne'
   | 'coinsSent'
+  | 'tradeUps'
 
 export interface AchievementDef {
   id: string
@@ -1292,6 +1294,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   ach('streak-30', '☄️', 'Unstoppable', 'Claim daily coins 30 days in a row', 'streak', 30, 200),
   ach('quiz-10', '🧠', 'Quiz whiz', 'Answer 10 quiz questions right', 'quiz', 10, 50),
   ach('serial-1', '🥇', 'Number one', 'Own copy #001 of a limited item', 'serialOne', 1, 50),
+  ach('tradeup-1', '🧪', 'Alchemist', 'Do a trade-up contract', 'tradeUps', 1, 15),
+  ach('tradeup-10', '⚗️', 'Trade-up master', 'Do 10 trade-up contracts', 'tradeUps', 10, 100),
   ach('send-500', '💸', 'Generous', 'Send 500 coins to friends in total', 'coinsSent', 500, 25),
 ]
 export const achievementById = (id: string) => ACHIEVEMENTS.find((a) => a.id === id)

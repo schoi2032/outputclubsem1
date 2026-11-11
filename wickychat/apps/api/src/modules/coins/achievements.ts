@@ -34,7 +34,7 @@ const num = (rows: { n: unknown }[]) => Number(rows[0]?.n ?? 0)
 
 export async function achievementStats(ctx: AppContext, userId: string): Promise<Stats> {
   const db = ctx.db
-  const [u, msgs, crates, trd, gifts, items, sold, quiz, serial, sent] = await Promise.all([
+  const [u, msgs, crates, trd, gifts, items, sold, quiz, serial, sent, ups] = await Promise.all([
     db.query.users.findFirst({ where: eq(users.id, userId), columns: { bestStreak: true } }),
     db
       .select({ n: count() })
@@ -83,6 +83,10 @@ export async function achievementStats(ctx: AppContext, userId: string): Promise
       .select({ n: sql<number>`coalesce(-sum(${coinTransactions.amount}), 0)::int` })
       .from(coinTransactions)
       .where(and(eq(coinTransactions.userId, userId), eq(coinTransactions.reason, 'coins_sent'))),
+    db
+      .select({ n: count() })
+      .from(coinTransactions)
+      .where(and(eq(coinTransactions.userId, userId), eq(coinTransactions.reason, 'trade_up'))),
   ])
   return {
     messages: num(msgs),
@@ -95,6 +99,7 @@ export async function achievementStats(ctx: AppContext, userId: string): Promise
     quiz: num(quiz),
     serialOne: num(serial),
     coinsSent: num(sent),
+    tradeUps: num(ups),
   }
 }
 
