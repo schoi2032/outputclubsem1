@@ -25,10 +25,28 @@ export interface CardLook {
   bannerUrl: string | null
   bannerColor: string | null
   theme?: [string, string]
+  cardBg?: string
   bioFont?: string
   pronouns: string
   bio: string
   decorationName?: string
+}
+
+/** Readable text colours for a custom card background. */
+function bgVars(hex: string): React.CSSProperties {
+  const n = Number.parseInt(hex.slice(1), 16)
+  const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255]
+  const light = (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.6
+  return {
+    background: hex,
+    '--q-bg-overlay': hex,
+    '--q-bg-muted': light ? 'rgb(0 0 0 / 0.07)' : 'rgb(255 255 255 / 0.1)',
+    '--q-border': light ? 'rgb(0 0 0 / 0.12)' : 'rgb(255 255 255 / 0.16)',
+    '--q-fg': light ? '#1c1917' : '#f5f3f0',
+    '--q-fg-muted': light ? 'rgb(28 25 23 / 0.72)' : 'rgb(245 243 240 / 0.75)',
+    '--q-fg-subtle': light ? 'rgb(28 25 23 / 0.55)' : 'rgb(245 243 240 / 0.58)',
+    color: light ? '#1c1917' : '#f5f3f0',
+  } as React.CSSProperties
 }
 
 /** The visual part of the card, without data loading or buttons. */
@@ -54,11 +72,13 @@ export function CardFace({
       <div
         className={cn('overflow-hidden', themed && 'rounded-[6px]')}
         style={
-          themed
-            ? {
-                background: `linear-gradient(180deg, color-mix(in oklab, ${look.theme![0]} 28%, var(--q-bg-overlay)), color-mix(in oklab, ${look.theme![1]} 28%, var(--q-bg-overlay)))`,
-              }
-            : undefined
+          look.cardBg
+            ? bgVars(look.cardBg)
+            : themed
+              ? {
+                  background: `linear-gradient(180deg, color-mix(in oklab, ${look.theme![0]} 28%, var(--q-bg-overlay)), color-mix(in oklab, ${look.theme![1]} 28%, var(--q-bg-overlay)))`,
+                }
+              : undefined
         }
       >
         <div
@@ -74,7 +94,7 @@ export function CardFace({
           aria-hidden="true"
         />
         <div className="px-4 pb-4">
-          <div className="-mt-10 mb-2 flex items-end justify-between">
+          <div className="-mt-10 mb-6 flex items-end justify-between">
             <span className="rounded-full bg-bg-overlay p-1.5">
               <Avatar
                 name={look.user.name}
@@ -198,6 +218,7 @@ export function ProfileCard({ user, panel }: { user: UserSummary; panel?: boolea
           bannerUrl: m?.bannerUrl ?? null,
           bannerColor: m?.bannerColor ?? null,
           theme: style.theme,
+          cardBg: style.cardBg,
           bioFont: style.bioFont,
           pronouns: m?.pronouns ?? '',
           bio: m?.bio ?? '',

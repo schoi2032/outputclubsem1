@@ -29,11 +29,13 @@ function Swatches({
   onChange,
   allowNone,
   noneLabel = 'Default',
+  noneBg = DEFAULT_GRADIENT,
 }: {
   value: string | null
   onChange: (c: string | null) => void
   allowNone?: boolean
   noneLabel?: string
+  noneBg?: string
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -44,10 +46,10 @@ function Swatches({
           aria-pressed={value === null}
           onClick={() => onChange(null)}
           className={cn(
-            'size-7 rounded-full ring-offset-2 ring-offset-bg',
+            'size-7 rounded-full border border-border ring-offset-2 ring-offset-bg',
             value === null && 'ring-2 ring-fg',
           )}
-          style={{ background: DEFAULT_GRADIENT }}
+          style={{ background: noneBg }}
         />
       )}
       {BANNER_COLORS.map((c) => (
@@ -309,6 +311,20 @@ export function ProfileCardEditor() {
           </section>
 
           <section className="flex flex-col gap-2">
+            <p className="text-[13px] font-medium">Background colour</p>
+            <p className="text-2xs text-fg-subtle">
+              The colour behind your card. Text switches to light or dark so it stays readable.
+            </p>
+            <Swatches
+              value={style.cardBg ?? null}
+              allowNone
+              noneLabel="Default background"
+              noneBg="var(--q-bg-overlay)"
+              onChange={(c) => set({ cardBg: c ?? undefined })}
+            />
+          </section>
+
+          <section className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <p className="text-[13px] font-medium">Card theme</p>
               <Switch
@@ -353,6 +369,7 @@ export function ProfileCardEditor() {
                 bannerUrl,
                 bannerColor,
                 theme: style.theme,
+                cardBg: style.cardBg,
                 bioFont: style.bioFont,
                 pronouns,
                 bio,
