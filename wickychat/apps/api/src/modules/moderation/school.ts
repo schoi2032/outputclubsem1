@@ -2,9 +2,9 @@
  * WickyChat: students report messages to teachers, and teachers put people in a timeout
  * (they can read but can't post until it ends).
  */
-import { channels, messageReports, messages, orgMemberships, users } from '@quid/db'
+import { channelMembers, channels, messageReports, messages, orgMemberships, users } from '@quid/db'
 import { type MessageReport, REPORT_REASONS } from '@quid/shared'
-import { and, count, desc, eq, inArray } from 'drizzle-orm'
+import { and, count, desc, eq, inArray, ne } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
 import { z } from 'zod'
 import { audit } from '../../core/audit'
@@ -194,6 +194,48 @@ export async function schoolModerationRoutes(app: App, ctx: AppContext) {
             : eq(messageReports.id, r.id),
         )
       return { ok: true }
+    },
+  )
+
+  /** Read receipts for teachers: who in the channel has seen a message, and who hasn't. */
+  app.get(
+    '/api/orgs/:orgId/messages/:id/seen',
+    { schema: { params: orgIdParams } },
+    async (req) => {
+      const scope = await requireOrg(ctx, req, req.params.orgId)
+      authorize(scope, 'audit.read')
+      const msg = await ctx.db.query.messages.findFirst({
+        where: and(eq(messages.id, req.params.id), eq(messages.orgId, scope.orgId)),
+        columns: { id: true, channelId: true, authorId: true },
+      })
+      if (!msg) throw notFound('Message')
+      await requireChannel(ctx, scope, msg.channelId, 'read')
+      const rows = await ctx.db
+        .select({
+          user: userCols,
+          lastRead: channelMembers.lastReadMessageId,
+          lastReadAt: channelMembers.lastReadAt,
+        })
+        .from(channelMembers)
+        .innerJoin(users, eq(users.id, channelMembers.userId))
+        .where(
+          and(
+            eq(channelMembers.channelId, msg.channelId),
+            eq(users.isBot, false),
+            msg.authorId ? ne(channelMembers.userId, msg.authorId) : undefined,
+          ),
+        )
+        .orderBy(users.name)
+      // Message ids are time-ordered (uuidv7), so "read up to" covers everything before it.
+      const seen = rows.filter((r) => r.lastRead && r.lastRead >= msg.id)
+      const notSeen = rows.filter((r) => !r.lastRead || r.lastRead < msg.id)
+      return {
+        seen: seen.map((r) => ({
+          ...toUserSummary(r.user),
+          at: r.lastReadAt?.toISOString() ?? null,
+        })),
+        notSeen: notSeen.map((r) => toUserSummary(r.user)),
+      }
     },
   )
 

@@ -54,6 +54,7 @@ import { EmojiValue, isEmojiOnly } from './custom-emoji'
 import { EmojiPicker } from './emoji-picker'
 import { ReportDialog } from './report-dialog'
 import { RichText } from './rich-text'
+import { SeenBy } from './seen-by'
 
 export interface MessageItemProps {
   m: LocalMessage
@@ -142,11 +143,16 @@ export const MessageItem = memo(function MessageItem({
   onOpenThread,
   onForward,
 }: MessageItemProps) {
-  const { me, base, api } = useOrgContext()
+  const { me, base, api, org: orgInfo } = useOrgContext()
   const actions = useMessageActions()
   const [editing, setEditing] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [reporting, setReporting] = useState(false)
+  // Teachers see who has read announcements (channels where only teachers can post).
+  const seenReceipts =
+    (orgInfo.role === 'owner' || orgInfo.role === 'admin') &&
+    channel.postingPolicy === 'admins' &&
+    m.kind === 'user'
   const [menuOpen, setMenuOpen] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
   const [taskOpen, setTaskOpen] = useState(false)
@@ -298,6 +304,7 @@ export const MessageItem = memo(function MessageItem({
 
         <Attachments items={m.attachments} />
         <Reactions m={m} onToggle={(e) => void actions.toggleReaction(m, e)} />
+        {seenReceipts && !local && !inThread && <SeenBy messageId={m.id} />}
         {!inThread && m.replyCount > 0 && <ThreadSummary m={m} onOpen={() => onOpenThread?.(m)} />}
 
         {m._status === 'failed' && (
