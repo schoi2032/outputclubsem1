@@ -32,7 +32,7 @@ import { avatarUrl } from '../users/serialize'
 import { checkPerson } from './crates'
 import { loadWallet } from './routes'
 import { changeCoins } from './service'
-import { resolveStickers } from './sticker-lookup'
+import { canUseSticker, resolveStickers } from './sticker-lookup'
 
 const BUILTIN = /^b:([a-z0-9-]+)$/
 
@@ -308,30 +308,7 @@ export async function stickerRoutes(app: App, ctx: AppContext) {
       const { key, parentId } = req.body
       const sticker = (await resolveStickers(ctx.db, [key])).get(key)
       if (!sticker) throw notFound('Sticker')
-      // Do you have the pack it's from?
-      const b = /^b:([a-z0-9-]+):/.exec(key)
-      let ok = false
-      if (b) {
-        const pack = stickerPackById(b[1]!)
-        ok =
-          !!pack && (pack.price === 0 || (await ownedKeys(ctx, scope.userId)).has(`b:${pack.id}`))
-      } else {
-        const [row] = await ctx.db
-          .select({
-            packId: stickers.packId,
-            creatorId: stickerPacks.creatorId,
-            status: stickerPacks.status,
-            orgId: stickerPacks.orgId,
-          })
-          .from(stickers)
-          .innerJoin(stickerPacks, eq(stickerPacks.id, stickers.packId))
-          .where(sql`'u:' || ${stickers.id}::text = ${key}`)
-        ok =
-          !!row &&
-          row.orgId === scope.orgId &&
-          row.status !== 'rejected' &&
-          (row.creatorId === scope.userId || (await ownedKeys(ctx, scope.userId)).has(row.packId))
-      }
+      const ok = await canUseSticker(ctx.db, scope, key)
       if (!ok) throw badRequest("You don't have that sticker pack. Get it in the Shop!")
       const message = await createMessage(ctx, scope, channel, {
         body: {

@@ -124,9 +124,19 @@ export async function reactionGroups(
     .where(inArray(reactions.messageId, messageIds))
     .groupBy(reactions.messageId, reactions.emoji)
     .orderBy(sql`min(${reactions.createdAt})`)
+  const stickerKeys = rows
+    .filter((r) => r.emoji.startsWith('sticker:'))
+    .map((r) => r.emoji.slice(8))
+  const stickerOf = stickerKeys.length ? await resolveStickers(ctx.db, stickerKeys) : null
   for (const r of rows) {
     const list = out.get(r.messageId) ?? []
-    list.push({ emoji: r.emoji, count: r.userIds.length, userIds: r.userIds })
+    const sticker = stickerOf?.get(r.emoji.slice(8))
+    list.push({
+      emoji: r.emoji,
+      count: r.userIds.length,
+      userIds: r.userIds,
+      ...(r.emoji.startsWith('sticker:') && sticker && { sticker }),
+    })
     out.set(r.messageId, list)
   }
   return out

@@ -149,3 +149,57 @@ export function StickerButton({
     </Popover>
   )
 }
+
+/** React to a message with one of your stickers. */
+export function StickerReactPicker({
+  onPick,
+  open,
+  onOpenChange,
+}: {
+  onPick: (reaction: string) => void
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}) {
+  const packs = useStickerPacks('shop', open)
+  const mine = (packs.data ?? []).filter((p) => p.owned)
+  return (
+    <Popover open={open} onOpenChange={onOpenChange}>
+      <Tooltip content="React with a sticker">
+        <PopoverTrigger asChild>
+          <IconButton label="React with a sticker" size="sm" className="size-7">
+            <StickerIcon />
+          </IconButton>
+        </PopoverTrigger>
+      </Tooltip>
+      <PopoverContent side="top" align="end" className="w-[300px] p-2">
+        {!packs.data ? (
+          <div className="h-32 animate-pulse rounded-md bg-bg-muted" />
+        ) : (
+          <div className="flex max-h-72 flex-col gap-2 overflow-y-auto">
+            {mine.map((p) => (
+              <div key={p.key}>
+                <p className="mb-1 text-2xs font-semibold text-fg-subtle uppercase">{p.name}</p>
+                <div className="grid grid-cols-6 gap-1">
+                  {p.stickers.map((st) => (
+                    <button
+                      key={st.key}
+                      type="button"
+                      title={st.name}
+                      onClick={() => {
+                        onPick(`sticker:${st.key}`)
+                        onOpenChange(false)
+                      }}
+                      className="flex items-center justify-center rounded-md p-0.5 hover:bg-bg-muted"
+                    >
+                      <StickerView sticker={st} size={38} colors={p.colors} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  )
+}

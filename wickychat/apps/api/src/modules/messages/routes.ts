@@ -20,6 +20,7 @@ import { badRequest, forbidden, notFound } from '../../core/errors'
 import { type App, orgIdParams, orgParams } from '../../core/http'
 import { check, getChannelAccess, requireChannel } from '../channels/service'
 import { coinsForMessage } from '../coins/service'
+import { canUseSticker } from '../coins/sticker-lookup'
 import { enqueueOutgoingWebhooks } from '../integrations/outgoing'
 import {
   createMessage,
@@ -209,6 +210,13 @@ export async function messageRoutes(app: App, ctx: AppContext) {
           throw badRequest("You can't react to this message.")
         const emoji = req.body.emoji
         if (!EMOJI.test(emoji)) throw badRequest('Invalid emoji.')
+        // Sticker reactions: only with stickers you own.
+        if (
+          method === 'post' &&
+          emoji.startsWith('sticker:') &&
+          !(await canUseSticker(ctx.db, scope, emoji.slice(8)))
+        )
+          throw badRequest("You don't have that sticker pack. Get it in the Shop!")
         if (method === 'post') {
           const [{ n }] = (await ctx.db
             .select({ n: sql<number>`count(distinct ${reactions.emoji})::int` })

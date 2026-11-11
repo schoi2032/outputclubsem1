@@ -1,5 +1,6 @@
 'use client'
 import type { Channel, Message } from '@quid/shared'
+import { builtinSticker } from '@quid/shared'
 import {
   Avatar,
   Button,
@@ -57,7 +58,7 @@ import { PollCard } from './poll'
 import { ReportDialog } from './report-dialog'
 import { RichText } from './rich-text'
 import { SeenBy } from './seen-by'
-import { StickerView } from './stickers'
+import { StickerReactPicker, StickerView } from './stickers'
 
 export interface MessageItemProps {
   m: LocalMessage
@@ -83,7 +84,7 @@ function Reactions({ m, onToggle }: { m: Message; onToggle: (emoji: string) => v
       {m.reactions.map((r) => {
         const mine = r.userIds.includes(me.id)
         const who = r.userIds.slice(0, 6).map(name)
-        const label = `${who.join(', ')}${r.userIds.length > 6 ? ` and ${r.userIds.length - 6} more` : ''} reacted with ${r.emoji}`
+        const label = `${who.join(', ')}${r.userIds.length > 6 ? ` and ${r.userIds.length - 6} more` : ''} reacted with ${r.sticker ? `the ${r.sticker.name} sticker` : r.emoji}`
         return (
           <Tooltip key={r.emoji} content={label}>
             <button
@@ -98,9 +99,21 @@ function Reactions({ m, onToggle }: { m: Message; onToggle: (emoji: string) => v
                   : 'border-border bg-bg-subtle text-fg-muted hover:border-border-strong',
               )}
             >
-              <span className="text-[13px] leading-none">
-                <EmojiValue value={r.emoji} />
-              </span>
+              {r.emoji.startsWith('sticker:') ? (
+                // Until the server answers, a just-added built-in sticker draws from its key.
+                (r.sticker ?? builtinSticker(r.emoji.slice(8))) ? (
+                  <StickerView
+                    sticker={(r.sticker ?? builtinSticker(r.emoji.slice(8)))!}
+                    size={20}
+                  />
+                ) : (
+                  <span className="text-[13px] leading-none">🖼️</span>
+                )
+              ) : (
+                <span className="text-[13px] leading-none">
+                  <EmojiValue value={r.emoji} />
+                </span>
+              )}
               {r.count}
             </button>
           </Tooltip>
@@ -158,6 +171,7 @@ export const MessageItem = memo(function MessageItem({
     m.kind === 'user'
   const [menuOpen, setMenuOpen] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
+  const [stickerOpen, setStickerOpen] = useState(false)
   const [taskOpen, setTaskOpen] = useState(false)
   const prefs = usePreferences()
   const emojis = useEmojiMap()
@@ -208,7 +222,7 @@ export const MessageItem = memo(function MessageItem({
     toast.success('Link copied')
   }
 
-  const toolbarVisible = menuOpen || pickerOpen
+  const toolbarVisible = menuOpen || pickerOpen || stickerOpen
 
   return (
     <div
@@ -364,6 +378,11 @@ export const MessageItem = memo(function MessageItem({
               <SmilePlus />
             </IconButton>
           </EmojiPicker>
+          <StickerReactPicker
+            onPick={(e) => void actions.toggleReaction(m, e)}
+            open={stickerOpen}
+            onOpenChange={setStickerOpen}
+          />
           {!inThread && onOpenThread && (
             <Tooltip content="Reply in thread">
               <IconButton

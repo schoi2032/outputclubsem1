@@ -175,6 +175,8 @@ export interface ReactionGroup {
   emoji: string
   count: number
   userIds: string[]
+  /** WickyChat: for sticker reactions (`sticker:<key>`), what to draw. */
+  sticker?: import('./stickers').Sticker
 }
 
 export interface Message {
