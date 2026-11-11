@@ -23,6 +23,7 @@ import {
   ListTodo,
   Lock,
   Megaphone,
+  PanelRight,
   Phone,
   Pin,
   Users,
@@ -42,6 +43,7 @@ import { useOrgContext } from '../org-context'
 import { CanvasTab } from '../productivity/canvas-tab'
 import { TasksTab } from '../productivity/tasks'
 import { WorkflowsButton } from '../productivity/workflow-run'
+import { ProfilePanel } from '../profile/profile-card'
 import { useVoiceRooms } from '../voice-rooms/voice-room-provider'
 import { FileCard } from './attachments'
 import { CatchUpCard, SummarizeMenu, type SummaryRequest } from './catch-up'
@@ -212,12 +214,16 @@ function Header({
   setTab,
   onDetails,
   onCatchUp,
+  profileOpen,
+  onToggleProfile,
 }: {
   channel: Channel
   tab: Tab
   setTab: (t: Tab) => void
   onDetails: (t: string) => void
   onCatchUp?: (r: SummaryRequest) => void
+  profileOpen?: boolean
+  onToggleProfile?: () => void
 }) {
   const { me, org, base } = useOrgContext()
   const presence = usePresence(org.id)
@@ -296,6 +302,18 @@ function Header({
                 <Users className="size-3.5" />
                 {channel.memberCount}
               </button>
+            </Tooltip>
+          )}
+          {partner && !partner.isBot && onToggleProfile && (
+            <Tooltip content={profileOpen ? 'Hide profile' : 'Show profile'}>
+              <IconButton
+                label={profileOpen ? 'Hide profile' : 'Show profile'}
+                className="hidden lg:inline-flex"
+                aria-pressed={profileOpen}
+                onClick={onToggleProfile}
+              >
+                <PanelRight />
+              </IconButton>
             </Tooltip>
           )}
           <Tooltip content="Details">
@@ -480,6 +498,21 @@ export function ChannelView({ channelId }: { channelId: string }) {
     if (tabParam && TABS.includes(tabParam)) setTabState(tabParam)
   }, [tabParam])
   const [details, setDetails] = useState<string | null>(null)
+  const [profileOpen, setProfileOpen] = useState(() => {
+    try {
+      return localStorage.getItem('wicky-dm-profile') !== 'off'
+    } catch {
+      return true
+    }
+  })
+  const toggleProfile = () =>
+    setProfileOpen((o) => {
+      try {
+        localStorage.setItem('wicky-dm-profile', o ? 'off' : 'on')
+      } catch {}
+      return !o
+    })
+  const dmUser = channel?.kind === 'dm' ? dmPartner(channel, me.id) : undefined
   const [forwarding, setForwarding] = useState<Message | null>(null)
   const [joining, setJoining] = useState(false)
   const [catchUp, setCatchUp] = useState<SummaryRequest | null>(null)
@@ -598,6 +631,8 @@ export function ChannelView({ channelId }: { channelId: string }) {
           setTab={setTab}
           onDetails={setDetails}
           onCatchUp={aiAvailable ? setCatchUp : undefined}
+          profileOpen={profileOpen}
+          onToggleProfile={toggleProfile}
         />
         <CallBanner channel={channel} />
         {tab === 'messages' && (
@@ -689,6 +724,7 @@ export function ChannelView({ channelId }: { channelId: string }) {
           />
         )}
       </section>
+      {dmUser && !dmUser.isBot && profileOpen && !threadId && <ProfilePanel user={dmUser} />}
       {threadId && (
         <ThreadPanel
           key={threadId}

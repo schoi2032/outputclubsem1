@@ -20,7 +20,7 @@ import { useOrgContext } from '@/components/org-context'
 import { SettingsCard } from '@/components/settings-ui'
 import { errorMessage, patch, upload } from '@/lib/api'
 import { keys } from '@/lib/queries'
-import { BioBlock, CardFace } from './profile-card'
+import { BioBlock, CardFace, ConnectionsBlock } from './profile-card'
 
 const DEFAULT_GRADIENT = 'linear-gradient(135deg, #8052ff, #15846e)'
 
@@ -136,7 +136,7 @@ export function ProfileCardEditor() {
         pronouns,
         bannerColor,
         ...(bannerFileId !== undefined && { bannerFileId }),
-        profileStyle: style,
+        profileStyle: cleanProfileStyle(style),
       })
       await qc.invalidateQueries({ queryKey: keys.me })
       void qc.invalidateQueries({ queryKey: ['members'] })
@@ -199,6 +199,17 @@ export function ProfileCardEditor() {
                 value={bio}
                 placeholder="Clubs, hobbies, favourite subject…"
                 onChange={(e) => setBio(e.target.value)}
+              />
+            )}
+          </Field>
+          <Field label="guns.lol" hint="Your guns.lol username. It shows as a link on your card.">
+            {(p) => (
+              <Input
+                {...p}
+                maxLength={60}
+                placeholder="username"
+                value={style.gunslol ?? ''}
+                onChange={(e) => set({ gunslol: e.target.value })}
               />
             )}
           </Field>
@@ -349,6 +360,7 @@ export function ProfileCardEditor() {
             >
               <div className="my-3 h-px bg-border" />
               <BioBlock bio={bio} font={style.bioFont} />
+              <ConnectionsBlock gunslol={cleanProfileStyle(style).gunslol} />
             </CardFace>
           </div>
         </div>

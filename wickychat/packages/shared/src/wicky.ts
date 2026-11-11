@@ -283,6 +283,8 @@ export interface ProfileStyle {
   bioFont?: ProfileFontId
   /** Two colours for the profile card background gradient (Discord's profile themes). */
   theme?: [string, string]
+  /** guns.lol username, shown as a link under Connections. */
+  gunslol?: string
 }
 
 const HEX = /^#[0-9a-fA-F]{6}$/
@@ -303,6 +305,13 @@ export function cleanProfileStyle(raw: unknown): ProfileStyle {
   if (Array.isArray(r.theme)) {
     const c = r.theme.filter((x): x is string => typeof x === 'string' && HEX.test(x))
     if (c.length === 2) out.theme = [c[0]!, c[1]!]
+  }
+  if (typeof r.gunslol === 'string') {
+    const name = r.gunslol
+      .trim()
+      .replace(/^(https?:\/\/)?(www\.)?guns\.lol\//i, '')
+      .replace(/^@/, '')
+    if (/^[A-Za-z0-9_.-]{1,32}$/.test(name)) out.gunslol = name
   }
   return out
 }

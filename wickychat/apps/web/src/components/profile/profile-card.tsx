@@ -8,7 +8,7 @@ import type { Channel, Member, UserSummary } from '@quid/shared'
 import { cleanProfileStyle, decorationById, ROLE_LABEL } from '@quid/shared'
 import { Avatar, Button, cn, Input, Popover, PopoverContent, PopoverTrigger, toast } from '@quid/ui'
 import { useQueryClient } from '@tanstack/react-query'
-import { Coins, Gift, MessageSquare } from 'lucide-react'
+import { Coins, ExternalLink, Gift, Link2, MessageSquare } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useOrgContext } from '@/components/org-context'
@@ -119,7 +119,30 @@ export function BioBlock({ bio, font }: { bio: string; font?: string }) {
   )
 }
 
-export function ProfileCard({ user }: { user: UserSummary }) {
+/** Linked accounts (just guns.lol for now). */
+export function ConnectionsBlock({ gunslol }: { gunslol?: string }) {
+  if (!gunslol) return null
+  return (
+    <>
+      <p className="mt-3 mb-1 text-2xs font-semibold text-fg-subtle uppercase">Connections</p>
+      <a
+        href={`https://guns.lol/${encodeURIComponent(gunslol)}`}
+        target="_blank"
+        rel="noreferrer noopener"
+        className="flex items-center gap-2 rounded-md border border-border bg-bg-muted/60 px-2.5 py-2 text-[13px] hover:bg-bg-muted"
+      >
+        <Link2 className="size-4 shrink-0 text-fg-muted" />
+        <span className="min-w-0 flex-1 truncate">
+          <span className="text-fg-muted">guns.lol/</span>
+          <span className="font-medium">{gunslol}</span>
+        </span>
+        <ExternalLink className="size-3.5 shrink-0 text-fg-subtle" />
+      </a>
+    </>
+  )
+}
+
+export function ProfileCard({ user, panel }: { user: UserSummary; panel?: boolean }) {
   const { org, api, base, me } = useOrgContext()
   const members = useMembers(org.id)
   const m: Member | undefined = members.data?.find((x) => x.id === user.id)
@@ -167,7 +190,7 @@ export function ProfileCard({ user }: { user: UserSummary }) {
   }
 
   return (
-    <div className="w-[320px]">
+    <div className={panel ? 'w-full' : 'w-[320px]'}>
       <CardFace
         presence={m?.presence}
         look={{
@@ -207,6 +230,7 @@ export function ProfileCard({ user }: { user: UserSummary }) {
         )}
         <div className="my-3 h-px bg-border" />
         <BioBlock bio={m?.bio ?? ''} font={style.bioFont} />
+        <ConnectionsBlock gunslol={style.gunslol} />
         {m && (
           <>
             <p className="mt-3 mb-0.5 text-2xs font-semibold text-fg-subtle uppercase">
@@ -223,14 +247,17 @@ export function ProfileCard({ user }: { user: UserSummary }) {
         )}
         {user.id !== me.id && !user.isBot && (
           <div className="mt-4 flex gap-2">
-            <Button className="flex-1" variant="primary" loading={busy} onClick={message}>
-              <MessageSquare /> Message
-            </Button>
+            {!panel && (
+              <Button className="flex-1" variant="primary" loading={busy} onClick={message}>
+                <MessageSquare /> Message
+              </Button>
+            )}
             <Button
               title="Gift a decoration"
+              className={panel ? 'flex-1' : undefined}
               onClick={() => router.push(`${base}/shop?gift=${user.id}`)}
             >
-              <Gift />
+              <Gift /> {panel && 'Gift a decoration'}
             </Button>
           </div>
         )}
@@ -284,5 +311,19 @@ export function ProfilePopover({
         <ProfileCard user={user} />
       </PopoverContent>
     </Popover>
+  )
+}
+
+/** Discord-style profile on the right side of a 1:1 DM. */
+export function ProfilePanel({ user }: { user: UserSummary }) {
+  return (
+    <aside
+      aria-label={`${displayName(user)}'s profile`}
+      className="hidden w-[340px] shrink-0 flex-col overflow-y-auto border-l border-border bg-bg-overlay lg:flex"
+    >
+      <div className="p-3">
+        <ProfileCard user={user} panel />
+      </div>
+    </aside>
   )
 }
