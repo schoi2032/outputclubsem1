@@ -48,7 +48,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
         ...(admin ? [{ href: 'customization', label: 'Customization', icon: Paintbrush }] : []),
         ...(admin ? [{ href: 'compliance', label: 'Compliance', icon: ShieldCheck }] : []),
         ...(can(org.role, 'members.invite_guest')
-          ? [{ href: 'members', label: 'Members & invitations', icon: Users }]
+          ? [{ href: 'members', label: 'Members', icon: Users }]
           : []),
         ...(org.role !== 'guest'
           ? [{ href: 'expressions', label: 'Emoji & sounds', icon: Smile }]

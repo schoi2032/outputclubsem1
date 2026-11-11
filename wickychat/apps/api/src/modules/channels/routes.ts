@@ -9,6 +9,7 @@ import {
 } from '@quid/db'
 import {
   addMembersSchema,
+  can,
   channelPrefsSchema,
   createChannelSchema,
   createConversationSchema,
@@ -30,6 +31,7 @@ import { publishChannelJoined, publishChannelLeft, publishChannelUpdated } from 
 import {
   assertOrgMembers,
   check,
+  getChannelAccess,
   requireChannel,
   serializeChannel,
   serializeChannels,
@@ -184,7 +186,10 @@ export async function channelRoutes(app: App, ctx: AppContext) {
               eq(channels.kind, 'public'),
               and(
                 eq(channels.kind, 'private'),
-                sql`exists (select 1 from channel_members cm where cm.channel_id = channels.id and cm.user_id = ${scope.userId})`,
+                // WickyChat: admins see every private channel so they can manage or delete it.
+                can(scope.role, 'channels.manage_any')
+                  ? undefined
+                  : sql`exists (select 1 from channel_members cm where cm.channel_id = channels.id and cm.user_id = ${scope.userId})`,
               ),
             ),
             archived ? isNotNull(channels.archivedAt) : isNull(channels.archivedAt),
@@ -354,8 +359,9 @@ export async function channelRoutes(app: App, ctx: AppContext) {
 
   app.delete(`${base}/channels/:id`, { schema: { params: orgIdParams } }, async (req) => {
     const scope = await requireOrg(ctx, req, req.params.orgId)
-    const a = await requireChannel(ctx, scope, req.params.id, 'delete')
-    if (a.channel.isDefault) throw badRequest('Default channels cannot be deleted.')
+    // WickyChat: admins can delete any channel, including default and private ones.
+    const a = await getChannelAccess(ctx, scope, req.params.id, { adminOverride: true })
+    if (!check(scope, a, 'delete')) throw forbidden()
     const members = await ctx.db
       .select({ userId: channelMembers.userId })
       .from(channelMembers)

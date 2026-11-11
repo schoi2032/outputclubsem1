@@ -13,7 +13,7 @@
       "root": "apps/api",
       "entrypoint": "src/vercel.ts",
       "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
-      "buildCommand": "echo 'API is compiled by Vercel from src/vercel.ts'"
+      "buildCommand": "cd ../.. && DATABASE_URL=\"${DATABASE_URL_UNPOOLED:-$DATABASE_URL}\" pnpm --filter @quid/db migrate"
     }
   },
   "rewrites": [

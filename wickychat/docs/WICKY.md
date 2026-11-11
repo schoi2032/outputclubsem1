@@ -18,6 +18,12 @@ Code: `apps/api/src/core/school.ts`
 
 > ⚠️ Because the first sign-in becomes owner, make sure the right person signs up first on a fresh database. If a test account grabs it, delete that user and the `chadwick` organization from the database. Then **redeploy**, because each server instance caches the organization's ID in memory (`cachedOrgId`).
 
+## Who can do what with channels
+
+- **Only admins and owners (teachers) can create channels**, public or private (`channels.create` in `packages/shared/src/permissions.ts`). Students can still start DMs and group chats with **New message**. The app hides "Create channel" from students, and the server rejects it with `403`.
+- **Admins can delete any channel**, including ones they didn't make, private ones they aren't in, and the default `#general` and `#announcements`. Use the trash icon in **Browse channels** or **Delete channel** in a channel's settings. Admins also see every private channel in Browse.
+- **No invitations.** Everyone with a school email joins automatically, so the "Invite people" buttons were removed.
+
 ## Swear filter
 
 Code: `packages/shared/src/profanity.ts` (tests in `profanity.test.ts`)

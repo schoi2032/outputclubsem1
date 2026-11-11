@@ -73,8 +73,9 @@ const ORG_POLICY: Record<OrgAction, (role: OrgRole) => boolean> = {
   'members.remove': atLeast('admin'),
   'departments.manage': atLeast('admin'),
   'teams.manage': atLeast('dept_admin'),
-  'channels.create': atLeast('member'),
-  'channels.create_private': atLeast('member'),
+  // WickyChat: only admins (teachers) make channels. Students can still start DMs and groups.
+  'channels.create': atLeast('admin'),
+  'channels.create_private': atLeast('admin'),
   'channels.browse': atLeast('member'),
   'channels.manage_any': atLeast('admin'),
   'conversations.create': atLeast('guest'),

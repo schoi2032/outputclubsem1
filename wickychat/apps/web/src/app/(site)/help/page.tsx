@@ -98,8 +98,8 @@ export default function HelpPage() {
               Click <strong>Browse channels</strong> to find and join others, like clubs or classes.
             </li>
             <li>
-              Click <strong>Create channel</strong> to start your own. Make it{' '}
-              <strong>private</strong> if only invited people should see it.
+              Only teachers can create channels. Want one for your club or group project? Ask a
+              teacher, or start a group chat with <strong>New message</strong> instead.
             </li>
           </ul>
 

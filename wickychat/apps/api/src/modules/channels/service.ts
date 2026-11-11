@@ -1,6 +1,6 @@
 import { channelMembers, channels, orgMemberships, users } from '@quid/db'
 import type { Channel, ChannelAction, ChannelRole, UserSummary } from '@quid/shared'
-import { canInChannel } from '@quid/shared'
+import { canInChannel, ROLE_RANK } from '@quid/shared'
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm'
 import type { OrgScope } from '../../core/auth'
 import type { AppContext } from '../../core/context'
@@ -24,6 +24,7 @@ export async function getChannelAccess(
   ctx: AppContext,
   scope: OrgScope,
   channelId: string,
+  opts: { adminOverride?: boolean } = {},
 ): Promise<ChannelAccess> {
   const rows = await ctx.db
     .select({ channel: channels, membership: channelMembers })
@@ -37,7 +38,12 @@ export async function getChannelAccess(
   const row = rows[0]
   if (!row) throw notFound('Channel')
   const access = { channel: row.channel, membership: row.membership }
-  if (!check(scope, access, 'read')) throw notFound('Channel')
+  // WickyChat: org admins (teachers) may manage channels they aren't in, e.g. to delete them.
+  const adminOverride =
+    opts.adminOverride &&
+    ROLE_RANK[scope.role] >= ROLE_RANK.admin &&
+    (row.channel.kind === 'public' || row.channel.kind === 'private')
+  if (!adminOverride && !check(scope, access, 'read')) throw notFound('Channel')
   return access
 }
 

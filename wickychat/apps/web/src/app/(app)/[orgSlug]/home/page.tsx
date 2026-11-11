@@ -23,7 +23,6 @@ import {
   Lock,
   MessageSquarePlus,
   Search,
-  UserPlus,
   Video,
 } from 'lucide-react'
 import Link from 'next/link'
@@ -307,13 +306,6 @@ export default function HomePage() {
                 <Hash /> Browse channels
               </Link>
             </Button>
-            {org.role !== 'guest' && (
-              <Button asChild>
-                <Link href={`${base}/settings/members`}>
-                  <UserPlus /> Invite people
-                </Link>
-              </Button>
-            )}
           </div>
 
           <TipCard />

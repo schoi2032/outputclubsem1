@@ -23,7 +23,6 @@ import {
   Search,
   Settings,
   Sparkles,
-  UserPlus,
   Video,
   Zap,
 } from 'lucide-react'
@@ -92,7 +91,6 @@ export function CommandPalette() {
   const [active, setActive] = useState(0)
   const list = useRef<HTMLDivElement>(null)
   const channels = useChannels(org.id)
-  const isAdmin = org.role === 'owner' || org.role === 'admin'
   const term = useDebounced(q.trim(), 180)
 
   useEffect(() => {
@@ -169,9 +167,6 @@ export function CommandPalette() {
       },
       { id: 'a:workflows', label: 'Workflows', icon: <Zap />, href: `${base}/workflows` },
       { id: 'a:plugins', label: 'Plugins', icon: <Puzzle />, href: `${base}/plugins` },
-      ...(isAdmin
-        ? [{ id: 'a:invite', label: 'Invite people', icon: <UserPlus />, href: `${base}/people` }]
-        : []),
       { id: 'a:settings', label: 'Settings', icon: <Settings />, href: `${base}/settings` },
       {
         id: 'a:prefs',
@@ -325,7 +320,7 @@ export function CommandPalette() {
       ...toggles,
       ...everything,
     ]
-  }, [q, term, channels.data, remote.data, me.id, base, isAdmin, go])
+  }, [q, term, channels.data, remote.data, me.id, base, go])
 
   useEffect(() => {
     list.current?.querySelector(`[data-index="${active}"]`)?.scrollIntoView({ block: 'nearest' })

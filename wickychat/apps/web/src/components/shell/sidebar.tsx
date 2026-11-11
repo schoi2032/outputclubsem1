@@ -31,7 +31,6 @@ import {
   Search,
   SendHorizontal,
   Settings,
-  UserPlus,
   Users,
   Zap,
 } from 'lucide-react'
@@ -43,7 +42,6 @@ import { usePreference } from '@/lib/preferences'
 import { useReminders, useTasks } from '@/lib/productivity'
 import { useChannels, useDepartments, useDrafts, usePresence, useTeams } from '@/lib/queries'
 import { CreateChannelDialog } from '../dialogs/create-channel-dialog'
-import { InviteDialog } from '../dialogs/invite-dialog'
 import { NewMessageDialog } from '../dialogs/new-message-dialog'
 import { useOrgContext } from '../org-context'
 import { PluginsSidebarItems } from '../plugins/sidebar-section'
@@ -207,8 +205,8 @@ export function Sidebar() {
   const drafts = useDrafts(org.id)
   const [createOpen, setCreateOpen] = useState(false)
   const [dmOpen, setDmOpen] = useState(false)
-  const [inviteOpen, setInviteOpen] = useState(false)
-  const canInvite = can(org.role, 'members.invite_guest')
+  // WickyChat: only admins (teachers) make channels; everyone joins the school automatically.
+  const canCreate = can(org.role, 'channels.create')
   const isAdmin = org.role === 'owner' || org.role === 'admin'
   const isMac = useIsMac()
   const sort = usePreference('sidebarSort')
@@ -295,11 +293,6 @@ export function Sidebar() {
           </MenuTrigger>
           <MenuContent align="start" className="w-60">
             <MenuLabel>{org.name}</MenuLabel>
-            {canInvite && (
-              <MenuItem icon={<UserPlus />} onSelect={() => setInviteOpen(true)}>
-                Invite people
-              </MenuItem>
-            )}
             {org.role !== 'guest' && (
               <MenuItem icon={<Users />} asChild>
                 <Link href={`${base}/people`}>People directory</Link>
@@ -390,9 +383,11 @@ export function Sidebar() {
                       </IconButton>
                     </MenuTrigger>
                     <MenuContent align="end">
-                      <MenuItem icon={<Plus />} onSelect={() => setCreateOpen(true)}>
-                        Create a channel
-                      </MenuItem>
+                      {canCreate && (
+                        <MenuItem icon={<Plus />} onSelect={() => setCreateOpen(true)}>
+                          Create a channel
+                        </MenuItem>
+                      )}
                       <MenuItem icon={<Hash />} asChild>
                         <Link href={`${base}/browse`}>Browse channels</Link>
                       </MenuItem>
@@ -404,7 +399,7 @@ export function Sidebar() {
               {groups.general.map((c) => (
                 <ChannelRow key={c.id} c={c} />
               ))}
-              {org.role !== 'guest' && (
+              {canCreate ? (
                 <li>
                   <button
                     type="button"
@@ -417,6 +412,20 @@ export function Sidebar() {
                     Add channel
                   </button>
                 </li>
+              ) : (
+                org.role !== 'guest' && (
+                  <li>
+                    <Link
+                      href={`${base}/browse`}
+                      className="q-nav flex h-[30px] w-full items-center gap-2 rounded-md px-2 text-[13.5px] text-fg-subtle hover:bg-bg-muted hover:text-fg"
+                    >
+                      <span className="flex size-5 items-center justify-center rounded-[5px] bg-bg-muted">
+                        <Hash className="size-3.5" />
+                      </span>
+                      Browse channels
+                    </Link>
+                  </li>
+                )
               )}
             </Section>
             {groups.dept.map((g) => (
@@ -481,21 +490,8 @@ export function Sidebar() {
         )}
       </div>
 
-      {canInvite && (
-        <div className="border-t border-border p-2">
-          <button
-            type="button"
-            onClick={() => setInviteOpen(true)}
-            className="q-nav flex h-8 w-full items-center gap-2 rounded-md px-2 text-[13px] text-fg-muted hover:bg-bg-muted hover:text-fg"
-          >
-            <UserPlus className="size-4" /> Invite people
-          </button>
-        </div>
-      )}
-
       <CreateChannelDialog open={createOpen} onOpenChange={setCreateOpen} />
       <NewMessageDialog open={dmOpen} onOpenChange={setDmOpen} />
-      <InviteDialog open={inviteOpen} onOpenChange={setInviteOpen} />
     </>
   )
 }

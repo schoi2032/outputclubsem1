@@ -1,9 +1,9 @@
 'use client'
 import { cn } from '@quid/ui'
-import { Check, ChevronRight, Hash, Puzzle, Sparkles, UserPlus, Video, X } from 'lucide-react'
+import { Check, ChevronRight, Hash, Puzzle, Sparkles, Video, X } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { useChannels, useMembers } from '@/lib/queries'
+import { useChannels } from '@/lib/queries'
 import { useOrgContext } from '../org-context'
 import { useInstalledPlugins } from '../plugins/sidebar-section'
 import { tourDone } from './tour'
@@ -22,7 +22,6 @@ type Step = {
 export function GetStarted({ hadMeeting }: { hadMeeting: boolean }) {
   const { org, me, base } = useOrgContext()
   const channels = useChannels(org.id)
-  const members = useMembers(org.role === 'guest' ? undefined : org.id)
   const { plugins, isSuccess: pluginsLoaded } = useInstalledPlugins()
   const isAdmin = org.role === 'owner' || org.role === 'admin'
   const key = `quid-get-started:${org.id}:${me.id}`
@@ -54,18 +53,6 @@ export function GetStarted({ hadMeeting }: { hadMeeting: boolean }) {
       done: toured,
       onClick: () => window.dispatchEvent(new Event('quid:tour')),
     },
-    ...(isAdmin
-      ? [
-          {
-            id: 'invite',
-            label: 'Invite your team',
-            detail: 'WickyChat is better with your people in it.',
-            icon: <UserPlus />,
-            done: (members.data?.length ?? 0) > 1,
-            href: `${base}/settings/members`,
-          },
-        ]
-      : []),
     {
       id: 'channels',
       label: 'Join a few channels',

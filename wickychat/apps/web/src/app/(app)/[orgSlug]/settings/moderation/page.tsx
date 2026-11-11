@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { useOrgContext } from '@/components/org-context'
 import { SettingsTitle } from '@/components/settings-ui'
-import { get } from '@/lib/api'
+import { errorMessage, get } from '@/lib/api'
 import { displayName, formatFull, relative } from '@/lib/format'
 
 type Range = '7d' | '30d' | 'all'
@@ -108,7 +108,11 @@ export default function ModerationSettings() {
         </div>
       </div>
 
-      {offenders.isLoading ? (
+      {offenders.isError ? (
+        <p className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-[13px] text-danger">
+          Couldn't load the rule breakers log: {errorMessage(offenders.error)}
+        </p>
+      ) : offenders.isLoading ? (
         <Skeleton className="h-40" />
       ) : !rows.length ? (
         <EmptyState
@@ -175,7 +179,11 @@ export default function ModerationSettings() {
         )}
       </div>
 
-      {events.isLoading ? (
+      {events.isError ? (
+        <p className="text-[13px] text-danger">
+          Couldn't load incidents: {errorMessage(events.error)}
+        </p>
+      ) : events.isLoading ? (
         <Skeleton className="h-60" />
       ) : !list.length ? (
         <p className="text-[13px] text-fg-subtle">No incidents yet.</p>

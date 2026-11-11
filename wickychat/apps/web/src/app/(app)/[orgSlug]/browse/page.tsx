@@ -1,14 +1,25 @@
 'use client'
-import type { Channel } from '@quid/shared'
-import { Button, cn, EmptyState, Input, Skeleton, toast } from '@quid/ui'
+import { type Channel, can } from '@quid/shared'
+import {
+  Button,
+  cn,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  EmptyState,
+  IconButton,
+  Input,
+  Skeleton,
+  toast,
+} from '@quid/ui'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Archive, Hash, Lock, Plus, Search } from 'lucide-react'
+import { Archive, Hash, Lock, Plus, Search, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { CreateChannelDialog } from '@/components/dialogs/create-channel-dialog'
 import { useOrgContext } from '@/components/org-context'
 import { PageHeader } from '@/components/page-header'
-import { errorMessage, get, post } from '@/lib/api'
+import { del, errorMessage, get, post } from '@/lib/api'
 import { keys } from '@/lib/queries'
 
 export default function BrowsePage() {
@@ -18,6 +29,7 @@ export default function BrowsePage() {
   const [q, setQ] = useState('')
   const [archived, setArchived] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
+  const [deleting, setDeleting] = useState<Channel | null>(null)
   useEffect(() => {
     const t = setTimeout(() => setQ(input.trim()), 250)
     return () => clearTimeout(t)
@@ -48,9 +60,11 @@ export default function BrowsePage() {
         title="Browse channels"
         icon={<Hash />}
         actions={
-          <Button size="sm" variant="primary" onClick={() => setCreateOpen(true)}>
-            <Plus /> Create channel
-          </Button>
+          can(org.role, 'channels.create') && (
+            <Button size="sm" variant="primary" onClick={() => setCreateOpen(true)}>
+              <Plus /> Create channel
+            </Button>
+          )
         }
       />
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -124,6 +138,16 @@ export default function BrowsePage() {
                       Join
                     </Button>
                   )}
+                  {can(org.role, 'channels.manage_any') && (
+                    <IconButton
+                      label={`Delete #${c.name}`}
+                      size="sm"
+                      className="text-fg-subtle hover:text-danger"
+                      onClick={() => setDeleting(c)}
+                    >
+                      <Trash2 />
+                    </IconButton>
+                  )}
                 </li>
               ))}
             </ul>
@@ -131,6 +155,35 @@ export default function BrowsePage() {
         </div>
       </div>
       <CreateChannelDialog open={createOpen} onOpenChange={setCreateOpen} />
+      <Dialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
+        <DialogContent
+          title={`Delete #${deleting?.name}?`}
+          description="The channel and all its messages and files are deleted for everyone. This can't be undone."
+        >
+          <DialogFooter>
+            <Button onClick={() => setDeleting(null)}>Cancel</Button>
+            <Button
+              variant="danger"
+              onClick={async () => {
+                const c = deleting!
+                setDeleting(null)
+                try {
+                  await del(`${api}/channels/${c.id}`)
+                  qc.setQueryData<Channel[]>(keys.channels(org.id), (l) =>
+                    l ? l.filter((x) => x.id !== c.id) : l,
+                  )
+                  void list.refetch()
+                  toast.success(`#${c.name} was deleted`)
+                } catch (e) {
+                  toast.error(errorMessage(e))
+                }
+              }}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

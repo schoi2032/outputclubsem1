@@ -14,7 +14,7 @@ export async function runMigrations(url: string) {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const url = process.env.DATABASE_URL ?? 'postgres://quid:quid@localhost:5432/quid'
+  const url = process.env.DATABASE_URL || 'postgres://quid:quid@localhost:5432/quid'
   runMigrations(url)
     .then(() => console.log('Migrations applied'))
     .catch((err) => {

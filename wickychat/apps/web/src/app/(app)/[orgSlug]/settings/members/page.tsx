@@ -14,9 +14,7 @@ import {
   toast,
 } from '@quid/ui'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { UserPlus } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { InviteDialog } from '@/components/dialogs/invite-dialog'
 import { useOrgContext } from '@/components/org-context'
 import { SettingsCard, SettingsTitle } from '@/components/settings-ui'
 import { del, errorMessage, get, patch } from '@/lib/api'
@@ -37,7 +35,6 @@ export default function MembersSettings() {
   })
   const departments = useDepartments(org.id)
   const [q, setQ] = useState('')
-  const [inviteOpen, setInviteOpen] = useState(false)
   const [removing, setRemoving] = useState<Member | null>(null)
 
   const list = useMemo(() => {
@@ -65,13 +62,8 @@ export default function MembersSettings() {
   return (
     <>
       <SettingsTitle
-        title="Members & invitations"
-        description="Roles control what people can do. Changes are recorded in the audit log."
-        actions={
-          <Button variant="primary" onClick={() => setInviteOpen(true)}>
-            <UserPlus /> Invite
-          </Button>
-        }
+        title="Members"
+        description="Everyone with a school email joins automatically. Roles control what people can do, and changes are recorded in the audit log."
       />
       {!!invites.data?.length && (
         <SettingsCard title={`Pending invitations · ${invites.data.length}`}>
@@ -181,13 +173,6 @@ export default function MembersSettings() {
           </ul>
         )}
       </SettingsCard>
-      <InviteDialog
-        open={inviteOpen}
-        onOpenChange={(o) => {
-          setInviteOpen(o)
-          if (!o) void invites.refetch()
-        }}
-      />
       <Dialog open={!!removing} onOpenChange={(o) => !o && setRemoving(null)}>
         <DialogContent
           title={`Remove ${removing?.name}?`}
