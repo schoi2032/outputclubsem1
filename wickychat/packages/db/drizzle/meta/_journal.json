@@ -281,6 +281,13 @@
       "when": 1794407189373,
       "tag": "0039_quests",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1794407344651,
+      "tag": "0040_class_war",
+      "breakpoints": true
     }
   ]
 }

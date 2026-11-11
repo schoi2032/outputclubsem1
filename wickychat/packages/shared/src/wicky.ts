@@ -391,6 +391,7 @@ export interface CoinTransaction {
     | 'sticker_gift'
     | 'sticker_sale'
     | 'quest'
+    | 'class_war'
   ref: string | null
   createdAt: string
 }
@@ -1451,4 +1452,42 @@ export interface QuestDay {
   bonusClaimed: boolean
   /** When the next set arrives. */
   resetsAt: string
+}
+
+// --- Class vs Class ----------------------------------------------------------------------
+
+/**
+ * Every week, group chats race on activity. Each person's messages count up to `dailyCap`
+ * a day (so one person spamming can't win it). When the week ends, everyone who sent at least
+ * `minMessages` in the top chats gets a reward.
+ */
+export const CLASS_WAR = {
+  dailyCap: 20,
+  minMembers: 3,
+  minMessages: 5,
+  rewards: [
+    { place: 1, crates: 1, coins: 50 },
+    { place: 2, crates: 1, coins: 0 },
+    { place: 3, crates: 0, coins: 25 },
+  ],
+  crateId: 'c-wicky',
+}
+
+export interface ClassWarRow {
+  channelId: string
+  /** Hidden for private chats you're not in. */
+  name: string
+  kind: 'public' | 'private' | 'group'
+  score: number
+  /** People who sent at least one message this week. */
+  people: number
+  mine: boolean
+}
+
+export interface ClassWar {
+  week: string
+  endsAt: string
+  standings: ClassWarRow[]
+  /** Last week's top 3. */
+  lastWeek: { name: string; score: number; place: number }[]
 }

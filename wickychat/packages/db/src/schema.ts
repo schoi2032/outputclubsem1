@@ -1813,3 +1813,17 @@ export const questClaims = pgTable(
   },
   (t) => [primaryKey({ columns: [t.userId, t.day, t.questId] })],
 )
+
+/** WickyChat Class vs Class: weeks whose rewards have been handed out. */
+export const classWarWeeks = pgTable(
+  'class_war_weeks',
+  {
+    orgId: orgRef(),
+    week: text('week').notNull(),
+    results: jsonb('results')
+      .$type<{ channelId: string; name: string; score: number; place: number }[]>()
+      .notNull(),
+    settledAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.orgId, t.week] })],
+)

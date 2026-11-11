@@ -42,6 +42,7 @@ import { channelRoutes } from './modules/channels/routes'
 import { achievementRoutes } from './modules/coins/achievements'
 import { auctionRoutes } from './modules/coins/auctions'
 import { bundleRoutes } from './modules/coins/bundles'
+import { classWarRoutes } from './modules/coins/classwar'
 import { crateRoutes } from './modules/coins/crates'
 import { duelRoutes } from './modules/coins/duels'
 import { investRoutes } from './modules/coins/invest'
@@ -340,6 +341,7 @@ export async function buildApp(config: Config, opts: BuildOptions = {}) {
   await duelRoutes(app, ctx)
   await stickerRoutes(app, ctx)
   await questRoutes(app, ctx)
+  await classWarRoutes(app, ctx)
   await complianceRoutes(app, ctx)
   await pluginRoutes(app, ctx)
   await productivityRoutes(app, ctx)

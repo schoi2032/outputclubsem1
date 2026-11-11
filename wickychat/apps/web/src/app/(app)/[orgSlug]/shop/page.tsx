@@ -73,6 +73,7 @@ import { useMyShelf } from '@/components/profile/shelf'
 import { AchievementsView, useAchievements } from '@/components/shop/achievements'
 import { AuctionsView } from '@/components/shop/auctions'
 import { BundlesView, CreateBundle, MyBundles, useBundleDefs } from '@/components/shop/bundles'
+import { ClassWarView } from '@/components/shop/classwar'
 import { CrateArt, CratesView, CreateCrate, MyCrates, useCrateDefs } from '@/components/shop/crates'
 import { InvestView, useStocks } from '@/components/shop/invest'
 import {
@@ -139,6 +140,7 @@ const REASON: Record<CoinTransaction['reason'], string> = {
   sticker_gift: 'Gifted a sticker pack',
   sticker_sale: 'Someone bought your sticker pack',
   quest: 'Daily quest done',
+  class_war: 'Class vs Class reward',
 }
 
 const POSITION_LABEL: Record<StickerPosition, string> = {
@@ -179,6 +181,7 @@ type Tab =
   | 'leaderboard'
   | 'achievements'
   | 'quests'
+  | 'classwar'
   | 'mine'
 const TABS: Tab[] = [
   'all',
@@ -198,6 +201,7 @@ const TABS: Tab[] = [
   'leaderboard',
   'achievements',
   'quests',
+  'classwar',
   'mine',
 ]
 
@@ -224,7 +228,11 @@ const GROUPS: { id: string; label: string; tabs: Tab[] }[] = [
   { id: 'trade', label: '🎒 My stuff & trading', tabs: ['mine', 'trades', 'auctions', 'market'] },
   { id: 'invest', label: '📈 Invest', tabs: ['invest'] },
   { id: 'create', label: '🎨 Create', tabs: ['create'] },
-  { id: 'goals', label: '🏆 Quests & goals', tabs: ['quests', 'achievements', 'leaderboard'] },
+  {
+    id: 'goals',
+    label: '🏆 Quests & goals',
+    tabs: ['quests', 'classwar', 'achievements', 'leaderboard'],
+  },
 ]
 const groupOf = (t: Tab) => GROUPS.find((g) => g.tabs.includes(t)) ?? GROUPS[0]!
 
@@ -246,6 +254,7 @@ const TAB_LABEL: Record<Tab, string> = {
   leaderboard: 'Leaderboard',
   achievements: 'Achievements',
   quests: 'Daily quests',
+  classwar: '⚔️ Class vs Class',
   mine: 'My stuff',
 }
 
@@ -1102,6 +1111,9 @@ function ShopInner() {
             </TabsContent>
             <TabsContent value="quests" className="pt-4">
               <QuestsView />
+            </TabsContent>
+            <TabsContent value="classwar" className="pt-4">
+              <ClassWarView />
             </TabsContent>
             <TabsContent value="achievements" className="pt-4">
               <AchievementsView />
