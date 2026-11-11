@@ -171,3 +171,16 @@ gcloud storage rm -r gs://$PROJECT_ID-quid-files
 gcloud secrets delete quid-database-url quid-encryption-key quid-internal-token
 gcloud artifacts repositories delete quid --location $REGION
 ```
+
+## WickyChat on Vercel: voice with LiveKit Cloud
+
+WickyChat runs on Vercel, so instead of the VM above it uses LiveKit Cloud (free tier is fine
+for a school). The API only needs three settings; until they're set, calls show as unavailable.
+
+1. Create a project at https://cloud.livekit.io (region near Korea, e.g. Tokyo).
+2. Settings → Keys → create a key.
+3. In your own terminal: `./scripts/setup-livekit.sh`. It asks for the URL, key and secret,
+   saves them as Vercel production variables (`LIVEKIT_URL`, `LIVEKIT_API_KEY`,
+   `LIVEKIT_API_SECRET`, the secret marked sensitive) and redeploys.
+
+No webhook is needed.
