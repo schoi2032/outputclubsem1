@@ -7,6 +7,8 @@ import {
   ArrowRight,
   Bell,
   BookOpen,
+  CalendarDays,
+  Clock,
   FileText,
   Gift,
   Hash,
@@ -163,6 +165,8 @@ export function CommandPalette() {
       { id: 'a:activity', label: 'Activity', icon: <Bell />, href: `${base}/activity` },
       { id: 'a:files', label: 'All files', icon: <FileText />, href: `${base}/files` },
       { id: 'a:tasks', label: 'My tasks', icon: <ListTodo />, href: `${base}/tasks` },
+      { id: 'a:calendar', label: 'Calendar', icon: <CalendarDays />, href: `${base}/calendar` },
+      { id: 'a:office', label: 'Office hours', icon: <Clock />, href: `${base}/office-hours` },
       {
         id: 'a:later',
         label: 'Later: saved and reminders',

@@ -19,8 +19,10 @@ import {
 import {
   Bookmark,
   Building2,
+  CalendarDays,
   ChevronDown,
   ChevronRight,
+  Clock,
   Hash,
   Headphones,
   ListTodo,
@@ -279,6 +281,8 @@ export function Sidebar() {
   const quick = [
     { href: `${base}/saved`, label: 'Later', icon: Bookmark, count: dueReminders },
     { href: `${base}/tasks`, label: 'My tasks', icon: ListTodo, count: openTasks },
+    { href: `${base}/calendar`, label: 'Calendar', icon: CalendarDays },
+    { href: `${base}/office-hours`, label: 'Office hours', icon: Clock },
     ...(org.role !== 'guest' ? [{ href: `${base}/workflows`, label: 'Workflows', icon: Zap }] : []),
     {
       href: `${base}/drafts`,

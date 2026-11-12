@@ -15,6 +15,21 @@ export interface Update {
 
 export const UPDATES: Update[] = [
   {
+    id: '2026-11-12-calendar-office-hours',
+    date: '2026-11-12',
+    emoji: '📅',
+    title: 'Calendar and office hours',
+    summary: 'Keep track of homework and tests, and book time with you\'re teachers.',
+    tag: 'new',
+    items: [
+      'A new Calendar page shows homework, tests, class events, your tasks, meetings and office hours all in one month view.',
+      'Teachers can add homework or a test to a class and everyone in it gets a notification and a reminder before its due.',
+      'Students check homework off when its done, and teachers see who finished and who hasnt yet.',
+      'Add your own personal events too, only you can see them.',
+      'Office hours: teachers set weekly times and students book a slot, with a reminder 10 minutes before. Online office hours come with a video meeting.',
+    ],
+  },
+  {
     id: '2026-11-03-wickychat',
     date: '2026-11-03',
     emoji: '🪁',

@@ -261,6 +261,8 @@ export type NotificationKind =
   | 'task_assigned'
   | 'task_due'
   | 'reminder'
+  | 'calendar'
+  | 'office_hours'
 
 export interface Notification {
   id: string
@@ -556,4 +558,86 @@ export interface Reminder {
   message: Message | null
   channelId: string | null
   createdAt: string
+}
+
+export type CalendarEventKind = 'event' | 'homework' | 'test' | 'personal'
+
+export interface CalendarEvent {
+  id: string
+  kind: CalendarEventKind
+  title: string
+  notes: string
+  startsAt: string
+  endsAt: string | null
+  allDay: boolean
+  channelId: string | null
+  channelName: string | null
+  createdBy: UserSummary | null
+  canEdit: boolean
+  done: boolean
+  doneCount: number | null
+  memberCount: number | null
+}
+
+export type CalendarItem =
+  | { type: 'event'; id: string; startsAt: string; endsAt: string | null; event: CalendarEvent }
+  | { type: 'task'; id: string; startsAt: string; endsAt: null; task: Task }
+  | {
+      type: 'meeting'
+      id: string
+      startsAt: string
+      endsAt: string
+      title: string
+      code: string
+    }
+  | {
+      type: 'booking'
+      id: string
+      startsAt: string
+      endsAt: string
+      booking: OfficeHourBooking
+    }
+
+export interface OfficeHour {
+  id: string
+  teacher: UserSummary
+  weekday: number
+  startTime: string
+  endTime: string
+  slotMinutes: number
+  location: string
+  online: boolean
+  note: string
+  timezone: string
+  skipDates: string[]
+  active: boolean
+}
+
+export interface OfficeHourSlot {
+  officeHourId: string
+  startsAt: string
+  endsAt: string
+  taken: boolean
+  location: string
+  online: boolean
+}
+
+export interface OfficeHourTeacher {
+  teacher: UserSummary
+  hours: OfficeHour[]
+  nextOpen: string | null
+}
+
+export interface OfficeHourBooking {
+  id: string
+  teacher: UserSummary
+  student: UserSummary
+  startsAt: string
+  endsAt: string
+  topic: string
+  location: string
+  online: boolean
+  meetingCode: string | null
+  status: 'booked' | 'cancelled'
+  cancelledByMe: boolean
 }

@@ -7,7 +7,9 @@ import {
   AtSign,
   Bell,
   CalendarClock,
+  CalendarDays,
   CheckCheck,
+  Clock,
   ListTodo,
   Megaphone,
   MessageSquareText,
@@ -42,6 +44,8 @@ function kindIcon(n: Notification) {
   if (n.kind === 'task_assigned') return ListTodo
   if (n.kind === 'task_due') return CalendarClock
   if (n.kind === 'reminder') return AlarmClock
+  if (n.kind === 'calendar') return CalendarDays
+  if (n.kind === 'office_hours') return Clock
   return Bell
 }
 

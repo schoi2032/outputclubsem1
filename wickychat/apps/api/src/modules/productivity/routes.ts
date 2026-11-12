@@ -1,6 +1,8 @@
 import type { AppContext } from '../../core/context'
 import type { App } from '../../core/http'
+import { calendarRoutes } from './calendar'
 import { canvasRoutes } from './canvases'
+import { officeHourRoutes } from './office-hours'
 import { reminderRoutes } from './reminders'
 import { taskRoutes } from './tasks'
 import { workflowRoutes } from './workflows'
@@ -11,4 +13,6 @@ export async function productivityRoutes(app: App, ctx: AppContext) {
   await taskRoutes(app, ctx)
   await reminderRoutes(app, ctx)
   await workflowRoutes(app, ctx)
+  await calendarRoutes(app, ctx)
+  await officeHourRoutes(app, ctx)
 }

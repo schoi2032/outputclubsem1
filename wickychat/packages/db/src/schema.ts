@@ -1914,3 +1914,101 @@ export const triviaAnswers = pgTable(
   },
   (t) => [primaryKey({ columns: [t.userId, t.day] })],
 )
+
+export const calendarEvents = pgTable(
+  'calendar_events',
+  {
+    id: pk(),
+    orgId: orgRef(),
+    channelId: uuid('channel_id').references(() => channels.id, { onDelete: 'cascade' }),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    kind: text('kind', { enum: ['event', 'homework', 'test', 'personal'] })
+      .notNull()
+      .default('event'),
+    title: text('title').notNull(),
+    notes: text('notes').notNull().default(''),
+    startsAt: ts('starts_at').notNull(),
+    endsAt: ts('ends_at'),
+    allDay: boolean('all_day').notNull().default(false),
+    remindedAt: ts('reminded_at'),
+    createdAt: createdAt(),
+    updatedAt: ts('updated_at').notNull().defaultNow(),
+  },
+  (t) => [
+    index('calendar_events_org_idx').on(t.orgId, t.startsAt),
+    index('calendar_events_channel_idx').on(t.channelId, t.startsAt),
+    index('calendar_events_due_idx').on(t.startsAt).where(sql`${t.remindedAt} is null`),
+  ],
+)
+
+export const calendarEventDone = pgTable(
+  'calendar_event_done',
+  {
+    eventId: uuid('event_id')
+      .notNull()
+      .references(() => calendarEvents.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    doneAt: ts('done_at').notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.eventId, t.userId] })],
+)
+
+export const officeHours = pgTable(
+  'office_hours',
+  {
+    id: pk(),
+    orgId: orgRef(),
+    teacherId: uuid('teacher_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    weekday: integer('weekday').notNull(),
+    startTime: text('start_time').notNull(),
+    endTime: text('end_time').notNull(),
+    slotMinutes: integer('slot_minutes').notNull().default(15),
+    location: text('location').notNull().default(''),
+    online: boolean('online').notNull().default(false),
+    note: text('note').notNull().default(''),
+    timezone: text('timezone').notNull(),
+    skipDates: text('skip_dates').array().notNull().default(sql`'{}'::text[]`),
+    active: boolean('active').notNull().default(true),
+    createdAt: createdAt(),
+  },
+  (t) => [index('office_hours_teacher_idx').on(t.orgId, t.teacherId)],
+)
+
+export const officeHourBookings = pgTable(
+  'office_hour_bookings',
+  {
+    id: pk(),
+    orgId: orgRef(),
+    officeHourId: uuid('office_hour_id').references(() => officeHours.id, {
+      onDelete: 'set null',
+    }),
+    teacherId: uuid('teacher_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    studentId: uuid('student_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    startsAt: ts('starts_at').notNull(),
+    endsAt: ts('ends_at').notNull(),
+    topic: text('topic').notNull().default(''),
+    location: text('location').notNull().default(''),
+    meetingId: uuid('meeting_id').references(() => meetings.id, { onDelete: 'set null' }),
+    status: text('status', { enum: ['booked', 'cancelled'] })
+      .notNull()
+      .default('booked'),
+    cancelledBy: uuid('cancelled_by').references(() => users.id, { onDelete: 'set null' }),
+    remindedAt: ts('reminded_at'),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex('office_hour_bookings_slot_uq')
+      .on(t.teacherId, t.startsAt)
+      .where(sql`${t.status} = 'booked'`),
+    index('office_hour_bookings_student_idx').on(t.studentId, t.startsAt),
+    index('office_hour_bookings_teacher_idx').on(t.teacherId, t.startsAt),
+  ],
+)

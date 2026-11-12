@@ -330,6 +330,13 @@
       "when": 1794413584669,
       "tag": "0046_data_log_tickets",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1794468836625,
+      "tag": "0047_calendar_office_hours",
+      "breakpoints": true
     }
   ]
 }
