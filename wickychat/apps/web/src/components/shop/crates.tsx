@@ -19,6 +19,8 @@ import {
   dropKey,
   effectById,
   isEventLive,
+  isSpecKind,
+  type SpecKind,
   STREAK_CRATE,
   TIER_ODDS,
   TIER_STYLE,
@@ -42,7 +44,8 @@ import { Gift, Info, Volume2, VolumeX } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { PeoplePicker } from '@/components/dialogs/people-picker'
 import { useOrgContext } from '@/components/org-context'
-import { bubbleClass, NamePlate } from '@/components/profile/cosmetics-fx'
+import { NamePlate } from '@/components/profile/cosmetics-fx'
+import { FlairPreview } from '@/components/shop/flair-preview'
 import { ThemeSwatch } from '@/components/shop/theme-swatch'
 import { del, errorMessage, get, post, put } from '@/lib/api'
 import { displayName, relative } from '@/lib/format'
@@ -138,8 +141,10 @@ export function DropTile({
           />
         ) : it.kind === 'theme' ? (
           <ThemeSwatch css={it.css ?? ''} className={big ? 'h-20 w-32' : 'h-12 w-20'} />
-        ) : it.kind === 'bubble' ? (
-          <span className={cn(bubbleClass(it.value), big ? 'text-sm' : 'text-2xs')}>hey 👋</span>
+        ) : it.kind === 'bubble' || isSpecKind(it.kind) ? (
+          <span className={cn('max-w-full overflow-hidden', big ? 'scale-100' : 'scale-75')}>
+            <FlairPreview kind={it.kind as SpecKind} value={it.value} compact={!big} />
+          </span>
         ) : it.kind === 'plate' ? (
           <span
             className={cn(

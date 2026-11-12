@@ -11,6 +11,7 @@ import {
   type CrateTier,
   DECORATION_IDS,
   EFFECT_IDS,
+  FLAIR_IDS,
   nextTier,
   PLATE_IDS,
   THEME_IDS,
@@ -29,7 +30,14 @@ import { CUSTOM_ITEM } from './contents'
 import { loadWallet } from './routes'
 import { takeOffItem } from './service'
 
-const BUILTIN_IDS = [...DECORATION_IDS, ...EFFECT_IDS, ...PLATE_IDS, ...BUBBLE_IDS, ...THEME_IDS]
+const BUILTIN_IDS = [
+  ...DECORATION_IDS,
+  ...EFFECT_IDS,
+  ...PLATE_IDS,
+  ...BUBBLE_IDS,
+  ...FLAIR_IDS,
+  ...THEME_IDS,
+]
 
 export async function tradeUpRoutes(app: App, ctx: AppContext) {
   app.post(

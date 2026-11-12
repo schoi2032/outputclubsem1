@@ -79,6 +79,12 @@ export const users = pgTable(
     profileEffect: text('profile_effect'),
     namePlate: text('name_plate'),
     chatBubble: text('chat_bubble'),
+    nameEffect: text('name_effect'),
+    messageEffect: text('message_effect'),
+    typingStyle: text('typing_style'),
+    reactionSkin: text('reaction_skin'),
+    mentionStyle: text('mention_style'),
+    soundPack: text('sound_pack'),
     /** WickyChat: extra daily-wheel spins (from crates). */
     spinTickets: integer('spin_tickets').notNull().default(0),
     /** WickyChat: up to 6 owned item ids pinned on their profile shelf. */
@@ -1014,6 +1020,7 @@ export const cosmetics = pgTable(
     kind: text('kind').notNull().default('decoration'),
     /** Theme CSS, already cleaned by sanitizeThemeCss (themes only). */
     css: text('css'),
+    spec: jsonb('spec'),
     /** Image drawn around the whole avatar (transparent in the middle). */
     frameFileId: uuid('frame_file_id').references(() => files.id, { onDelete: 'set null' }),
     /** Small image perched on the avatar, at `stickerPosition`. */

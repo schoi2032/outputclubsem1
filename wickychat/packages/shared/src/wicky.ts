@@ -2,6 +2,7 @@
  * WickyChat extras: Wicky Coins and avatar decorations.
  * Shared by the API (prices, rules) and the web app (shop, rendering).
  */
+import type { FlairKind, SpecKind } from './flair'
 
 /** How Wicky Coins are earned and lost. */
 export const COINS = {
@@ -341,9 +342,10 @@ export const CREATOR_SHARE = 0.9
 export interface Cosmetic {
   id: string
   /** A decoration around the avatar, an app theme (CSS), a profile effect or a name plate. */
-  kind: 'decoration' | 'theme' | 'effect' | 'plate'
+  kind: 'decoration' | 'theme' | 'effect' | 'plate' | SpecKind
   /** What gets stored when it's equipped (effects and plates). */
   value: string
+  spec?: unknown
   /** Theme CSS (themes only). */
   css: string | null
   /** What goes in `users.decoration` / `Avatar decoration`: `u:<id>|f:<file>|s:<file>:<pos>`. */
@@ -556,6 +558,7 @@ export interface Wallet {
   equippedEffect: string | null
   equippedPlate: string | null
   equippedBubble: string | null
+  equippedFlair: Record<FlairKind, string | null>
   /** Days in a row the daily bonus was claimed. */
   streak: number
   /** Whether today's daily bonus can still be claimed. */
@@ -1661,7 +1664,7 @@ export function customImageFile(value: string | null | undefined): string | null
   return m?.[1] ?? null
 }
 
-export type ItemKind = 'decoration' | 'theme' | 'effect' | 'plate' | 'bubble'
+export type ItemKind = 'decoration' | 'theme' | 'effect' | 'plate' | 'bubble' | FlairKind
 
 // --- Marketplace -----------------------------------------------------------------------
 
@@ -1980,7 +1983,7 @@ export const ARTIST = {
   deliverDays: 7,
 }
 
-export type CommissionKind = 'decoration' | 'effect' | 'plate' | 'theme'
+export type CommissionKind = 'decoration' | 'effect' | 'plate' | 'theme' | SpecKind
 
 export interface Artist {
   user: import('./types').UserSummary

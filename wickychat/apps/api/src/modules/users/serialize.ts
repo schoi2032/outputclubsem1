@@ -9,6 +9,11 @@ type UserRow = Pick<
   profileStyle?: Record<string, unknown> | null
   namePlate?: string | null
   chatBubble?: string | null
+  nameEffect?: string | null
+  messageEffect?: string | null
+  typingStyle?: string | null
+  reactionSkin?: string | null
+  mentionStyle?: string | null
   profileEffect?: string | null
 }
 
@@ -24,6 +29,11 @@ export const userCols = {
   profileStyle: users.profileStyle,
   namePlate: users.namePlate,
   chatBubble: users.chatBubble,
+  nameEffect: users.nameEffect,
+  messageEffect: users.messageEffect,
+  typingStyle: users.typingStyle,
+  reactionSkin: users.reactionSkin,
+  mentionStyle: users.mentionStyle,
   profileEffect: users.profileEffect,
 }
 
@@ -46,6 +56,11 @@ export function toUserSummary(u: UserRow): UserSummary {
     nameStyle: nameStyle(u.profileStyle),
     namePlate: u.namePlate ?? null,
     chatBubble: u.chatBubble ?? null,
+    nameEffect: u.nameEffect ?? null,
+    messageEffect: u.messageEffect ?? null,
+    typingStyle: u.typingStyle ?? null,
+    reactionSkin: u.reactionSkin ?? null,
+    mentionStyle: u.mentionStyle ?? null,
     profileEffect: u.profileEffect ?? null,
   }
 }

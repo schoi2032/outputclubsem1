@@ -10,6 +10,7 @@ import {
   type ArtistsPage,
   type Commission,
   censorText,
+  SPEC_KINDS,
   topics,
 } from '@quid/shared'
 import { and, desc, eq, inArray, or, sql } from 'drizzle-orm'
@@ -207,7 +208,7 @@ export async function artistRoutes(app: App, ctx: AppContext) {
         params: orgParams,
         body: z.object({
           artistId: z.uuid(),
-          kind: z.enum(['decoration', 'effect', 'plate', 'theme']),
+          kind: z.enum(['decoration', 'effect', 'plate', 'theme', ...SPEC_KINDS]),
           description: z.string().trim().min(5).max(500),
           offer: z.number().int().min(ARTIST.offer.min).max(ARTIST.offer.max),
         }),

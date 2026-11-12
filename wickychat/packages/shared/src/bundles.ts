@@ -2,6 +2,8 @@
  * WickyChat bundles: several items sold together, usually cheaper than buying each one.
  * Built-in bundles are below; students make their own from their cosmetics and Shop items.
  */
+
+import { flairById } from './flair'
 import { isEventLive } from './seasons'
 import { bubbleById, decorationById, effectById, plateById, themeById } from './wicky'
 
@@ -9,7 +11,7 @@ import { bubbleById, decorationById, effectById, plateById, themeById } from './
 export function builtinItem(id: string): { price: number; event?: string } | undefined {
   const d = decorationById(id)
   if (d) return { price: d.price }
-  const x = effectById(id) ?? plateById(id) ?? bubbleById(id) ?? themeById(id)
+  const x = effectById(id) ?? plateById(id) ?? bubbleById(id) ?? flairById(id) ?? themeById(id)
   return x ? { price: x.price, event: x.event } : undefined
 }
 

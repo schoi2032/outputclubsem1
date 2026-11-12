@@ -20,6 +20,11 @@ export interface UserSummary {
   /** WickyChat: animated background behind the name in lists (Shop item value). */
   namePlate?: string | null
   chatBubble?: string | null
+  nameEffect?: string | null
+  messageEffect?: string | null
+  typingStyle?: string | null
+  reactionSkin?: string | null
+  mentionStyle?: string | null
   /** WickyChat: animated overlay on the profile card (Shop item value). */
   profileEffect?: string | null
 }
@@ -35,6 +40,7 @@ export interface ProfileExtras {
 }
 
 export interface Me extends UserSummary, ProfileExtras {
+  soundPack?: string | null
   /** Wicky Coins balance. */
   coins: number
   /** The app theme they have on (from the Wicky Shop), ready to load. */

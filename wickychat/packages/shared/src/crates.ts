@@ -3,6 +3,7 @@
  * like a case in a game: open it whenever you like, gift it or trade it. Opening rolls one drop.
  * The server rolls; the web app only plays the spinning reel that lands on what you got.
  */
+import { flairById } from './flair'
 import { bubbleById, decorationById, effectById, plateById, themeById } from './wicky'
 
 export type CrateTier = 'common' | 'rare' | 'epic' | 'legendary'
@@ -140,11 +141,55 @@ export const CRATES: CrateDef[] = [
       i('legendary', 'b-rainbow'),
     ],
   },
+  {
+    id: 'c-flair',
+    name: 'Flair Crate',
+    emoji: '🌈',
+    description:
+      'Name effects, message effects, typing indicators, reaction skins, mention styles and sound packs.',
+    price: 160,
+    colors: ['#ff5cc8', '#ffb84d'],
+    drops: [
+      c('common', 50),
+      c('common', 90),
+      tk('common', 1),
+      i('common', 'ty-dots'),
+      i('common', 'ty-snail'),
+      i('common', 'ms-underline'),
+      i('common', 'ms-highlighter'),
+      i('common', 'mf-pop'),
+      i('common', 'sp-pop'),
+      i('common', 'rs-mint'),
+      i('rare', 'ty-cat'),
+      i('rare', 'ty-music'),
+      i('rare', 'mf-sparkle'),
+      i('rare', 'mf-hearts'),
+      i('rare', 'rs-candy'),
+      i('rare', 'rs-chalk'),
+      i('rare', 'sp-kalimba'),
+      i('rare', 'ne-heartbeat'),
+      i('rare', 'ne-ice'),
+      i('epic', 'mf-confetti'),
+      i('epic', 'mf-money'),
+      i('epic', 'rs-neon'),
+      i('epic', 'ms-neon'),
+      i('epic', 'ne-glitch'),
+      i('epic', 'ne-fire'),
+      i('epic', 'sp-arcade'),
+      c('legendary', 1000),
+      i('legendary', 'ne-rainbow'),
+      i('legendary', 'mf-party'),
+      i('legendary', 'rs-gold'),
+      i('legendary', 'ms-gold'),
+    ],
+  },
   ...seasonCrate('halloween', '🎃', 'Spooky Crate', '#ff7a00', '#6d28d9', [
     i('common', 'pumpkin'),
     i('common', 'ghost'),
     i('rare', 'p-pumpkin'),
     i('rare', 'b-spooky'),
+    i('rare', 'ne-spooky'),
+    i('epic', 'mf-pumpkin'),
     i('epic', 'e-bats'),
     i('legendary', 't-spooky'),
   ]),
@@ -237,6 +282,7 @@ export function builtinName(id: string) {
     effectById(id)?.name ??
     plateById(id)?.name ??
     bubbleById(id)?.name ??
+    flairById(id)?.name ??
     themeById(id)?.name
   )
 }

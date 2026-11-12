@@ -10,6 +10,7 @@ import {
   customImageValue,
   INVEST,
   type Me,
+  specValue,
   themeById,
   themeCss,
 } from '@quid/shared'
@@ -181,18 +182,38 @@ export async function takeOffItem(db: Db | Tx, userId: string, itemId: string) {
       profileEffect: true,
       namePlate: true,
       chatBubble: true,
+      nameEffect: true,
+      messageEffect: true,
+      typingStyle: true,
+      reactionSkin: true,
+      mentionStyle: true,
+      soundPack: true,
     },
   })
   if (!u) return
   const m = /^u:([0-9a-f-]{36})$/.exec(itemId)
   const c = m ? await db.query.cosmetics.findFirst({ where: eq(cosmetics.id, m[1]!) }) : null
-  const values = new Set([itemId, ...(c ? [cosmeticDecoration(c), customImageValue(c)] : [])])
+  const values = new Set([
+    itemId,
+    ...(c ? [cosmeticDecoration(c), customImageValue(c), ...(c.spec ? [specValue(c)] : [])] : []),
+  ])
   const off: Partial<typeof users.$inferInsert> = {}
   if (u.decoration && values.has(u.decoration)) off.decoration = null
   if (u.appTheme && values.has(u.appTheme)) off.appTheme = null
   if (u.profileEffect && values.has(u.profileEffect)) off.profileEffect = null
   if (u.namePlate && values.has(u.namePlate)) off.namePlate = null
   if (u.chatBubble && values.has(u.chatBubble)) off.chatBubble = null
+  for (const col of [
+    'nameEffect',
+    'messageEffect',
+    'typingStyle',
+    'reactionSkin',
+    'mentionStyle',
+    'soundPack',
+  ] as const) {
+    const v = u[col]
+    if (v && values.has(v)) off[col] = null
+  }
   if (Object.keys(off).length) await db.update(users).set(off).where(eq(users.id, userId))
 }
 

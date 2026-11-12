@@ -12,6 +12,10 @@ import {
   decorationById,
   EFFECTS,
   effectById,
+  FLAIR,
+  FLAIR_KINDS,
+  type FlairKind,
+  flairById,
   type ItemKind,
   isEventLive,
   PLATES,
@@ -26,7 +30,8 @@ import { Avatar, cn, Input, Select } from '@quid/ui'
 import { useQuery } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { useOrgContext } from '@/components/org-context'
-import { bubbleClass, NamePlate, ProfileEffect } from '@/components/profile/cosmetics-fx'
+import { NamePlate, ProfileEffect } from '@/components/profile/cosmetics-fx'
+import { FlairPreview } from '@/components/shop/flair-preview'
 import { ThemeSwatch } from '@/components/shop/theme-swatch'
 import { get } from '@/lib/api'
 import { displayName } from '@/lib/format'
@@ -47,6 +52,12 @@ export const KIND_LABEL: Record<ItemKind, string> = {
   effect: 'Profile effect',
   plate: 'Name plate',
   bubble: 'Chat bubble',
+  name_effect: 'Name effect',
+  message_effect: 'Message effect',
+  typing: 'Typing indicator',
+  reaction_skin: 'Reaction skin',
+  mention_style: 'Mention style',
+  sound_pack: 'Sound pack',
   theme: 'Theme (CSS)',
 }
 
@@ -127,6 +138,19 @@ export const BUILTIN_ITEMS: ShopItem[] = [
       price: b.price,
       rarity: tierOfPrice(b.price),
       ...evFields(b.event),
+    }),
+  ),
+  ...FLAIR.map(
+    (f): ShopItem => ({
+      kind: f.kind,
+      value: f.id,
+      itemId: f.id,
+      decoration: '',
+      name: f.name,
+      description: f.description,
+      price: f.price,
+      rarity: tierOfPrice(f.price),
+      ...evFields(f.event),
     }),
   ),
   ...THEMES.map(
@@ -210,6 +234,7 @@ export function itemName(id: string | null | undefined, community: Cosmetic[]) {
     effectById(key)?.name ??
     plateById(key)?.name ??
     bubbleById(key)?.name ??
+    flairById(key)?.name ??
     key
   )
 }
@@ -268,6 +293,17 @@ export function ItemPreview({ it, compact }: { it: ShopItem; compact?: boolean }
         <ProfileEffect value={it.value} />
       </div>
     )
+  if ((FLAIR_KINDS as string[]).includes(it.kind))
+    return (
+      <div
+        className={cn(
+          'mb-1 flex w-full items-center justify-center overflow-hidden rounded-lg border border-border bg-bg-subtle p-2',
+          h,
+        )}
+      >
+        <FlairPreview kind={it.kind as FlairKind} value={it.value} compact={compact} />
+      </div>
+    )
   if (it.kind === 'bubble')
     return (
       <div
@@ -283,7 +319,7 @@ export function ItemPreview({ it, compact }: { it: ShopItem; compact?: boolean }
           </span>
         )}
         <span className="min-w-0">
-          <span className={cn('q-msg-text truncate', bubbleClass(it.value))}>hey whats up 👋</span>
+          <FlairPreview kind="bubble" value={it.value} />
         </span>
       </div>
     )
@@ -423,6 +459,12 @@ export function ItemPicker({
           <option value="effect">Effects</option>
           <option value="plate">Name plates</option>
           <option value="bubble">Chat bubbles</option>
+          <option value="name_effect">Name effects</option>
+          <option value="message_effect">Message effects</option>
+          <option value="typing">Typing indicators</option>
+          <option value="reaction_skin">Reaction skins</option>
+          <option value="mention_style">Mention styles</option>
+          <option value="sound_pack">Sound packs</option>
           <option value="theme">Themes</option>
         </Select>
         <Input

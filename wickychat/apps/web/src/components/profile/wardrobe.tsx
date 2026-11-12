@@ -3,18 +3,21 @@
  * WickyChat Wardrobe: everything you own in one place. Search, filter by kind, hover to try
  * something on in the preview, click to wear it (click again to take it off).
  */
-import type { ItemKind, Wallet } from '@quid/shared'
+import type { FlairKind, ItemKind, Wallet } from '@quid/shared'
+import { specFromValue } from '@quid/shared'
 import { Avatar, Button, cn, Input, Select, Skeleton, toast } from '@quid/ui'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, Search, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useOrgContext } from '@/components/org-context'
 import { SettingsCard } from '@/components/settings-ui'
+import { FlairPreview } from '@/components/shop/flair-preview'
 import { ItemPreview, RARITY, type ShopItem, useCatalog } from '@/components/shop/items'
 import { errorMessage, get, put } from '@/lib/api'
 import { displayName } from '@/lib/format'
 import { keys } from '@/lib/queries'
-import { bubbleClass, NamePlate, ProfileEffect } from './cosmetics-fx'
+import { NamePlate, ProfileEffect } from './cosmetics-fx'
+import { bubbleProps, nameEffectProps } from './flair'
 
 type Filter = ItemKind | 'all' | 'wearing'
 
@@ -25,6 +28,12 @@ const TABS: { id: Filter; label: string }[] = [
   { id: 'effect', label: 'Effects' },
   { id: 'plate', label: 'Name plates' },
   { id: 'bubble', label: 'Chat bubbles' },
+  { id: 'name_effect', label: 'Name effects' },
+  { id: 'message_effect', label: 'Message effects' },
+  { id: 'typing', label: 'Typing' },
+  { id: 'reaction_skin', label: 'Reactions' },
+  { id: 'mention_style', label: 'Mentions' },
+  { id: 'sound_pack', label: 'Sounds' },
   { id: 'theme', label: 'Themes' },
 ]
 
@@ -33,6 +42,12 @@ const SLOT_LABEL: Record<ItemKind, string> = {
   effect: 'Effect',
   plate: 'Name plate',
   bubble: 'Chat bubble',
+  name_effect: 'Name effect',
+  message_effect: 'Message effect',
+  typing: 'Typing indicator',
+  reaction_skin: 'Reaction skin',
+  mention_style: 'Mention style',
+  sound_pack: 'Sound pack',
   theme: 'Theme',
 }
 
@@ -59,6 +74,7 @@ export function Wardrobe() {
     if (it.kind === 'effect') return w.equippedEffect === it.value
     if (it.kind === 'plate') return w.equippedPlate === it.value
     if (it.kind === 'bubble') return w.equippedBubble === it.value
+    if (it.kind in w.equippedFlair) return w.equippedFlair[it.kind as FlairKind] === it.value
     return w.equipped?.split('|')[0] === it.itemId
   }
 
@@ -125,7 +141,12 @@ export function Wardrobe() {
     effect: hover?.kind === 'effect' ? hover.value : w?.equippedEffect,
     plate: hover?.kind === 'plate' ? hover.value : w?.equippedPlate,
     bubble: hover?.kind === 'bubble' ? hover.value : w?.equippedBubble,
+    name: hover?.kind === 'name_effect' ? hover.value : w?.equippedFlair.name_effect,
   }
+  const nameFx = nameEffectProps(specFromValue('name_effect', look.name))
+  const bubbleLook = bubbleProps(look.bubble)
+  const otherFlair =
+    hover && hover.kind !== 'name_effect' && hover.kind in (w?.equippedFlair ?? {}) ? hover : null
 
   return (
     <SettingsCard
@@ -145,16 +166,28 @@ export function Wardrobe() {
             <ProfileEffect value={look.effect} />
             <div className="relative isolate overflow-hidden rounded-md px-2 py-0.5">
               <NamePlate value={look.plate} />
-              <span className="text-[13px] font-semibold text-white">{displayName(me)}</span>
+              <span
+                className={cn('text-[13px] font-semibold text-white', nameFx?.className)}
+                style={nameFx?.style}
+              >
+                {displayName(me)}
+              </span>
             </div>
             {look.bubble && (
               <span
-                className={cn(
-                  'max-w-[90%] truncate text-[12px] text-white',
-                  bubbleClass(look.bubble),
-                )}
+                className={cn('max-w-[90%] truncate text-[12px] text-white', bubbleLook.className)}
+                style={bubbleLook.style}
               >
                 hi 👋
+              </span>
+            )}
+            {otherFlair && (
+              <span className="rounded-md bg-bg px-2 py-1">
+                <FlairPreview
+                  kind={otherFlair.kind as FlairKind}
+                  value={otherFlair.value}
+                  compact
+                />
               </span>
             )}
           </div>

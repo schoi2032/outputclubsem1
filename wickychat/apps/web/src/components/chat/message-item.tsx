@@ -38,7 +38,13 @@ import {
   Trash2,
 } from 'lucide-react'
 import { memo, useState } from 'react'
-import { bubbleClass } from '@/components/profile/cosmetics-fx'
+import {
+  bubbleProps,
+  MessageFxLayer,
+  mentionStyleProps,
+  reactionSkinProps,
+  useMessageFx,
+} from '@/components/profile/flair'
 import { type LocalMessage, useMessageActions } from '@/lib/actions'
 import { errorMessage, post } from '@/lib/api'
 import { useEmojiMap } from '@/lib/expressions'
@@ -78,6 +84,7 @@ export interface MessageItemProps {
 function Reactions({ m, onToggle }: { m: Message; onToggle: (emoji: string) => void }) {
   const { me, org } = useOrgContext()
   const members = useMembers(org.id)
+  const skin = reactionSkinProps(m.author.reactionSkin)
   const name = (id: string) =>
     id === me.id ? 'You' : (members.data?.find((x) => x.id === id)?.name ?? 'Someone')
   if (!m.reactions.length) return null
@@ -94,11 +101,13 @@ function Reactions({ m, onToggle }: { m: Message; onToggle: (emoji: string) => v
               aria-pressed={mine}
               aria-label={label}
               onClick={() => onToggle(r.emoji)}
+              style={skin?.style}
               className={cn(
                 'inline-flex h-6 items-center gap-1 rounded-full border px-2 text-xs tabular-nums transition-colors',
                 mine
                   ? 'border-accent/50 bg-accent-subtle font-medium text-accent-text'
                   : 'border-border bg-bg-subtle text-fg-muted hover:border-border-strong',
+                skin?.className,
               )}
             >
               {r.emoji.startsWith('sticker:') ? (
@@ -191,6 +200,15 @@ export const MessageItem = memo(function MessageItem({
   }
   const local = m._status !== undefined
   const author = displayName(m.author)
+  const fx = useMessageFx(
+    m.clientId || m.id,
+    m.createdAt,
+    m.author.messageEffect,
+    !local && m.kind === 'user' && !m.author.isBot,
+  )
+  const jumbo = prefs.jumboEmoji && isEmojiOnly(m.text, emojis)
+  const bubble = !m.author.isBot && !jumbo ? bubbleProps(m.author.chatBubble) : null
+  const mention = mentionStyleProps(m.author.mentionStyle)
 
   if (m.kind === 'system') {
     return (
@@ -238,6 +256,7 @@ export const MessageItem = memo(function MessageItem({
         toolbarVisible && 'bg-bg-subtle',
       )}
     >
+      {fx && <MessageFxLayer spec={fx} seed={m.id.length + m.createdAt.length} />}
       <div className={cn('shrink-0', compact ? 'w-8' : 'w-9')}>
         {grouped ? (
           <Tooltip content={formatFull(m.createdAt)}>
@@ -319,11 +338,16 @@ export const MessageItem = memo(function MessageItem({
         ) : (
           <div
             className={cn(
-              prefs.jumboEmoji && isEmojiOnly(m.text, emojis) ? 'q-jumbo' : 'q-msg-text',
-              !m.author.isBot &&
-                !(prefs.jumboEmoji && isEmojiOnly(m.text, emojis)) &&
-                bubbleClass(m.author.chatBubble),
+              jumbo ? 'q-jumbo' : 'q-msg-text',
+              bubble?.className,
+              mention?.className,
+              fx && `q-mfx-${fx.motion}`,
             )}
+            style={{
+              ...bubble?.style,
+              ...mention?.style,
+              ...(fx?.color && ({ '--mfx-c': fx.color } as React.CSSProperties)),
+            }}
           >
             <RichText doc={m.body} />
             {m.editedAt && <span className="text-2xs opacity-60"> (edited)</span>}

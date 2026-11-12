@@ -1,11 +1,12 @@
 'use client'
 import { cn, toast } from '@quid/ui'
 import { usePathname, useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { LATEST_UPDATE } from '@/lib/changelog'
 import { setOrgAccent, setPreferences } from '@/lib/preferences'
 import { usePresence } from '@/lib/queries'
 import { onNotification, useRealtime, viewing } from '@/lib/realtime'
+import { playPack } from '@/lib/sounds'
 import { CallProvider } from '../calls/call-provider'
 import { Tour } from '../onboarding/tour'
 import { OrgBanner } from '../org/org-banner'
@@ -63,6 +64,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return () => clearTimeout(t)
   }, [lastSeenUpdate, me.createdAt, base, router])
 
+  const soundRef = useRef(me.soundPack)
+  soundRef.current = me.soundPack
   // Surface mentions, DMs and replies as a toast unless you're looking at that conversation.
   useEffect(
     () =>
@@ -77,6 +80,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           return
         // Calls have their own incoming-call card; activity is too noisy for toasts.
         if (n.kind === 'channel_activity' || n.kind === 'incoming_call') return
+        playPack(soundRef.current, 'notify')
         const href = n.link
           ? n.link
           : n.channelId

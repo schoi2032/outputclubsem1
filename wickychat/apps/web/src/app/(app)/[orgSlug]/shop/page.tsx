@@ -16,13 +16,17 @@ import {
   CREATOR_SHARE,
   eventEndsAt,
   eventStartsAt,
+  FLAIR_KINDS,
+  type FlairKind,
   type ItemKind,
   isEventLive,
+  isSpecKind,
   type Leaderboard,
   liveEvents,
   MARKET_PRICE,
   MARKET_SHARE,
   type MarketListing,
+  type SpecKind,
   STICKER_POSITIONS,
   STREAK_CRATE,
   type StickerPosition,
@@ -76,7 +80,9 @@ import { AuctionsView } from '@/components/shop/auctions'
 import { BundlesView, CreateBundle, MyBundles, useBundleDefs } from '@/components/shop/bundles'
 import { ClassWarView } from '@/components/shop/classwar'
 import { CrateArt, CratesView, CreateCrate, MyCrates, useCrateDefs } from '@/components/shop/crates'
+import { CreateFlair } from '@/components/shop/create-flair'
 import { EarnView, earnWaiting, useEarn, useTrivia } from '@/components/shop/earn'
+import { FlairPreview } from '@/components/shop/flair-preview'
 import { InvestView, useStocks } from '@/components/shop/invest'
 import {
   BUILTIN_ITEMS,
@@ -186,6 +192,12 @@ type Tab =
   | 'effects'
   | 'plates'
   | 'bubbles'
+  | 'name_effect'
+  | 'message_effect'
+  | 'typing'
+  | 'reaction_skin'
+  | 'mention_style'
+  | 'sound_pack'
   | 'themes'
   | 'stickers'
   | 'create'
@@ -209,6 +221,12 @@ const TABS: Tab[] = [
   'effects',
   'plates',
   'bubbles',
+  'name_effect',
+  'message_effect',
+  'typing',
+  'reaction_skin',
+  'mention_style',
+  'sound_pack',
   'themes',
   'stickers',
   'create',
@@ -239,11 +257,23 @@ const GROUPS: { id: string; label: string; tabs: Tab[] }[] = [
       'decorations',
       'effects',
       'plates',
-      'bubbles',
       'themes',
       'stickers',
       'crates',
       'bundles',
+    ],
+  },
+  {
+    id: 'flair',
+    label: '✨ Chat flair',
+    tabs: [
+      'bubbles',
+      'name_effect',
+      'message_effect',
+      'typing',
+      'reaction_skin',
+      'mention_style',
+      'sound_pack',
     ],
   },
   { id: 'earn', label: '💰 Earn', tabs: ['earn'] },
@@ -267,6 +297,12 @@ const TAB_LABEL: Record<Tab, string> = {
   effects: 'Effects',
   plates: 'Name plates',
   bubbles: 'Chat bubbles',
+  name_effect: 'Name effects',
+  message_effect: 'Message effects',
+  typing: 'Typing',
+  reaction_skin: 'Reactions',
+  mention_style: 'Mentions',
+  sound_pack: 'Sounds',
   themes: 'Themes',
   stickers: 'Stickers',
   create: 'Create',
@@ -425,7 +461,7 @@ function ShopInner() {
     )
   const equip = (id: string | null) =>
     act(`equip:${id}`, () => put<Wallet>('/api/me/decoration', { itemId: id }))
-  const equipSlot = (slot: 'effect' | 'plate' | 'bubble', id: string | null) =>
+  const equipSlot = (slot: 'effect' | 'plate' | 'bubble' | FlairKind, id: string | null) =>
     act(`${slot}:${id}`, () => put<Wallet>('/api/me/equip', { slot, itemId: id }))
   const switchTheme = (id: string | null) => {
     setPreview(null)
@@ -470,7 +506,12 @@ function ShopInner() {
     const owned = ownedSet.has(it.itemId)
     const isTheme = it.kind === 'theme'
     const slot =
-      it.kind === 'effect' || it.kind === 'plate' || it.kind === 'bubble' ? it.kind : null
+      it.kind === 'effect' ||
+      it.kind === 'plate' ||
+      it.kind === 'bubble' ||
+      (FLAIR_KINDS as string[]).includes(it.kind)
+        ? (it.kind as 'effect' | 'plate' | 'bubble' | FlairKind)
+        : null
     const wearing = isTheme
       ? w?.equippedTheme === it.itemId
       : slot
@@ -478,7 +519,9 @@ function ShopInner() {
             ? w?.equippedEffect
             : slot === 'plate'
               ? w?.equippedPlate
-              : w?.equippedBubble) === it.value
+              : slot === 'bubble'
+                ? w?.equippedBubble
+                : w?.equippedFlair[slot]) === it.value
         : equippedKey === it.itemId
     const takeOff = () => (isTheme ? switchTheme(null) : slot ? equipSlot(slot, null) : equip(null))
     const putOn = () =>
@@ -1125,6 +1168,77 @@ function ShopInner() {
                 also a Bubble Crate if your feeling lucky.
               </p>
               {grid(byKind('bubble', false), '')}
+              <h3 className="mt-8 mb-3 text-[14px] font-semibold">Made by students</h3>
+              {grid(
+                byKind('bubble', true),
+                'No student-made bubbles yet. Make one in the Create tab!',
+              )}
+            </TabsContent>
+            <TabsContent value="name_effect" className="pt-4">
+              <p className="mb-3 text-[13px] text-fg-muted">
+                Animated colours for your name, everywhere it shows up in chat.
+              </p>
+              {grid(byKind('name_effect', false), '')}
+              <h3 className="mt-8 mb-3 text-[14px] font-semibold">Made by students</h3>
+              {grid(
+                byKind('name_effect', true),
+                'Nobody has made one yet. Be the first in the Create tab!',
+              )}
+            </TabsContent>
+            <TabsContent value="message_effect" className="pt-4">
+              <p className="mb-3 text-[13px] text-fg-muted">
+                A quick animation that plays once when each of your messages shows up for everyone.
+              </p>
+              {grid(byKind('message_effect', false), '')}
+              <h3 className="mt-8 mb-3 text-[14px] font-semibold">Made by students</h3>
+              {grid(
+                byKind('message_effect', true),
+                'Nobody has made one yet. Be the first in the Create tab!',
+              )}
+            </TabsContent>
+            <TabsContent value="typing" className="pt-4">
+              <p className="mb-3 text-[13px] text-fg-muted">
+                What people see while your typing, instead of the three gray dots.
+              </p>
+              {grid(byKind('typing', false), '')}
+              <h3 className="mt-8 mb-3 text-[14px] font-semibold">Made by students</h3>
+              {grid(
+                byKind('typing', true),
+                'Nobody has made one yet. Be the first in the Create tab!',
+              )}
+            </TabsContent>
+            <TabsContent value="reaction_skin" className="pt-4">
+              <p className="mb-3 text-[13px] text-fg-muted">
+                Changes how the reactions look on your messages, so everyone who reacts sees it.
+              </p>
+              {grid(byKind('reaction_skin', false), '')}
+              <h3 className="mt-8 mb-3 text-[14px] font-semibold">Made by students</h3>
+              {grid(
+                byKind('reaction_skin', true),
+                'Nobody has made one yet. Be the first in the Create tab!',
+              )}
+            </TabsContent>
+            <TabsContent value="mention_style" className="pt-4">
+              <p className="mb-3 text-[13px] text-fg-muted">
+                How your @mentions look in the messages you send.
+              </p>
+              {grid(byKind('mention_style', false), '')}
+              <h3 className="mt-8 mb-3 text-[14px] font-semibold">Made by students</h3>
+              {grid(
+                byKind('mention_style', true),
+                'Nobody has made one yet. Be the first in the Create tab!',
+              )}
+            </TabsContent>
+            <TabsContent value="sound_pack" className="pt-4">
+              <p className="mb-3 text-[13px] text-fg-muted">
+                Sounds for when you get a ping and when you send a message. Only you can here them.
+              </p>
+              {grid(byKind('sound_pack', false), '')}
+              <h3 className="mt-8 mb-3 text-[14px] font-semibold">Made by students</h3>
+              {grid(
+                byKind('sound_pack', true),
+                'Nobody has made one yet. Be the first in the Create tab!',
+              )}
             </TabsContent>
             <TabsContent value="themes" className="pt-4">
               <p className="mb-3 text-[13px] text-fg-muted">
@@ -1844,12 +1958,40 @@ function AvailabilityFields({ a }: { a: ReturnType<typeof useAvailability> }) {
   )
 }
 
+function CreateFlairItem({ kind }: { kind: SpecKind }) {
+  const avail = useAvailability()
+  return (
+    <CreateFlair
+      kind={kind}
+      availability={<AvailabilityFields a={avail} />}
+      availabilityBody={avail.body}
+      isPublic={avail.visibility === 'public'}
+    />
+  )
+}
+
 function CreatePicker({ catalog }: { catalog: Map<string, ShopItem> }) {
   const [kind, setKind] = useState<ItemKind | 'crate' | 'bundle'>('decoration')
   return (
     <>
       <div className="mb-5 inline-flex flex-wrap rounded-lg border border-border p-0.5 text-[13px]">
-        {(['decoration', 'effect', 'plate', 'theme', 'crate', 'bundle'] as const).map((k) => (
+        {(
+          [
+            'decoration',
+            'effect',
+            'plate',
+            'theme',
+            'bubble',
+            'name_effect',
+            'message_effect',
+            'typing',
+            'reaction_skin',
+            'mention_style',
+            'sound_pack',
+            'crate',
+            'bundle',
+          ] as const
+        ).map((k) => (
           <button
             key={k}
             type="button"
@@ -1864,7 +2006,9 @@ function CreatePicker({ catalog }: { catalog: Map<string, ShopItem> }) {
           </button>
         ))}
       </div>
-      {kind === 'decoration' ? (
+      {isSpecKind(kind) ? (
+        <CreateFlairItem key={kind} kind={kind} />
+      ) : kind === 'decoration' ? (
         <CreateCosmetic />
       ) : kind === 'theme' ? (
         <CreateTheme />
@@ -2341,7 +2485,11 @@ function MyCreations() {
         ))}
         {(mine.data ?? []).map((c) => (
           <li key={c.id} className="flex items-center gap-4 p-3">
-            {c.kind === 'theme' ? (
+            {isSpecKind(c.kind) ? (
+              <span className="flex h-14 w-28 items-center justify-center overflow-hidden rounded-md bg-bg-muted">
+                <FlairPreview kind={c.kind} value={c.value} compact />
+              </span>
+            ) : c.kind === 'theme' ? (
               <ThemeSwatch css={c.css ?? ''} className="h-14 w-20" />
             ) : c.kind === 'effect' || c.kind === 'plate' ? (
               <span className="relative isolate block h-14 w-20 overflow-hidden rounded-md bg-bg-muted">

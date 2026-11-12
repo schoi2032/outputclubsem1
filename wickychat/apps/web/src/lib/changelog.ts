@@ -15,6 +15,22 @@ export interface Update {
 
 export const UPDATES: Update[] = [
   {
+    id: '2026-11-13-chat-flair',
+    date: '2026-11-13',
+    emoji: '🌈',
+    title: 'Chat flair',
+    summary: 'Six new kinds of cosmetics, and you can make your own of every one.',
+    tag: 'new',
+    items: [
+      'Name effects: shimmer, rainbow, fire, glitch and more on your name everywhere in chat.',
+      'Message effects: confetti, hearts, snow or a shake that plays once when your message shows up.',
+      'Typing indicators, reaction skins and mention styles that everyone in the chat can see.',
+      'Sound packs for pings and sending, only you here them.',
+      'Make your own of any of these (and chat bubbles) in Create. A teacher checks them first, same as always.',
+      'Theres a new Flair Crate too.',
+    ],
+  },
+  {
     id: '2026-11-12-chat-bubbles',
     date: '2026-11-12',
     emoji: '💬',
@@ -23,7 +39,7 @@ export const UPDATES: Update[] = [
     tag: 'new',
     items: [
       '20 bubbles in the Shop under Chat bubbles, from Cloud and Sticky Note to Neon Sign, Hologram and a spinning Rainbow Border.',
-      'Everyone in the chat see\'s your bubble on your messages.',
+      "Everyone in the chat see's your bubble on your messages.",
       'Theres a new Bubble Crate, and the Spooky, Winter and Sweetheart crates have a seasonal bubble each.',
       'Wear them from the Wardrobe like everything else, and trade, sell or gift them too.',
     ],
@@ -33,7 +49,7 @@ export const UPDATES: Update[] = [
     date: '2026-11-12',
     emoji: '📅',
     title: 'Calendar and office hours',
-    summary: 'Keep track of homework and tests, and book time with you\'re teachers.',
+    summary: "Keep track of homework and tests, and book time with you're teachers.",
     tag: 'new',
     items: [
       'A new Calendar page shows homework, tests, class events, your tasks, meetings and office hours all in one month view.',

@@ -36,6 +36,13 @@ const KIND: Record<CommissionKind, string> = {
   decoration: 'Avatar decoration',
   effect: 'Profile effect',
   plate: 'Name plate',
+  bubble: 'Chat bubble',
+  name_effect: 'Name effect',
+  message_effect: 'Message effect',
+  typing: 'Typing indicator',
+  reaction_skin: 'Reaction skin',
+  mention_style: 'Mention style',
+  sound_pack: 'Sound pack',
   theme: 'App theme',
 }
 const STATUS: Record<Commission['status'], { label: string; className: string }> = {

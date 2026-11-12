@@ -7,6 +7,7 @@ import { useOrgContext } from '@/components/org-context'
 import { parseRemind, whenLabel } from '@/lib/productivity'
 import { del, errorMessage, get, patch, post, put } from './api'
 import { keys, patchMessage, removeMessage, upsertMessage } from './queries'
+import { playPack } from './sounds'
 
 export type PluginCommand = {
   command: string
@@ -115,6 +116,14 @@ export function useMessageActions() {
         displayName: me.displayName,
         avatarUrl: me.avatarUrl,
         isBot: false,
+        decoration: me.decoration,
+        nameStyle: me.nameStyle,
+        namePlate: me.namePlate,
+        chatBubble: me.chatBubble,
+        nameEffect: me.nameEffect,
+        messageEffect: me.messageEffect,
+        reactionSkin: me.reactionSkin,
+        mentionStyle: me.mentionStyle,
       },
       body,
       text: docToText(body),
@@ -156,6 +165,7 @@ export function useMessageActions() {
           clientId,
         })
         place(saved)
+        playPack(me.soundPack, 'send')
         void qc.invalidateQueries({ queryKey: keys.drafts(org.id) })
       } catch (e) {
         place({

@@ -31,14 +31,23 @@ import {
   decorationById,
   EFFECT_IDS,
   effectById,
+  FLAIR_IDS,
+  FLAIR_KINDS,
+  type FlairKind,
+  flairById,
   isEventLive,
+  isSpecKind,
   MAX_THEME_CSS,
   PLATE_IDS,
+  parseSpec,
   plateById,
+  SPEC_KINDS,
+  type SpecKind,
   STICKER_POSITIONS,
   STREAK_CRATE,
   type StickerPosition,
   sanitizeThemeCss,
+  specValue,
   streakBonus,
   THEME_IDS,
   themeById,
@@ -59,11 +68,21 @@ import { changeCoins, currentStreak, earnedFromMessagesToday, startOfSchoolDay }
 const CUSTOM = /^u:([0-9a-f-]{36})$/
 
 /** Which column an item goes in when it's put on, and what's stored there. */
+export const FLAIR_COLUMN = {
+  name_effect: 'nameEffect',
+  message_effect: 'messageEffect',
+  typing: 'typingStyle',
+  reaction_skin: 'reactionSkin',
+  mention_style: 'mentionStyle',
+  sound_pack: 'soundPack',
+} as const satisfies Record<FlairKind, keyof typeof users.$inferInsert>
+
 function equipFor(
   itemId: string,
   custom?: {
     id: string
     kind: string
+    spec?: unknown
     frameFileId: string | null
     stickerFileId: string | null
     stickerPosition: string
@@ -73,12 +92,42 @@ function equipFor(
   if (effectById(itemId)) return { profileEffect: itemId }
   if (plateById(itemId)) return { namePlate: itemId }
   if (bubbleById(itemId)) return { chatBubble: itemId }
+  const fl = flairById(itemId)
+  if (fl) return { [FLAIR_COLUMN[fl.kind]]: itemId }
+  if (custom?.kind === 'bubble') return { chatBubble: specValue(custom) }
+  if (custom && (FLAIR_KINDS as string[]).includes(custom.kind))
+    return { [FLAIR_COLUMN[custom.kind as FlairKind]]: specValue(custom) }
   if (custom?.kind === 'effect') return { profileEffect: customImageValue(custom) }
   if (custom?.kind === 'plate') return { namePlate: customImageValue(custom) }
   return { decoration: custom ? cosmeticDecoration(custom) : itemId }
 }
 
 type CosmeticRow = typeof cosmetics.$inferSelect
+
+async function checkSpec(ctx: AppContext, userId: string, kind: SpecKind, raw: unknown) {
+  const spec = parseSpec(kind, raw)
+  if (!spec)
+    throw badRequest('Some of the settings for this look wrong. Check the colours and options.')
+  const words = JSON.stringify(spec)
+  if (censorText(words).hits) throw badRequest('Keep it school-friendly.')
+  if (kind === 'sound_pack') {
+    if (!('notify' in spec)) throw badRequest('Upload your own sounds for a custom sound pack.')
+    const want = [spec.notify, spec.send].filter((x): x is string => !!x)
+    const mine = await ctx.db
+      .select({ id: files.id })
+      .from(files)
+      .where(
+        and(
+          inArray(files.id, want),
+          eq(files.uploaderId, userId),
+          eq(files.purpose, 'sound'),
+          isNull(files.deletedAt),
+        ),
+      )
+    if (mine.length !== want.length) throw badRequest('Upload the sounds first.')
+  }
+  return spec
+}
 
 export function serializeCosmetic(
   c: CosmeticRow,
@@ -89,7 +138,13 @@ export function serializeCosmetic(
     kind: c.kind as Cosmetic['kind'],
     css: c.kind === 'theme' ? c.css : null,
     decoration: c.kind === 'decoration' ? cosmeticDecoration(c) : '',
-    value: c.kind === 'effect' || c.kind === 'plate' ? customImageValue(c) : `u:${c.id}`,
+    value:
+      c.kind === 'effect' || c.kind === 'plate'
+        ? customImageValue(c)
+        : isSpecKind(c.kind)
+          ? specValue(c)
+          : `u:${c.id}`,
+    spec: c.spec ?? undefined,
     name: c.name,
     description: c.description,
     price: c.price,
@@ -120,6 +175,12 @@ export async function loadWallet(ctx: AppContext, userId: string): Promise<Walle
         profileEffect: true,
         namePlate: true,
         chatBubble: true,
+        nameEffect: true,
+        messageEffect: true,
+        typingStyle: true,
+        reactionSkin: true,
+        mentionStyle: true,
+        soundPack: true,
         spinTickets: true,
       },
     }),
@@ -162,6 +223,7 @@ export async function loadWallet(ctx: AppContext, userId: string): Promise<Walle
       EFFECT_IDS.includes(o.itemId) ||
       PLATE_IDS.includes(o.itemId) ||
       BUBBLE_IDS.includes(o.itemId) ||
+      FLAIR_IDS.includes(o.itemId) ||
       CUSTOM.test(o.itemId),
   )
   const giftedBy: Wallet['giftedBy'] = {}
@@ -188,6 +250,14 @@ export async function loadWallet(ctx: AppContext, userId: string): Promise<Walle
     equippedEffect: u.profileEffect,
     equippedPlate: u.namePlate,
     equippedBubble: u.chatBubble,
+    equippedFlair: {
+      name_effect: u.nameEffect,
+      message_effect: u.messageEffect,
+      typing: u.typingStyle,
+      reaction_skin: u.reactionSkin,
+      mention_style: u.mentionStyle,
+      sound_pack: u.soundPack,
+    },
     streak: currentStreak(u.dailyClaimedAt, u.dailyStreak),
     dailyAvailable: !u.dailyClaimedAt || u.dailyClaimedAt < startOfSchoolDay(),
     earnedFromMessagesToday: earned,
@@ -310,7 +380,8 @@ export async function coinRoutes(app: App, ctx: AppContext) {
         themeById(itemId) ??
         effectById(itemId) ??
         plateById(itemId) ??
-        bubbleById(itemId)
+        bubbleById(itemId) ??
+        flairById(itemId)
       const m = CUSTOM.exec(itemId)
       if (builtin) {
         if ('event' in builtin && builtin.event && !isEventLive(builtin.event))
@@ -419,7 +490,7 @@ export async function coinRoutes(app: App, ctx: AppContext) {
     {
       schema: {
         body: z.object({
-          slot: z.enum(['effect', 'plate', 'bubble']),
+          slot: z.enum(['effect', 'plate', 'bubble', ...FLAIR_KINDS]),
           itemId: z.string().max(60).nullable(),
         }),
       },
@@ -428,7 +499,13 @@ export async function coinRoutes(app: App, ctx: AppContext) {
       const me = requireUser(req)
       const { slot, itemId } = req.body
       const column =
-        slot === 'effect' ? 'profileEffect' : slot === 'plate' ? 'namePlate' : 'chatBubble'
+        slot === 'effect'
+          ? 'profileEffect'
+          : slot === 'plate'
+            ? 'namePlate'
+            : slot === 'bubble'
+              ? 'chatBubble'
+              : FLAIR_COLUMN[slot]
       let value: string | null = null
       if (itemId) {
         const owned = await ctx.db.query.userItems.findFirst({
@@ -533,8 +610,11 @@ export async function coinRoutes(app: App, ctx: AppContext) {
           name: z.string().trim().min(2).max(40),
           description: z.string().trim().max(140).default(''),
           price: z.number().int().min(COSMETIC_PRICE.min).max(COSMETIC_PRICE.max),
-          kind: z.enum(['decoration', 'theme', 'effect', 'plate']).default('decoration'),
+          kind: z
+            .enum(['decoration', 'theme', 'effect', 'plate', ...SPEC_KINDS])
+            .default('decoration'),
           css: z.string().max(MAX_THEME_CSS).optional(),
+          spec: z.unknown().optional(),
           frameFileId: z.uuid().nullable().default(null),
           stickerFileId: z.uuid().nullable().default(null),
           stickerPosition: z.enum(STICKER_POSITIONS).default('tr'),
@@ -559,13 +639,15 @@ export async function coinRoutes(app: App, ctx: AppContext) {
       if (isTheme && !css) throw badRequest('Write some CSS for your theme.')
       const isImage = b.kind === 'effect' || b.kind === 'plate'
       if (isImage && !b.frameFileId) throw badRequest('Add an image.')
+      const spec = isSpecKind(b.kind) ? await checkSpec(ctx, scope.userId, b.kind, b.spec) : null
       if (b.kind === 'decoration' && !b.frameFileId && !b.stickerFileId)
         throw badRequest('Add a frame image, a sticker image, or both.')
       if (censorText(b.name).hits || censorText(b.description).hits)
         throw badRequest('Keep the name and description school-friendly.')
       if (css && censorText(css).hits)
         throw badRequest('Keep the CSS (and its comments) school-friendly.')
-      const ids = isTheme ? [] : [b.frameFileId, b.stickerFileId].filter((x): x is string => !!x)
+      const ids =
+        isTheme || spec ? [] : [b.frameFileId, b.stickerFileId].filter((x): x is string => !!x)
       const mine = !ids.length
         ? []
         : await ctx.db
@@ -596,8 +678,9 @@ export async function coinRoutes(app: App, ctx: AppContext) {
           price: b.price,
           kind: b.kind,
           css,
-          frameFileId: isTheme ? null : b.frameFileId,
-          stickerFileId: isTheme || isImage ? null : b.stickerFileId,
+          spec,
+          frameFileId: isTheme || spec ? null : b.frameFileId,
+          stickerFileId: isTheme || isImage || spec ? null : b.stickerFileId,
           stickerPosition: b.stickerPosition,
           visibility: b.visibility,
           stock: b.stock,

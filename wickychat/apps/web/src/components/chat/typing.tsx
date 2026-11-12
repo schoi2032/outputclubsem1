@@ -1,4 +1,6 @@
 'use client'
+import { specFromValue } from '@quid/shared'
+import { TypingGlyphs } from '@/components/profile/flair'
 import { displayName } from '@/lib/format'
 import { useAiStatus, useMembers } from '@/lib/queries'
 import { useTyping } from '@/lib/realtime'
@@ -19,6 +21,8 @@ export function TypingIndicator({
     const m = members.data?.find((x) => x.id === id)
     return m ? displayName(m).split(' ')[0] : id === assistant?.id ? 'Claude' : 'Someone'
   })
+  const first = members.data?.find((x) => x.id === ids[0])
+  const custom = specFromValue('typing', first?.typingStyle)
   const text =
     names.length === 0
       ? ''
@@ -31,15 +35,19 @@ export function TypingIndicator({
     <div className="h-5 px-5 text-2xs text-fg-subtle" aria-live="polite">
       {text && (
         <span className="inline-flex items-center gap-1.5">
-          <span className="inline-flex gap-0.5">
-            {[0, 1, 2].map((i) => (
-              <span
-                key={i}
-                className="size-1 animate-bounce rounded-full bg-fg-subtle"
-                style={{ animationDelay: `${i * 120}ms` }}
-              />
-            ))}
-          </span>
+          {custom ? (
+            <TypingGlyphs spec={custom} />
+          ) : (
+            <span className="inline-flex gap-0.5">
+              {[0, 1, 2].map((i) => (
+                <span
+                  key={i}
+                  className="size-1 animate-bounce rounded-full bg-fg-subtle"
+                  style={{ animationDelay: `${i * 120}ms` }}
+                />
+              ))}
+            </span>
+          )}
           {text}…
         </span>
       )}

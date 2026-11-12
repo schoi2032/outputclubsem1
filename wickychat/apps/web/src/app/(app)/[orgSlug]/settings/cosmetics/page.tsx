@@ -3,7 +3,7 @@
  * WickyChat: teachers review student-made cosmetics before they go on sale, and can take
  * approved ones down again.
  */
-import type { Cosmetic } from '@quid/shared'
+import { type Cosmetic, isSpecKind } from '@quid/shared'
 import { Avatar, Button, EmptyState, Input, Skeleton, toast } from '@quid/ui'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Palette } from 'lucide-react'
@@ -11,6 +11,7 @@ import { useState } from 'react'
 import { useOrgContext } from '@/components/org-context'
 import { NamePlate } from '@/components/profile/cosmetics-fx'
 import { SettingsTitle } from '@/components/settings-ui'
+import { FlairPreview } from '@/components/shop/flair-preview'
 import { ThemeSwatch } from '@/components/shop/theme-swatch'
 import { errorMessage, get, post } from '@/lib/api'
 import { displayName, relative } from '@/lib/format'
@@ -36,7 +37,11 @@ function Row({ c, onDone, live }: { c: Cosmetic; onDone: () => void; live?: bool
   return (
     <li className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
       <div className="flex shrink-0 gap-6 px-3">
-        {c.kind === 'theme' ? (
+        {isSpecKind(c.kind) ? (
+          <span className="flex min-h-20 w-40 items-center justify-center rounded-md bg-bg-muted p-2">
+            <FlairPreview kind={c.kind} value={c.value} />
+          </span>
+        ) : c.kind === 'theme' ? (
           <ThemeSwatch css={c.css ?? ''} className="w-28" />
         ) : c.kind === 'effect' || c.kind === 'plate' ? (
           <span className="relative isolate block h-20 w-28 overflow-hidden rounded-md bg-bg-muted">
