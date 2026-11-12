@@ -1746,8 +1746,6 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   ach('auction-1', '🔨', 'Going, going, gone', 'Win an auction', 'auctionsWon', 1, 20),
   ach('invest-1', '📈', 'Investor', 'Buy something on the Stock Market', 'invested', 1, 15),
   ach('dividend-100', '🏦', 'Believer', 'Earn 100 coins from backing people', 'dividends', 100, 50),
-  ach('duel-1', '🪙', 'Heads or tails', 'Win a coinflip duel', 'duelsWon', 1, 10),
-  ach('duel-10', '🎲', 'Lucky streak', 'Win 10 coinflip duels', 'duelsWon', 10, 60),
   ach('sticker-1', '🖼️', 'Sticker artist', 'Get a sticker pack approved', 'stickerPacks', 1, 30),
   ach('send-500', '💸', 'Generous', 'Send 500 coins to friends in total', 'coinsSent', 500, 25),
 ]
@@ -1793,6 +1791,8 @@ export interface Auction {
 }
 
 // --- Coinflip duels ----------------------------------------------------------------------
+
+export const COINFLIP_ON: boolean = false
 
 export const DUEL = { min: 1, max: 200, expiresMs: 10 * 60_000 }
 
@@ -1854,7 +1854,6 @@ export const QUESTS: QuestDef[] = [
   q('shop', '🛍️', 'Buy something in the Shop', 'shop', 1, 15),
   q('gift', '💝', 'Gift someone something (an item, a crate or coins)', 'gift', 1, 20),
   q('sticker-3', '🖼️', 'Send 3 stickers', 'sticker', 3, 10),
-  q('duel', '🪙', 'Play a coinflip duel', 'duel', 1, 10),
   q('vote', '📊', 'Vote in a poll', 'vote', 1, 10),
   q('crate', '📦', 'Open a crate', 'crate', 1, 10),
 ]

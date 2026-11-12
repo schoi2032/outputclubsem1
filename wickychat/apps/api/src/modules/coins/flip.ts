@@ -5,14 +5,13 @@
 
 import { randomInt } from 'node:crypto'
 import { coinTransactions, users } from '@quid/db'
-import { flipPayout, SOLO_FLIP, type SoloFlip } from '@quid/shared'
+import { COINFLIP_ON, flipPayout, SOLO_FLIP, type SoloFlip } from '@quid/shared'
 import { and, count, eq, gte } from 'drizzle-orm'
 import { z } from 'zod'
 import { requireOrg } from '../../core/auth'
 import type { AppContext } from '../../core/context'
 import { badRequest, forbidden } from '../../core/errors'
 import { type App, orgParams } from '../../core/http'
-import { loadCustomization } from '../orgs/customization'
 import { loadWallet } from './routes'
 import { changeCoins, startOfSchoolDay } from './service'
 
@@ -50,8 +49,7 @@ export async function flipRoutes(app: App, ctx: AppContext) {
     },
     async (req) => {
       const scope = await requireOrg(ctx, req, req.params.orgId)
-      if (!(await loadCustomization(ctx, scope.orgId)).duels)
-        throw forbidden('Coin games are turned off at this school.')
+      if (!COINFLIP_ON) throw forbidden('Coinflip is turned off.')
       const { bet, side } = req.body
       const flip = await ctx.db.transaction(async (tx) => {
         const [u] = await tx

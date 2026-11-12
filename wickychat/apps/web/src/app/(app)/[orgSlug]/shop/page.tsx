@@ -75,7 +75,6 @@ import { ArtistsView } from '@/components/shop/artists'
 import { AuctionsView } from '@/components/shop/auctions'
 import { BundlesView, CreateBundle, MyBundles, useBundleDefs } from '@/components/shop/bundles'
 import { ClassWarView } from '@/components/shop/classwar'
-import { CoinflipView } from '@/components/shop/coinflip'
 import { CrateArt, CratesView, CreateCrate, MyCrates, useCrateDefs } from '@/components/shop/crates'
 import { EarnView, earnWaiting, useEarn, useTrivia } from '@/components/shop/earn'
 import { InvestView, useStocks } from '@/components/shop/invest'
@@ -198,7 +197,6 @@ type Tab =
   | 'quests'
   | 'classwar'
   | 'artists'
-  | 'flip'
   | 'earn'
   | 'mine'
 const TABS: Tab[] = [
@@ -221,7 +219,6 @@ const TABS: Tab[] = [
   'quests',
   'classwar',
   'artists',
-  'flip',
   'earn',
   'mine',
 ]
@@ -248,7 +245,7 @@ const GROUPS: { id: string; label: string; tabs: Tab[] }[] = [
   },
   { id: 'earn', label: '💰 Earn', tabs: ['earn'] },
   { id: 'trade', label: '🎒 My stuff & trading', tabs: ['mine', 'trades', 'auctions', 'market'] },
-  { id: 'invest', label: '📈 Invest & games', tabs: ['invest', 'flip'] },
+  { id: 'invest', label: '📈 Invest', tabs: ['invest'] },
   { id: 'create', label: '🎨 Create & artists', tabs: ['create', 'artists'] },
   {
     id: 'goals',
@@ -278,7 +275,6 @@ const TAB_LABEL: Record<Tab, string> = {
   quests: 'Daily quests',
   classwar: '⚔️ Class vs Class',
   artists: '🎨 Official Artists',
-  flip: '🪙 Coinflip',
   earn: 'Earn',
   mine: 'My stuff',
 }
@@ -1150,9 +1146,6 @@ function ShopInner() {
             </TabsContent>
             <TabsContent value="earn" className="pt-4">
               <EarnView onGo={(t) => setTab(t as Tab)} />
-            </TabsContent>
-            <TabsContent value="flip" className="pt-4">
-              <CoinflipView wallet={w} />
             </TabsContent>
             <TabsContent value="artists" className="pt-4">
               <ArtistsView wallet={w} preset={params.get('artist') ?? undefined} />

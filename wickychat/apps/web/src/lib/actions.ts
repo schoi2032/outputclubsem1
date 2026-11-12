@@ -1,6 +1,6 @@
 'use client'
 import type { Attachment, Channel, DocNode, Message, ReactionGroup } from '@quid/shared'
-import { DUEL, docToText } from '@quid/shared'
+import { docToText } from '@quid/shared'
 import { toast } from '@quid/ui'
 import { useQueryClient } from '@tanstack/react-query'
 import { useOrgContext } from '@/components/org-context'
@@ -20,7 +20,6 @@ export type PluginCommand = {
 export const BUILTIN_COMMANDS = [
   { command: 'remind', usage: 'in 20m stretch', description: 'Set a reminder for yourself' },
   { command: 'todo', usage: 'Write the launch email', description: 'Add a task to this channel' },
-  { command: 'coinflip', usage: '50 heads', description: 'Duel anyone here for Wicky Coins' },
 ] as const
 
 export type LocalMessage = Message & { _status?: 'sending' | 'failed'; _retry?: () => void }
@@ -100,27 +99,8 @@ export function useMessageActions() {
         return
       }
       if (slash[1] === 'coinflip') {
-        const args = (slash[2] ?? '').toLowerCase()
-        const amount = Number(/\d+/.exec(args)?.[0])
-        if (!amount || amount < DUEL.min || amount > DUEL.max) {
-          toast.error(`Try “/coinflip 50 heads” (${DUEL.min} to ${DUEL.max} coins).`)
-          throw new Error('bad /coinflip')
-        }
-        // In a 1:1 chat, the duel is for the other person.
-        const other =
-          channel.kind === 'dm' ? channel.participants?.find((m) => m.id !== me.id)?.id : undefined
-        try {
-          await post(`${api}/channels/${channel.id}/duels`, {
-            amount,
-            side: args.includes('tail') ? 'tails' : 'heads',
-            opponentId: other ?? null,
-          })
-          void qc.invalidateQueries({ queryKey: ['wallet'] })
-        } catch (e) {
-          toast.error(errorMessage(e))
-          throw e
-        }
-        return
+        toast.error('Coinflip is turned off.')
+        throw new Error('coinflip off')
       }
     }
     const clientId = `c-${crypto.randomUUID()}`

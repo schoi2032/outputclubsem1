@@ -3,7 +3,7 @@
  * WickyChat: coinflip duels in chat. DuelCard shows under the message; DuelButton opens the
  * dialog to start one (or type `/coinflip 50 heads`).
  */
-import { type Channel, DUEL, type Duel, type Wallet } from '@quid/shared'
+import { type Channel, COINFLIP_ON, DUEL, type Duel, type Wallet } from '@quid/shared'
 import {
   Button,
   cn,
@@ -67,7 +67,8 @@ export function DuelCard({ duelId }: { duelId: string }) {
   const d = q.data
   if (!d) return <div className="mt-2 h-20 max-w-sm animate-pulse rounded-lg bg-bg-muted" />
   const mine = d.challenger.id === me.id
-  const canAccept = d.status === 'open' && !mine && (!d.opponent || d.opponent.id === me.id)
+  const canAccept =
+    COINFLIP_ON && d.status === 'open' && !mine && (!d.opponent || d.opponent.id === me.id)
   const won = d.winnerId === me.id
   const played = mine || d.acceptedBy?.id === me.id
 

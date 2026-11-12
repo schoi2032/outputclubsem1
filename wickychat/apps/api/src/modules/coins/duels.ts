@@ -6,7 +6,7 @@
 
 import { randomInt } from 'node:crypto'
 import { duels, messages, users } from '@quid/db'
-import { DUEL, type Duel, topics } from '@quid/shared'
+import { COINFLIP_ON, DUEL, type Duel, topics } from '@quid/shared'
 import { and, eq, inArray, lt } from 'drizzle-orm'
 import { z } from 'zod'
 import { type OrgScope, requireOrg } from '../../core/auth'
@@ -15,7 +15,6 @@ import { badRequest, conflict, forbidden, notFound } from '../../core/errors'
 import { type App, orgIdParams } from '../../core/http'
 import { requireChannel } from '../channels/service'
 import { createMessage, serializeMessage } from '../messages/service'
-import { loadCustomization } from '../orgs/customization'
 import { toUserSummary, userCols } from '../users/serialize'
 import { loadWallet } from './routes'
 import { changeCoins } from './service'
@@ -108,8 +107,7 @@ export async function duelRoutes(app: App, ctx: AppContext) {
     async (req, reply) => {
       const scope = await requireOrg(ctx, req, req.params.orgId)
       const { channel } = await requireChannel(ctx, scope, req.params.id, 'post')
-      if (!(await loadCustomization(ctx, scope.orgId)).duels)
-        throw forbidden('Coinflip duels are turned off at this school.')
+      if (!COINFLIP_ON) throw forbidden('Coinflip duels are turned off.')
       const { amount, side, opponentId } = req.body
       if (opponentId === scope.userId) throw badRequest("You can't duel yourself.")
       const opponent = opponentId
@@ -181,6 +179,7 @@ export async function duelRoutes(app: App, ctx: AppContext) {
     async (req) => {
       const scope = await requireOrg(ctx, req, req.params.orgId)
       const found = await getDuel(ctx, scope, req.params.id)
+      if (!COINFLIP_ON) throw forbidden('Coinflip duels are turned off.')
       const done = await ctx.db.transaction(async (tx) => {
         const [d] = await tx.select().from(duels).where(eq(duels.id, found.id)).for('update')
         if (!d || d.status !== 'open') throw conflict('Too late! This duel is over.')
