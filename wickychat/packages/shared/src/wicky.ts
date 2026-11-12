@@ -555,6 +555,7 @@ export interface Wallet {
   equippedTheme: string | null
   equippedEffect: string | null
   equippedPlate: string | null
+  equippedBubble: string | null
   /** Days in a row the daily bonus was claimed. */
   streak: number
   /** Whether today's daily bonus can still be claimed. */
@@ -1592,10 +1593,63 @@ export const PLATES: SimpleItem[] = [
   },
 ]
 
+export const BUBBLES: SimpleItem[] = [
+  { id: 'b-cloud', name: 'Cloud', description: 'Soft and puffy white', price: 90 },
+  { id: 'b-sky', name: 'Sky', description: 'Light blue with a little shine', price: 100 },
+  { id: 'b-bubblegum', name: 'Bubblegum', description: 'Pink and pop', price: 110 },
+  { id: 'b-mint', name: 'Mint Chip', description: 'Cool green with dots', price: 110 },
+  { id: 'b-notebook', name: 'Notebook', description: 'Lined paper with a red margin', price: 130 },
+  { id: 'b-sticky', name: 'Sticky Note', description: 'Yellow and a tiny bit crooked', price: 130 },
+  { id: 'b-chalk', name: 'Chalkboard', description: 'Dark green with chalky letters', price: 150 },
+  { id: 'b-pixel', name: 'Pixel', description: 'Chunky 8 bit border', price: 160 },
+  { id: 'b-sunset', name: 'Sunset', description: 'Orange to pink gradient', price: 160 },
+  { id: 'b-terminal', name: 'Terminal', description: 'Green text on black', price: 170 },
+  { id: 'b-glass', name: 'Frosted Glass', description: 'See through and blurry', price: 190 },
+  {
+    id: 'b-neon',
+    name: 'Neon Sign',
+    description: 'Glowing pink outline that flickers',
+    price: 220,
+  },
+  { id: 'b-galaxy', name: 'Galaxy', description: 'Purple space with twinkling stars', price: 240 },
+  { id: 'b-holo', name: 'Hologram', description: 'Shifts colours as it moves', price: 280 },
+  { id: 'b-lava', name: 'Lava Lamp', description: 'Slow hot blobs', price: 260 },
+  { id: 'b-gold', name: 'Golden', description: 'Shiny gold with a sweeping shine', price: 320 },
+  {
+    id: 'b-rainbow',
+    name: 'Rainbow Border',
+    description: 'A border that spins through every colour',
+    price: 350,
+  },
+  {
+    id: 'b-spooky',
+    name: 'Spooky',
+    description: 'Purple and orange with cobwebs',
+    price: 170,
+    event: 'halloween',
+  },
+  {
+    id: 'b-snow',
+    name: 'Snow Day',
+    description: 'Icy blue with falling snow',
+    price: 170,
+    event: 'winter',
+  },
+  {
+    id: 'b-heart',
+    name: 'Love Letter',
+    description: 'Pink paper with little hearts',
+    price: 160,
+    event: 'valentine',
+  },
+]
+
 export const EFFECT_IDS = EFFECTS.map((e) => e.id)
 export const PLATE_IDS = PLATES.map((p) => p.id)
 export const effectById = (id: string | null | undefined) => EFFECTS.find((e) => e.id === id)
 export const plateById = (id: string | null | undefined) => PLATES.find((p) => p.id === id)
+export const BUBBLE_IDS = BUBBLES.map((b) => b.id)
+export const bubbleById = (id: string | null | undefined) => BUBBLES.find((b) => b.id === id)
 
 /** Value stored for a student-made effect or plate: `u:<cosmetic id>|i:<image file id>`. */
 export const customImageValue = (c: { id: string; frameFileId: string | null }) =>
@@ -1607,7 +1661,7 @@ export function customImageFile(value: string | null | undefined): string | null
   return m?.[1] ?? null
 }
 
-export type ItemKind = 'decoration' | 'theme' | 'effect' | 'plate'
+export type ItemKind = 'decoration' | 'theme' | 'effect' | 'plate' | 'bubble'
 
 // --- Marketplace -----------------------------------------------------------------------
 

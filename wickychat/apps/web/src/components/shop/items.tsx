@@ -4,6 +4,8 @@
  * plates and themes, seasonal items and student-made cosmetics) plus how to draw each one.
  */
 import {
+  BUBBLES,
+  bubbleById,
   type Cosmetic,
   DECORATIONS,
   type DecorationRarity,
@@ -24,7 +26,7 @@ import { Avatar, cn, Input, Select } from '@quid/ui'
 import { useQuery } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { useOrgContext } from '@/components/org-context'
-import { NamePlate, ProfileEffect } from '@/components/profile/cosmetics-fx'
+import { bubbleClass, NamePlate, ProfileEffect } from '@/components/profile/cosmetics-fx'
 import { ThemeSwatch } from '@/components/shop/theme-swatch'
 import { get } from '@/lib/api'
 import { displayName } from '@/lib/format'
@@ -44,6 +46,7 @@ export const KIND_LABEL: Record<ItemKind, string> = {
   decoration: 'Decoration',
   effect: 'Profile effect',
   plate: 'Name plate',
+  bubble: 'Chat bubble',
   theme: 'Theme (CSS)',
 }
 
@@ -111,6 +114,19 @@ export const BUILTIN_ITEMS: ShopItem[] = [
       price: pl.price,
       rarity: tierOfPrice(pl.price),
       ...evFields(pl.event),
+    }),
+  ),
+  ...BUBBLES.map(
+    (b): ShopItem => ({
+      kind: 'bubble',
+      value: b.id,
+      itemId: b.id,
+      decoration: '',
+      name: b.name,
+      description: b.description,
+      price: b.price,
+      rarity: tierOfPrice(b.price),
+      ...evFields(b.event),
     }),
   ),
   ...THEMES.map(
@@ -193,6 +209,7 @@ export function itemName(id: string | null | undefined, community: Cosmetic[]) {
     themeById(key)?.name ??
     effectById(key)?.name ??
     plateById(key)?.name ??
+    bubbleById(key)?.name ??
     key
   )
 }
@@ -249,6 +266,25 @@ export function ItemPreview({ it, compact }: { it: ShopItem; compact?: boolean }
       >
         <Avatar name={me.name} id={me.id} src={me.avatarUrl} size={compact ? 'md' : 'lg'} />
         <ProfileEffect value={it.value} />
+      </div>
+    )
+  if (it.kind === 'bubble')
+    return (
+      <div
+        className={cn(
+          'mb-1 flex w-full flex-col justify-center gap-1 rounded-lg border border-border bg-bg p-2 text-left',
+          h,
+        )}
+      >
+        {!compact && (
+          <span className="flex items-center gap-1.5 text-[11px] font-semibold">
+            <Avatar name={me.name} id={me.id} src={me.avatarUrl} size="xs" />
+            {displayName(me)}
+          </span>
+        )}
+        <span className="min-w-0">
+          <span className={cn('q-msg-text truncate', bubbleClass(it.value))}>hey whats up 👋</span>
+        </span>
       </div>
     )
   if (it.kind === 'plate')
@@ -386,6 +422,7 @@ export function ItemPicker({
           <option value="decoration">Decorations</option>
           <option value="effect">Effects</option>
           <option value="plate">Name plates</option>
+          <option value="bubble">Chat bubbles</option>
           <option value="theme">Themes</option>
         </Select>
         <Input

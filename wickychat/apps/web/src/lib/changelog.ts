@@ -15,6 +15,20 @@ export interface Update {
 
 export const UPDATES: Update[] = [
   {
+    id: '2026-11-12-chat-bubbles',
+    date: '2026-11-12',
+    emoji: '💬',
+    title: 'Chat bubbles',
+    summary: 'A new kind of cosmetic that goes behind every message you send.',
+    tag: 'new',
+    items: [
+      '20 bubbles in the Shop under Chat bubbles, from Cloud and Sticky Note to Neon Sign, Hologram and a spinning Rainbow Border.',
+      'Everyone in the chat see\'s your bubble on your messages.',
+      'Theres a new Bubble Crate, and the Spooky, Winter and Sweetheart crates have a seasonal bubble each.',
+      'Wear them from the Wardrobe like everything else, and trade, sell or gift them too.',
+    ],
+  },
+  {
     id: '2026-11-12-calendar-office-hours',
     date: '2026-11-12',
     emoji: '📅',

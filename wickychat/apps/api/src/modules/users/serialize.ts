@@ -8,6 +8,7 @@ type UserRow = Pick<
   decoration?: string | null
   profileStyle?: Record<string, unknown> | null
   namePlate?: string | null
+  chatBubble?: string | null
   profileEffect?: string | null
 }
 
@@ -22,6 +23,7 @@ export const userCols = {
   decoration: users.decoration,
   profileStyle: users.profileStyle,
   namePlate: users.namePlate,
+  chatBubble: users.chatBubble,
   profileEffect: users.profileEffect,
 }
 
@@ -43,6 +45,7 @@ export function toUserSummary(u: UserRow): UserSummary {
     decoration: u.decoration ?? null,
     nameStyle: nameStyle(u.profileStyle),
     namePlate: u.namePlate ?? null,
+    chatBubble: u.chatBubble ?? null,
     profileEffect: u.profileEffect ?? null,
   }
 }

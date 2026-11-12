@@ -139,6 +139,7 @@ export async function loadMe(
       isBot: false,
       decoration: u.decoration,
       namePlate: u.namePlate,
+      chatBubble: u.chatBubble,
       profileEffect: u.profileEffect,
       bio: u.bio,
       pronouns: u.pronouns,

@@ -15,6 +15,7 @@ import {
   users,
 } from '@quid/db'
 import {
+  BUBBLE_IDS,
   builtinItem,
   builtinMakers,
   buyPrice,
@@ -47,7 +48,7 @@ import { changeCoins, takeOffItem } from './service'
 type Db = AppContext['db']
 type Tx = Parameters<Parameters<Db['transaction']>[0]>[0]
 
-const BUILTIN_IDS = [...DECORATION_IDS, ...EFFECT_IDS, ...PLATE_IDS, ...THEME_IDS]
+const BUILTIN_IDS = [...DECORATION_IDS, ...EFFECT_IDS, ...PLATE_IDS, ...BUBBLE_IDS, ...THEME_IDS]
 const PERSON = /^p:([0-9a-f-]{36})$/
 
 export interface Listed {

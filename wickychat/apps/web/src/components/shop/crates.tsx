@@ -42,7 +42,7 @@ import { Gift, Info, Volume2, VolumeX } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { PeoplePicker } from '@/components/dialogs/people-picker'
 import { useOrgContext } from '@/components/org-context'
-import { NamePlate } from '@/components/profile/cosmetics-fx'
+import { bubbleClass, NamePlate } from '@/components/profile/cosmetics-fx'
 import { ThemeSwatch } from '@/components/shop/theme-swatch'
 import { del, errorMessage, get, post, put } from '@/lib/api'
 import { displayName, relative } from '@/lib/format'
@@ -138,6 +138,8 @@ export function DropTile({
           />
         ) : it.kind === 'theme' ? (
           <ThemeSwatch css={it.css ?? ''} className={big ? 'h-20 w-32' : 'h-12 w-20'} />
+        ) : it.kind === 'bubble' ? (
+          <span className={cn(bubbleClass(it.value), big ? 'text-sm' : 'text-2xs')}>hey 👋</span>
         ) : it.kind === 'plate' ? (
           <span
             className={cn(

@@ -78,6 +78,7 @@ export const users = pgTable(
     /** Equipped profile card effect and name plate (built-in id or `u:<cosmetic id>`). */
     profileEffect: text('profile_effect'),
     namePlate: text('name_plate'),
+    chatBubble: text('chat_bubble'),
     /** WickyChat: extra daily-wheel spins (from crates). */
     spinTickets: integer('spin_tickets').notNull().default(0),
     /** WickyChat: up to 6 owned item ids pinned on their profile shelf. */

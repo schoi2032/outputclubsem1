@@ -14,7 +14,7 @@ import { ItemPreview, RARITY, type ShopItem, useCatalog } from '@/components/sho
 import { errorMessage, get, put } from '@/lib/api'
 import { displayName } from '@/lib/format'
 import { keys } from '@/lib/queries'
-import { NamePlate, ProfileEffect } from './cosmetics-fx'
+import { bubbleClass, NamePlate, ProfileEffect } from './cosmetics-fx'
 
 type Filter = ItemKind | 'all' | 'wearing'
 
@@ -24,6 +24,7 @@ const TABS: { id: Filter; label: string }[] = [
   { id: 'decoration', label: 'Decorations' },
   { id: 'effect', label: 'Effects' },
   { id: 'plate', label: 'Name plates' },
+  { id: 'bubble', label: 'Chat bubbles' },
   { id: 'theme', label: 'Themes' },
 ]
 
@@ -31,6 +32,7 @@ const SLOT_LABEL: Record<ItemKind, string> = {
   decoration: 'Decoration',
   effect: 'Effect',
   plate: 'Name plate',
+  bubble: 'Chat bubble',
   theme: 'Theme',
 }
 
@@ -56,6 +58,7 @@ export function Wardrobe() {
     if (it.kind === 'theme') return w.equippedTheme === it.itemId
     if (it.kind === 'effect') return w.equippedEffect === it.value
     if (it.kind === 'plate') return w.equippedPlate === it.value
+    if (it.kind === 'bubble') return w.equippedBubble === it.value
     return w.equipped?.split('|')[0] === it.itemId
   }
 
@@ -121,6 +124,7 @@ export function Wardrobe() {
     decoration: hover?.kind === 'decoration' ? hover.decoration : (w?.equipped ?? undefined),
     effect: hover?.kind === 'effect' ? hover.value : w?.equippedEffect,
     plate: hover?.kind === 'plate' ? hover.value : w?.equippedPlate,
+    bubble: hover?.kind === 'bubble' ? hover.value : w?.equippedBubble,
   }
 
   return (
@@ -143,6 +147,16 @@ export function Wardrobe() {
               <NamePlate value={look.plate} />
               <span className="text-[13px] font-semibold text-white">{displayName(me)}</span>
             </div>
+            {look.bubble && (
+              <span
+                className={cn(
+                  'max-w-[90%] truncate text-[12px] text-white',
+                  bubbleClass(look.bubble),
+                )}
+              >
+                hi 👋
+              </span>
+            )}
           </div>
           <ul className="grid flex-1 grid-cols-2 gap-2">
             {(Object.keys(SLOT_LABEL) as ItemKind[]).map((k) => {

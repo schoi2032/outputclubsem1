@@ -3,7 +3,7 @@
  * like a case in a game: open it whenever you like, gift it or trade it. Opening rolls one drop.
  * The server rolls; the web app only plays the spinning reel that lands on what you got.
  */
-import { decorationById, effectById, plateById, themeById } from './wicky'
+import { bubbleById, decorationById, effectById, plateById, themeById } from './wicky'
 
 export type CrateTier = 'common' | 'rare' | 'epic' | 'legendary'
 
@@ -110,10 +110,41 @@ export const CRATES: CrateDef[] = [
       i('legendary', 't-macchiato'),
     ],
   },
+  {
+    id: 'c-bubble',
+    name: 'Bubble Crate',
+    emoji: '💬',
+    description: 'A new chat bubble for your messages, or coins.',
+    price: 150,
+    colors: ['#ff8fc7', '#5ec8ff'],
+    drops: [
+      c('common', 50),
+      c('common', 90),
+      tk('common', 1),
+      i('common', 'b-cloud'),
+      i('common', 'b-sky'),
+      i('common', 'b-bubblegum'),
+      i('common', 'b-mint'),
+      i('rare', 'b-notebook'),
+      i('rare', 'b-sticky'),
+      i('rare', 'b-chalk'),
+      i('rare', 'b-pixel'),
+      i('rare', 'b-terminal'),
+      i('epic', 'b-glass'),
+      i('epic', 'b-neon'),
+      i('epic', 'b-galaxy'),
+      i('epic', 'b-lava'),
+      c('legendary', 1000),
+      i('legendary', 'b-holo'),
+      i('legendary', 'b-gold'),
+      i('legendary', 'b-rainbow'),
+    ],
+  },
   ...seasonCrate('halloween', '🎃', 'Spooky Crate', '#ff7a00', '#6d28d9', [
     i('common', 'pumpkin'),
     i('common', 'ghost'),
     i('rare', 'p-pumpkin'),
+    i('rare', 'b-spooky'),
     i('epic', 'e-bats'),
     i('legendary', 't-spooky'),
   ]),
@@ -126,6 +157,7 @@ export const CRATES: CrateDef[] = [
   ...seasonCrate('winter', '🎁', 'Winter Crate', '#38bdf8', '#e0f2fe', [
     i('common', 'snow'),
     i('rare', 'p-frost'),
+    i('rare', 'b-snow'),
     i('epic', 'e-winter'),
     i('legendary', 't-frost'),
   ]),
@@ -137,6 +169,7 @@ export const CRATES: CrateDef[] = [
   ...seasonCrate('valentine', '💝', 'Sweetheart Crate', '#ff4d8d', '#ffb3c6', [
     i('common', 'hearts'),
     i('rare', 'p-rose'),
+    i('rare', 'b-heart'),
     i('epic', 'e-cupid'),
   ]),
   ...seasonCrate('spring', '🌷', 'Bloom Crate', '#f9a8d4', '#86efac', [
@@ -200,7 +233,11 @@ export const dropKey = (d: CrateDrop) =>
 /** Name of a built-in item, for crate contents. */
 export function builtinName(id: string) {
   return (
-    decorationById(id)?.name ?? effectById(id)?.name ?? plateById(id)?.name ?? themeById(id)?.name
+    decorationById(id)?.name ??
+    effectById(id)?.name ??
+    plateById(id)?.name ??
+    bubbleById(id)?.name ??
+    themeById(id)?.name
   )
 }
 

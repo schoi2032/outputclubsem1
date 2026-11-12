@@ -3,7 +3,7 @@
  * background behind a name). Values are Shop item ids (`e-snow`, `p-ocean`) or student-made
  * ones (`u:<id>|i:<image file id>`).
  */
-import { customImageFile, effectById } from '@quid/shared'
+import { bubbleById, customImageFile, effectById } from '@quid/shared'
 
 const CONFETTI = ['#ff5c8a', '#ffd23f', '#3bceac', '#5b6ee8', '#ff8c42']
 
@@ -73,4 +73,9 @@ export function NamePlate({ value }: { value?: string | null }) {
     )
   if (!/^p-[a-z]+$/.test(value)) return null
   return <span aria-hidden="true" className={`q-plate q-plate-${value.slice(2)}`} />
+}
+
+export function bubbleClass(value?: string | null) {
+  const b = bubbleById(value)
+  return b ? `q-bubble q-bubble-${b.id.slice(2)}` : ''
 }

@@ -6,6 +6,7 @@
 import { randomInt } from 'node:crypto'
 import { coinTransactions, cosmetics, marketListings, userItems } from '@quid/db'
 import {
+  BUBBLE_IDS,
   builtinItem,
   type CrateTier,
   DECORATION_IDS,
@@ -28,7 +29,7 @@ import { CUSTOM_ITEM } from './contents'
 import { loadWallet } from './routes'
 import { takeOffItem } from './service'
 
-const BUILTIN_IDS = [...DECORATION_IDS, ...EFFECT_IDS, ...PLATE_IDS, ...THEME_IDS]
+const BUILTIN_IDS = [...DECORATION_IDS, ...EFFECT_IDS, ...PLATE_IDS, ...BUBBLE_IDS, ...THEME_IDS]
 
 export async function tradeUpRoutes(app: App, ctx: AppContext) {
   app.post(

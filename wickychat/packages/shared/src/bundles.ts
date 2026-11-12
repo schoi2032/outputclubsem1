@@ -3,13 +3,13 @@
  * Built-in bundles are below; students make their own from their cosmetics and Shop items.
  */
 import { isEventLive } from './seasons'
-import { decorationById, effectById, plateById, themeById } from './wicky'
+import { bubbleById, decorationById, effectById, plateById, themeById } from './wicky'
 
 /** A built-in Shop item's price and event (if it's seasonal). */
 export function builtinItem(id: string): { price: number; event?: string } | undefined {
   const d = decorationById(id)
   if (d) return { price: d.price }
-  const x = effectById(id) ?? plateById(id) ?? themeById(id)
+  const x = effectById(id) ?? plateById(id) ?? bubbleById(id) ?? themeById(id)
   return x ? { price: x.price, event: x.event } : undefined
 }
 

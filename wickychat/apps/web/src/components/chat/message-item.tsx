@@ -38,6 +38,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import { memo, useState } from 'react'
+import { bubbleClass } from '@/components/profile/cosmetics-fx'
 import { type LocalMessage, useMessageActions } from '@/lib/actions'
 import { errorMessage, post } from '@/lib/api'
 import { useEmojiMap } from '@/lib/expressions'
@@ -317,10 +318,15 @@ export const MessageItem = memo(function MessageItem({
           </div>
         ) : (
           <div
-            className={prefs.jumboEmoji && isEmojiOnly(m.text, emojis) ? 'q-jumbo' : 'q-msg-text'}
+            className={cn(
+              prefs.jumboEmoji && isEmojiOnly(m.text, emojis) ? 'q-jumbo' : 'q-msg-text',
+              !m.author.isBot &&
+                !(prefs.jumboEmoji && isEmojiOnly(m.text, emojis)) &&
+                bubbleClass(m.author.chatBubble),
+            )}
           >
             <RichText doc={m.body} />
-            {m.editedAt && <span className="text-2xs text-fg-subtle"> (edited)</span>}
+            {m.editedAt && <span className="text-2xs opacity-60"> (edited)</span>}
           </div>
         )}
 

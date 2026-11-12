@@ -19,6 +19,7 @@ export interface UserSummary {
   nameStyle?: { font?: string; colors?: string[] } | null
   /** WickyChat: animated background behind the name in lists (Shop item value). */
   namePlate?: string | null
+  chatBubble?: string | null
   /** WickyChat: animated overlay on the profile card (Shop item value). */
   profileEffect?: string | null
 }

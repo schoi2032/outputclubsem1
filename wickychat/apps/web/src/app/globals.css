@@ -734,3 +734,262 @@
     opacity: 0.6;
   }
 }
+
+.q-bubble {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  margin-top: 3px;
+  padding: 6px 12px 7px;
+  border-radius: 14px;
+  border-top-left-radius: 5px;
+  overflow: hidden;
+  isolation: isolate;
+}
+.q-bubble a {
+  color: inherit;
+  text-decoration: underline;
+}
+.q-bubble-cloud {
+  background: #fff;
+  color: #2b2d42;
+  box-shadow: 0 2px 7px rgba(80, 90, 120, 0.18);
+}
+.q-bubble-sky {
+  background: linear-gradient(170deg, #d9f0ff, #a8d8ff);
+  color: #0d3557;
+}
+.q-bubble-bubblegum {
+  background: linear-gradient(160deg, #ffb3d9, #ff7ab8);
+  color: #4a0a2c;
+}
+.q-bubble-mint {
+  background-color: #c9f5e1;
+  background-image: radial-gradient(rgba(40, 120, 85, 0.22) 1.5px, transparent 2px);
+  background-size: 13px 11px;
+  color: #12402c;
+}
+.q-bubble-notebook {
+  background-color: #fffdf6;
+  background-image:
+    linear-gradient(90deg, transparent 13px, #ff8a8a 13px, #ff8a8a 15px, transparent 15px),
+    repeating-linear-gradient(#fffdf6 0 20px, #b9d3f0 20px 21px);
+  padding-left: 22px;
+  color: #23305a;
+  border: 1px solid #e6e1cf;
+}
+.q-bubble-sticky {
+  background: #fff07a;
+  color: #4a3d00;
+  border-radius: 3px;
+  transform: rotate(-0.6deg);
+  box-shadow: 2px 3px 6px rgba(0, 0, 0, 0.16);
+}
+.q-bubble-chalk {
+  background: #2f4a3a;
+  color: #f1f6ef;
+  border: 3px solid #8b5a2b;
+  border-radius: 6px;
+  font-family: "Comic Sans MS", "Chalkboard SE", cursive;
+  text-shadow: 0 0 1px rgba(255, 255, 255, 0.6);
+}
+.q-bubble-pixel {
+  background: #f7f7f7;
+  color: #111;
+  border-radius: 0;
+  box-shadow:
+    0 -4px 0 0 #6a5cff,
+    0 4px 0 0 #6a5cff,
+    -4px 0 0 0 #6a5cff,
+    4px 0 0 0 #6a5cff;
+  margin: 7px 4px 4px;
+  font-family: "Courier New", monospace;
+}
+.q-bubble-sunset {
+  background: linear-gradient(120deg, #ff9a3c, #ff5e7e 60%, #c3489b);
+  color: #fff;
+}
+.q-bubble-terminal {
+  background: #0b0f0b;
+  color: #3dff7a;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  border: 1px solid #1f3d24;
+  border-radius: 6px;
+}
+.q-bubble-terminal::after {
+  content: "_";
+  margin-left: 2px;
+  animation: q-blink 1.1s steps(1) infinite;
+}
+.q-bubble-glass {
+  background: rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(9px) saturate(1.6);
+  -webkit-backdrop-filter: blur(9px) saturate(1.6);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 3px 12px rgba(0, 0, 0, 0.12);
+}
+.q-bubble-neon {
+  background: #160616;
+  color: #ffe3f8;
+  border: 2px solid #ff3ccf;
+  box-shadow:
+    0 0 6px #ff3ccf,
+    inset 0 0 7px rgba(255, 60, 207, 0.55);
+  text-shadow: 0 0 5px #ff3ccf;
+  animation: q-neon 4.3s infinite;
+}
+.q-bubble-galaxy {
+  background:
+    radial-gradient(1px 1px at 20% 30%, #fff, transparent),
+    radial-gradient(1px 1px at 70% 60%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 45% 80%, #fff, transparent),
+    radial-gradient(1px 1px at 88% 22%, #fff, transparent),
+    linear-gradient(130deg, #1a0b3d, #4b1d7a 55%, #8a2f8f);
+  background-size: 100% 100%;
+  color: #f3e9ff;
+  animation: q-twinkle-bg 3s ease-in-out infinite alternate;
+}
+.q-bubble-holo {
+  background: linear-gradient(115deg, #ffd1f7, #c1f0ff, #d7ffc4, #fff3b0, #e3c8ff, #ffd1f7);
+  background-size: 300% 300%;
+  color: #2a2350;
+  animation: q-holo 6s linear infinite;
+}
+.q-bubble-lava {
+  background:
+    radial-gradient(circle at 30% 125%, rgba(255, 179, 0, 0.55) 0 18%, transparent 19%),
+    radial-gradient(circle at 78% -15%, rgba(255, 112, 67, 0.7) 0 21%, transparent 22%),
+    linear-gradient(160deg, #b71c1c, #e64a19);
+  background-size: 140% 140%;
+  color: #fff4e0;
+  animation: q-holo 9s ease-in-out infinite alternate;
+}
+.q-bubble-gold {
+  background: linear-gradient(
+    105deg,
+    #b8860b 0%,
+    #f5d76e 35%,
+    #fff6c9 45%,
+    #f5d76e 55%,
+    #b8860b 100%
+  );
+  background-size: 250% 100%;
+  color: #3d2a00;
+  animation: q-shine 3.6s ease-in-out infinite;
+}
+.q-bubble-rainbow {
+  background: var(--color-bg);
+  padding: 7px 13px 8px;
+}
+.q-bubble-rainbow::before {
+  content: "";
+  position: absolute;
+  inset: -60%;
+  z-index: -2;
+  background: conic-gradient(#ff4d4d, #ffb84d, #fff24d, #5cff7a, #4dc9ff, #a64dff, #ff4d4d);
+  animation: q-spin 4s linear infinite;
+}
+.q-bubble-rainbow::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  z-index: -1;
+  border-radius: 12px;
+  border-top-left-radius: 4px;
+  background: var(--color-bg);
+}
+.q-bubble-spooky {
+  background: linear-gradient(150deg, #3b1260, #ff7a00 140%);
+  color: #ffe9d1;
+  border: 1px dashed rgba(255, 255, 255, 0.35);
+}
+.q-bubble-snow {
+  background:
+    radial-gradient(2px 2px at 15% 20%, #fff, transparent),
+    radial-gradient(2px 2px at 60% 70%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 85% 35%, #fff, transparent),
+    linear-gradient(180deg, #8fd3ff, #4aa3e8);
+  background-size:
+    60px 50px,
+    70px 60px,
+    50px 45px,
+    100% 100%;
+  color: #06294a;
+  animation: q-snowfall 5s linear infinite;
+}
+.q-bubble-heart {
+  background-color: #ffe0ea;
+  background-image: radial-gradient(
+    circle at 50% 50%,
+    rgba(255, 77, 141, 0.25) 3px,
+    transparent 4px
+  );
+  background-size: 22px 22px;
+  color: #6b0f33;
+  border: 1px solid #ffb3c6;
+}
+@keyframes q-blink {
+  50% {
+    opacity: 0;
+  }
+}
+@keyframes q-neon {
+  0%,
+  92%,
+  100% {
+    opacity: 1;
+  }
+  94% {
+    opacity: 0.55;
+  }
+  96% {
+    opacity: 1;
+  }
+  97% {
+    opacity: 0.7;
+  }
+}
+@keyframes q-twinkle-bg {
+  to {
+    filter: brightness(1.18);
+  }
+}
+@keyframes q-holo {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+@keyframes q-shine {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+@keyframes q-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+@keyframes q-snowfall {
+  to {
+    background-position:
+      0 50px,
+      0 60px,
+      0 45px,
+      0 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .q-bubble,
+  .q-bubble::before,
+  .q-bubble::after {
+    animation: none !important;
+  }
+}

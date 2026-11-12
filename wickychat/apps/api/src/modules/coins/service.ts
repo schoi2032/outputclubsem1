@@ -175,7 +175,13 @@ export function currentStreak(lastClaim: Date | null, streak: number) {
 export async function takeOffItem(db: Db | Tx, userId: string, itemId: string) {
   const u = await db.query.users.findFirst({
     where: eq(users.id, userId),
-    columns: { decoration: true, appTheme: true, profileEffect: true, namePlate: true },
+    columns: {
+      decoration: true,
+      appTheme: true,
+      profileEffect: true,
+      namePlate: true,
+      chatBubble: true,
+    },
   })
   if (!u) return
   const m = /^u:([0-9a-f-]{36})$/.exec(itemId)
@@ -186,6 +192,7 @@ export async function takeOffItem(db: Db | Tx, userId: string, itemId: string) {
   if (u.appTheme && values.has(u.appTheme)) off.appTheme = null
   if (u.profileEffect && values.has(u.profileEffect)) off.profileEffect = null
   if (u.namePlate && values.has(u.namePlate)) off.namePlate = null
+  if (u.chatBubble && values.has(u.chatBubble)) off.chatBubble = null
   if (Object.keys(off).length) await db.update(users).set(off).where(eq(users.id, userId))
 }
 

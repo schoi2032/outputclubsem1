@@ -185,6 +185,7 @@ type Tab =
   | 'decorations'
   | 'effects'
   | 'plates'
+  | 'bubbles'
   | 'themes'
   | 'stickers'
   | 'create'
@@ -207,6 +208,7 @@ const TABS: Tab[] = [
   'decorations',
   'effects',
   'plates',
+  'bubbles',
   'themes',
   'stickers',
   'create',
@@ -237,6 +239,7 @@ const GROUPS: { id: string; label: string; tabs: Tab[] }[] = [
       'decorations',
       'effects',
       'plates',
+      'bubbles',
       'themes',
       'stickers',
       'crates',
@@ -263,6 +266,7 @@ const TAB_LABEL: Record<Tab, string> = {
   decorations: 'Decorations',
   effects: 'Effects',
   plates: 'Name plates',
+  bubbles: 'Chat bubbles',
   themes: 'Themes',
   stickers: 'Stickers',
   create: 'Create',
@@ -288,6 +292,7 @@ const KIND_FILTERS: { id: KindFilter; label: string }[] = [
   { id: 'decoration', label: 'Decorations' },
   { id: 'effect', label: 'Effects' },
   { id: 'plate', label: 'Name plates' },
+  { id: 'bubble', label: 'Chat bubbles' },
   { id: 'theme', label: 'Themes' },
   { id: 'crate', label: 'Crates' },
 ]
@@ -420,7 +425,7 @@ function ShopInner() {
     )
   const equip = (id: string | null) =>
     act(`equip:${id}`, () => put<Wallet>('/api/me/decoration', { itemId: id }))
-  const equipSlot = (slot: 'effect' | 'plate', id: string | null) =>
+  const equipSlot = (slot: 'effect' | 'plate' | 'bubble', id: string | null) =>
     act(`${slot}:${id}`, () => put<Wallet>('/api/me/equip', { slot, itemId: id }))
   const switchTheme = (id: string | null) => {
     setPreview(null)
@@ -464,11 +469,16 @@ function ShopInner() {
   const card = (it: ShopItem) => {
     const owned = ownedSet.has(it.itemId)
     const isTheme = it.kind === 'theme'
-    const slot = it.kind === 'effect' || it.kind === 'plate' ? it.kind : null
+    const slot =
+      it.kind === 'effect' || it.kind === 'plate' || it.kind === 'bubble' ? it.kind : null
     const wearing = isTheme
       ? w?.equippedTheme === it.itemId
       : slot
-        ? (slot === 'effect' ? w?.equippedEffect : w?.equippedPlate) === it.value
+        ? (slot === 'effect'
+            ? w?.equippedEffect
+            : slot === 'plate'
+              ? w?.equippedPlate
+              : w?.equippedBubble) === it.value
         : equippedKey === it.itemId
     const takeOff = () => (isTheme ? switchTheme(null) : slot ? equipSlot(slot, null) : equip(null))
     const putOn = () =>
@@ -1108,6 +1118,13 @@ function ShopInner() {
                 byKind('plate', true),
                 'No student-made name plates yet. Make one in the Create tab!',
               )}
+            </TabsContent>
+            <TabsContent value="bubbles" className="pt-4">
+              <p className="mb-3 text-[13px] text-fg-muted">
+                A style behind every message you send, so everyone in the chat can see it. Theres
+                also a Bubble Crate if your feeling lucky.
+              </p>
+              {grid(byKind('bubble', false), '')}
             </TabsContent>
             <TabsContent value="themes" className="pt-4">
               <p className="mb-3 text-[13px] text-fg-muted">
@@ -1855,9 +1872,9 @@ function CreatePicker({ catalog }: { catalog: Map<string, ShopItem> }) {
         <CreateCrate catalog={catalog} />
       ) : kind === 'bundle' ? (
         <CreateBundle />
-      ) : (
+      ) : kind === 'effect' || kind === 'plate' ? (
         <CreateImageItem key={kind} kind={kind} />
-      )}
+      ) : null}
     </>
   )
 }

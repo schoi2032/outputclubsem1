@@ -12,6 +12,8 @@ import {
   users,
 } from '@quid/db'
 import {
+  BUBBLE_IDS,
+  bubbleById,
   builtinMakers,
   buyPrice,
   COIN_GIFT,
@@ -70,6 +72,7 @@ function equipFor(
   if (themeById(itemId) || custom?.kind === 'theme') return { appTheme: itemId }
   if (effectById(itemId)) return { profileEffect: itemId }
   if (plateById(itemId)) return { namePlate: itemId }
+  if (bubbleById(itemId)) return { chatBubble: itemId }
   if (custom?.kind === 'effect') return { profileEffect: customImageValue(custom) }
   if (custom?.kind === 'plate') return { namePlate: customImageValue(custom) }
   return { decoration: custom ? cosmeticDecoration(custom) : itemId }
@@ -116,6 +119,7 @@ export async function loadWallet(ctx: AppContext, userId: string): Promise<Walle
         dailyStreak: true,
         profileEffect: true,
         namePlate: true,
+        chatBubble: true,
         spinTickets: true,
       },
     }),
@@ -157,6 +161,7 @@ export async function loadWallet(ctx: AppContext, userId: string): Promise<Walle
       THEME_IDS.includes(o.itemId) ||
       EFFECT_IDS.includes(o.itemId) ||
       PLATE_IDS.includes(o.itemId) ||
+      BUBBLE_IDS.includes(o.itemId) ||
       CUSTOM.test(o.itemId),
   )
   const giftedBy: Wallet['giftedBy'] = {}
@@ -182,6 +187,7 @@ export async function loadWallet(ctx: AppContext, userId: string): Promise<Walle
     equippedTheme: u.appTheme,
     equippedEffect: u.profileEffect,
     equippedPlate: u.namePlate,
+    equippedBubble: u.chatBubble,
     streak: currentStreak(u.dailyClaimedAt, u.dailyStreak),
     dailyAvailable: !u.dailyClaimedAt || u.dailyClaimedAt < startOfSchoolDay(),
     earnedFromMessagesToday: earned,
@@ -300,7 +306,11 @@ export async function coinRoutes(app: App, ctx: AppContext) {
       let price: number
       let custom: CosmeticRow | undefined
       const builtin =
-        decorationById(itemId) ?? themeById(itemId) ?? effectById(itemId) ?? plateById(itemId)
+        decorationById(itemId) ??
+        themeById(itemId) ??
+        effectById(itemId) ??
+        plateById(itemId) ??
+        bubbleById(itemId)
       const m = CUSTOM.exec(itemId)
       if (builtin) {
         if ('event' in builtin && builtin.event && !isEventLive(builtin.event))
@@ -409,7 +419,7 @@ export async function coinRoutes(app: App, ctx: AppContext) {
     {
       schema: {
         body: z.object({
-          slot: z.enum(['effect', 'plate']),
+          slot: z.enum(['effect', 'plate', 'bubble']),
           itemId: z.string().max(60).nullable(),
         }),
       },
@@ -417,7 +427,8 @@ export async function coinRoutes(app: App, ctx: AppContext) {
     async (req) => {
       const me = requireUser(req)
       const { slot, itemId } = req.body
-      const column = slot === 'effect' ? 'profileEffect' : 'namePlate'
+      const column =
+        slot === 'effect' ? 'profileEffect' : slot === 'plate' ? 'namePlate' : 'chatBubble'
       let value: string | null = null
       if (itemId) {
         const owned = await ctx.db.query.userItems.findFirst({
