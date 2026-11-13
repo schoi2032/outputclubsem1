@@ -14,6 +14,7 @@ import {
   type CosmeticManifest,
   CRATES,
   CREATOR_SHARE,
+  cssImageUrl,
   eventEndsAt,
   eventStartsAt,
   FLAIR_KINDS,
@@ -83,6 +84,7 @@ import { CrateArt, CratesView, CreateCrate, MyCrates, useCrateDefs } from '@/com
 import { CreateFlair } from '@/components/shop/create-flair'
 import { CssImageButton, insertAtCursor } from '@/components/shop/css-image'
 import { EarnView, earnWaiting, useEarn, useTrivia } from '@/components/shop/earn'
+import { EXAMPLE_THEME, ExampleBox, exampleFile } from '@/components/shop/example-file'
 import { FlairPreview } from '@/components/shop/flair-preview'
 import { InvestView, useStocks } from '@/components/shop/invest'
 import {
@@ -180,8 +182,8 @@ const EXAMPLE_MANIFEST: CosmeticManifest = {
   name: 'Galaxy Ring',
   description: 'Stars all around you',
   price: 150,
-  frame: 'frame.gif',
-  sticker: 'star.png',
+  frame: 'decoration-frame.webp',
+  sticker: 'decoration-sticker.png',
   stickerPosition: 'tr',
 }
 
@@ -1798,6 +1800,35 @@ function CreateImageItem({ kind }: { kind: 'effect' | 'plate' }) {
             )}
           </Field>
         )}
+        <ExampleBox
+          title={kind === 'effect' ? 'Example: Falling Stars' : 'Example: Neon Ribbons'}
+          tips={
+            kind === 'effect'
+              ? [
+                  'About 340×500, a tall image the same shape as a profile card.',
+                  'Transparent background! Only the stars should show, so people can still read the card.',
+                  'Keep the middle mostly empty and put the busy stuff near the edges.',
+                  'An animated WebP or GIF loops over and over, under 2 MB.',
+                ]
+              : [
+                  'About 600×80, long and thin like a banner.',
+                  'Darker or softer colours so the name on top is still easy to read.',
+                  'It can be animated (WebP or GIF) and it loops, under 2 MB.',
+                  'Rounded corners look nice, and keep important stuff away from the left where the name goes.',
+                ]
+          }
+          files={[
+            kind === 'effect'
+              ? { name: 'profile-effect.webp', label: 'Download the example' }
+              : { name: 'name-plate.webp', label: 'Download the example' },
+          ]}
+          onTry={async () => {
+            setFile(
+              await exampleFile(kind === 'effect' ? 'profile-effect.webp' : 'name-plate.webp'),
+            )
+            if (!name) setName(kind === 'effect' ? 'Falling Stars' : 'Neon Ribbons')
+          }}
+        />
         <div>
           <p className="mb-1 text-[13px] font-medium">Image</p>
           <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-[13px] hover:bg-bg-muted">
@@ -2130,6 +2161,25 @@ function CreateTheme() {
             )}
           </Field>
         )}
+        <ExampleBox
+          title="Example: Galaxy Glass (a theme with a background picture)"
+          tips={[
+            'Themes are CSS. Change the --q-… colours and the whole app changes.',
+            'For a picture behind everything, press Add image, then use it on body like the example does.',
+            'Background pictures look best big (1600×1000 or so) and blurry or dark, so text stays readable.',
+            'See through panels (rgb(... / 0.6)) let your picture show thru. Press Preview to try it on the real app.',
+          ]}
+          files={[{ name: 'theme-background.webp', label: 'Example background' }]}
+          onTry={async () => {
+            const a = await upload<Attachment>(
+              `${api}/files?purpose=cosmetic`,
+              await exampleFile('theme-background.webp'),
+            ).promise
+            setCss(EXAMPLE_THEME(cssImageUrl(a.id)))
+            if (!name) setName('Galaxy Glass')
+            setPreviewing(true)
+          }}
+        />
         <div>
           <div className="mb-1 flex items-center justify-between gap-2">
             <p className="text-[13px] font-medium">CSS</p>
@@ -2396,6 +2446,30 @@ function CreateCosmetic() {
             )}
           </Field>
         )}
+        <ExampleBox
+          title="Not sure what to make? Try the Galaxy Ring"
+          tips={[
+            'Frame: a square image (512×512 is great) with a see through middle, the ring goes near the edges.',
+            'Sticker: a small PNG with a transparent background, about 200×200. It sits on one edge of the picture.',
+            'Animated WebP or GIF frames move! Keep them under 2 MB so they load fast.',
+            'Draw it in any app that exports PNG with transparency (Procreate, Krita, Photopea, Canva…).',
+          ]}
+          files={[
+            { name: 'decoration-frame.webp', label: 'Example frame' },
+            { name: 'decoration-sticker.png', label: 'Example sticker' },
+          ]}
+          onTry={async () => {
+            const [f, st] = await Promise.all([
+              exampleFile('decoration-frame.webp'),
+              exampleFile('decoration-sticker.png'),
+            ])
+            setFrame(f)
+            setSticker(st)
+            setPosition('tr')
+            if (!name) setName('Galaxy Ring')
+            if (!description) setDescription('Stars all around you')
+          }}
+        />
         {imgInput(
           'Frame',
           'A square PNG, GIF or WebP that goes around the whole picture. Leave the middle transparent. Up to 2 MB; GIFs animate.',

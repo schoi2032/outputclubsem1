@@ -24,6 +24,7 @@ import { Copy, Minus, Play, Plus, Upload } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useOrgContext } from '@/components/org-context'
 import { CssImageButton, insertAtCursor } from '@/components/shop/css-image'
+import { ExampleBox, exampleFile } from '@/components/shop/example-file'
 import { FlairPreview } from '@/components/shop/flair-preview'
 import { LiveEditor } from '@/components/shop/live-editor'
 import { errorMessage, post, upload } from '@/lib/api'
@@ -813,6 +814,30 @@ export function CreateFlair({
               </>
             )}
 
+            {kind === 'sound_pack' && (
+              <ExampleBox
+                title="Example: Chime Pack"
+                tips={[
+                  'Keep sounds short! A ping under 1 second, a send sound under half a second.',
+                  'Not to loud, people hear these alot. Fade the end out so it doesnt click.',
+                  'MP3, WAV or OGG, up to 1 MB each. You can make them in GarageBand, BandLab or Audacity.',
+                  'Press the Play buttons after you load them to hear how they sound.',
+                ]}
+                files={[
+                  { name: 'sound-ping.wav', label: 'Example ping' },
+                  { name: 'sound-send.wav', label: 'Example send' },
+                ]}
+                onTry={async () => {
+                  const [n, sd] = await Promise.all([
+                    exampleFile('sound-ping.wav'),
+                    exampleFile('sound-send.wav'),
+                  ])
+                  setNotify(n)
+                  setSend(sd)
+                  if (!name) setName('Chime Pack')
+                }}
+              />
+            )}
             {kind === 'sound_pack' &&
               (
                 [
