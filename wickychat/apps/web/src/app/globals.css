@@ -1463,3 +1463,11 @@
     opacity: 0.55;
   }
 }
+
+.q-ty-pill {
+  padding: 1px 9px 1px 7px;
+  border-radius: 999px;
+  background: var(--typ-bg);
+  border: 1px solid var(--typ-border);
+  line-height: 16px;
+}

@@ -6,6 +6,7 @@ import {
   FLAIR_LABEL,
   MESSAGE_MOTIONS,
   NAME_ANIMS,
+  PROFILE_FONTS,
   parseSpec,
   type SpecKind,
   specValue,
@@ -25,7 +26,8 @@ const HINT: Record<SpecKind, string> = {
   bubble: 'Pick colours, a border and a pattern for the bubble behind messages.',
   name_effect: 'Pick up to 4 colours and how they move.',
   message_effect: 'Pick up to 4 emoji and how they fly out when a message shows up.',
-  typing: 'Pick 1 to 3 emoji or symbols that show while someone types.',
+  typing:
+    'Pick 1 to 3 emoji or symbols and what it says, than style the words with colours, gradients, fonts and a pill.',
   reaction_skin: 'Colours for the reaction pills under messages.',
   mention_style: 'How @mentions look in messages.',
   sound_pack:
@@ -171,8 +173,17 @@ export function CreateFlair({
   const [accent, setAccent] = useState('#8052ff')
   const [useAccent, setUseAccent] = useState(false)
   const [phrase, setPhrase] = useState('')
-  const [phraseColor, setPhraseColor] = useState('#ff7a00')
-  const [usePhraseColor, setUsePhraseColor] = useState(false)
+  const [useWords, setUseWords] = useState(false)
+  const [wordColors, setWordColors] = useState(['#ff5cc8', '#8052ff'])
+  const [wordAnim, setWordAnim] = useState<string>('none')
+  const [font, setFont] = useState('default')
+  const [bold, setBold] = useState(false)
+  const [italic, setItalic] = useState(false)
+  const [size, setSize] = useState('normal')
+  const [usePill, setUsePill] = useState(false)
+  const [pillBg, setPillBg] = useState(['#1d1d2b'])
+  const [usePillBorder, setUsePillBorder] = useState(false)
+  const [pillBorder, setPillBorder] = useState('#ff5cc8')
   const [text, setText] = useState('#ffffff')
   const [border, setBorder] = useState('#ff3ccf')
   const [borderStyle, setBorderStyle] = useState('none')
@@ -197,7 +208,12 @@ export function CreateFlair({
               anim,
               ...(useAccent && { color: accent }),
               ...(phrase.trim().length >= 2 && { phrase: phrase.trim() }),
-              ...(usePhraseColor && { phraseColor }),
+              ...(useWords && { textColors: wordColors, textAnim: wordAnim }),
+              ...(font !== 'default' && { font }),
+              ...(bold && { bold }),
+              ...(italic && { italic }),
+              ...(size !== 'normal' && { size }),
+              ...(usePill && { bg: pillBg, ...(usePillBorder && { border: pillBorder }) }),
             }
           : kind === 'reaction_skin'
             ? { bg: colors.slice(0, 2), border, text, shape, glow }
@@ -491,15 +507,91 @@ export function CreateFlair({
                 />
               )}
             </Field>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
               <Toggle
-                id="cf-phrase-color"
-                label="Colour the words"
-                checked={usePhraseColor}
-                onChange={setUsePhraseColor}
+                id="cf-words"
+                label="Colour the words (pick 2 or 3 for a gradient)"
+                checked={useWords}
+                onChange={setUseWords}
               />
-              {usePhraseColor && (
-                <Color label="Words colour" value={phraseColor} onChange={setPhraseColor} />
+              {useWords && (
+                <div className="flex flex-wrap items-end gap-4">
+                  <Colors value={wordColors} onChange={setWordColors} max={3} />
+                  <Field label="Words animation">
+                    {(p) => (
+                      <Select
+                        {...p}
+                        className="w-auto"
+                        value={wordAnim}
+                        onChange={(e) => setWordAnim(e.target.value)}
+                      >
+                        {NAME_ANIMS.map((x) => (
+                          <option key={x} value={x}>
+                            {ANIM_LABEL[x] ?? x}
+                          </option>
+                        ))}
+                      </Select>
+                    )}
+                  </Field>
+                </div>
+              )}
+            </div>
+            <div className="flex flex-wrap items-end gap-4">
+              <Field label="Font">
+                {(p) => (
+                  <Select
+                    {...p}
+                    className="w-auto"
+                    value={font}
+                    onChange={(e) => setFont(e.target.value)}
+                  >
+                    {PROFILE_FONTS.map((f) => (
+                      <option key={f.id} value={f.id}>
+                        {f.name}
+                      </option>
+                    ))}
+                  </Select>
+                )}
+              </Field>
+              <Field label="Size">
+                {(p) => (
+                  <Select
+                    {...p}
+                    className="w-auto"
+                    value={size}
+                    onChange={(e) => setSize(e.target.value)}
+                  >
+                    <option value="small">Small</option>
+                    <option value="normal">Normal</option>
+                    <option value="big">Big</option>
+                  </Select>
+                )}
+              </Field>
+            </div>
+            <div className="flex flex-wrap items-center gap-4">
+              <Toggle id="cf-bold" label="Bold" checked={bold} onChange={setBold} />
+              <Toggle id="cf-italic" label="Italic" checked={italic} onChange={setItalic} />
+            </div>
+            <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
+              <Toggle
+                id="cf-pill"
+                label="Put it in a pill"
+                checked={usePill}
+                onChange={setUsePill}
+              />
+              {usePill && (
+                <div className="flex flex-wrap items-center gap-4">
+                  <Colors value={pillBg} onChange={setPillBg} max={2} />
+                  <Toggle
+                    id="cf-pill-border"
+                    label="Border"
+                    checked={usePillBorder}
+                    onChange={setUsePillBorder}
+                  />
+                  {usePillBorder && (
+                    <Color label="Pill border colour" value={pillBorder} onChange={setPillBorder} />
+                  )}
+                </div>
               )}
             </div>
           </>

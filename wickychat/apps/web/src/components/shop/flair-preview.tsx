@@ -10,7 +10,7 @@ import {
   mentionStyleProps,
   nameEffectProps,
   reactionSkinProps,
-  TypingGlyphs,
+  TypingLine,
 } from '@/components/profile/flair'
 import { displayName } from '@/lib/format'
 import { playPack } from '@/lib/sounds'
@@ -73,11 +73,8 @@ export function FlairPreview({
   if (kind === 'typing') {
     const spec = specFromValue('typing', value)
     return spec ? (
-      <span className="inline-flex items-center gap-1.5 text-[12px] text-fg-subtle">
-        <TypingGlyphs spec={spec} />
-        <span style={spec.phraseColor ? { color: spec.phraseColor } : undefined}>
-          {typingText(name.split(' ')[0]!, spec)}…
-        </span>
+      <span className="text-[12px] text-fg-subtle">
+        <TypingLine spec={spec} text={typingText(name.split(' ')[0]!, spec)} />
       </span>
     ) : null
   }

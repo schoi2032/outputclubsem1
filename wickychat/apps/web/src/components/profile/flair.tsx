@@ -138,6 +138,51 @@ export function useMessageFx(key: string, createdAt: string, value?: string | nu
   return on ? spec : null
 }
 
+export function TypingLine({ spec, text }: { spec: TypingSpec | null; text: string }) {
+  const words = spec?.textColors
+    ? nameEffectProps({ colors: spec.textColors, anim: spec.textAnim ?? 'none', speed: 1 })
+    : null
+  const pill: Vars | undefined = spec?.bg
+    ? { '--typ-bg': grad(spec.bg, 110), '--typ-border': spec.border ?? 'transparent' }
+    : undefined
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-1.5',
+        pill && 'q-ty-pill',
+        spec?.size === 'small' && 'text-[10px]',
+        spec?.size === 'big' && 'text-[13px]',
+      )}
+      style={pill}
+    >
+      {spec ? (
+        <TypingGlyphs spec={spec} />
+      ) : (
+        <span className="inline-flex gap-0.5">
+          {[0, 1, 2].map((i) => (
+            <span
+              key={i}
+              className="size-1 animate-bounce rounded-full bg-fg-subtle"
+              style={{ animationDelay: `${i * 120}ms` }}
+            />
+          ))}
+        </span>
+      )}
+      <span
+        className={cn(
+          words?.className,
+          spec?.font && `q-font-${spec.font}`,
+          spec?.bold && 'font-bold',
+          spec?.italic && 'italic',
+        )}
+        style={words?.style}
+      >
+        {text}…
+      </span>
+    </span>
+  )
+}
+
 export function TypingGlyphs({ spec }: { spec: TypingSpec }) {
   return (
     <span

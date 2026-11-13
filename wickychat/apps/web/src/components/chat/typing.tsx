@@ -1,6 +1,6 @@
 'use client'
 import { specFromValue, typingText } from '@quid/shared'
-import { TypingGlyphs } from '@/components/profile/flair'
+import { TypingLine } from '@/components/profile/flair'
 import { displayName } from '@/lib/format'
 import { useAiStatus, useMembers } from '@/lib/queries'
 import { useTyping } from '@/lib/realtime'
@@ -32,31 +32,8 @@ export function TypingIndicator({
           ? `${names[0]} and ${names[1]} are typing`
           : 'Several people are typing'
   return (
-    <div className="h-5 px-5 text-2xs text-fg-subtle" aria-live="polite">
-      {text && (
-        <span className="inline-flex items-center gap-1.5">
-          {custom ? (
-            <TypingGlyphs spec={custom} />
-          ) : (
-            <span className="inline-flex gap-0.5">
-              {[0, 1, 2].map((i) => (
-                <span
-                  key={i}
-                  className="size-1 animate-bounce rounded-full bg-fg-subtle"
-                  style={{ animationDelay: `${i * 120}ms` }}
-                />
-              ))}
-            </span>
-          )}
-          <span
-            style={
-              names.length === 1 && custom?.phraseColor ? { color: custom.phraseColor } : undefined
-            }
-          >
-            {text}…
-          </span>
-        </span>
-      )}
+    <div className="flex h-5 items-center px-5 text-2xs text-fg-subtle" aria-live="polite">
+      {text && <TypingLine spec={custom} text={text} />}
     </div>
   )
 }
