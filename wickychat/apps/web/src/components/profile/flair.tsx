@@ -11,6 +11,7 @@ import {
 } from '@quid/shared'
 import { cn } from '@quid/ui'
 import { type CSSProperties, useEffect, useState } from 'react'
+import { flairCssClass } from '@/lib/flair-css'
 
 type Vars = CSSProperties & Record<`--${string}`, string | number>
 
@@ -29,12 +30,18 @@ export function nameEffectProps(spec: NameEffectSpec | null) {
   return { className: `q-ne q-ne-${spec.anim}`, style }
 }
 
+export function nameFxFor(value?: string | null) {
+  const p = nameEffectProps(specFromValue('name_effect', value))
+  return p ? { ...p, className: cn(p.className, flairCssClass('name_effect', value)) } : null
+}
+
 export function bubbleProps(value?: string | null): { className: string; style?: Vars } {
   const builtin = bubbleById(value)
   if (builtin) return { className: `q-bubble q-bubble-${builtin.id.slice(2)}` }
   const spec = specFromValue('bubble', value)
   if (!spec) return { className: '' }
-  return customBubble(spec)
+  const p = customBubble(spec)
+  return { ...p, className: cn(p.className, flairCssClass('bubble', value)) }
 }
 
 export function customBubble(spec: BubbleSpec) {
@@ -58,7 +65,9 @@ export function customBubble(spec: BubbleSpec) {
 
 export function reactionSkinProps(value?: string | null) {
   const spec = specFromValue('reaction_skin', value)
-  return spec ? reactionSkinFromSpec(spec) : null
+  if (!spec) return null
+  const p = reactionSkinFromSpec(spec)
+  return { ...p, className: cn(p.className, flairCssClass('reaction_skin', value)) }
 }
 
 export function reactionSkinFromSpec(spec: ReactionSkinSpec) {
@@ -75,7 +84,9 @@ export function reactionSkinFromSpec(spec: ReactionSkinSpec) {
 
 export function mentionStyleProps(value?: string | null) {
   const spec = specFromValue('mention_style', value)
-  return spec ? mentionFromSpec(spec) : null
+  if (!spec) return null
+  const p = mentionFromSpec(spec)
+  return { ...p, className: cn(p.className, flairCssClass('mention_style', value)) }
 }
 
 export function mentionFromSpec(spec: MentionStyleSpec) {
@@ -138,7 +149,15 @@ export function useMessageFx(key: string, createdAt: string, value?: string | nu
   return on ? spec : null
 }
 
-export function TypingLine({ spec, text }: { spec: TypingSpec | null; text: string }) {
+export function TypingLine({
+  spec,
+  text,
+  value,
+}: {
+  spec: TypingSpec | null
+  text: string
+  value?: string | null
+}) {
   const words = spec?.textColors
     ? nameEffectProps({ colors: spec.textColors, anim: spec.textAnim ?? 'none', speed: 1 })
     : null
@@ -150,6 +169,7 @@ export function TypingLine({ spec, text }: { spec: TypingSpec | null; text: stri
       className={cn(
         'inline-flex items-center gap-1.5',
         pill && 'q-ty-pill',
+        flairCssClass('typing', value),
         spec?.size === 'small' && 'text-[10px]',
         spec?.size === 'big' && 'text-[13px]',
       )}
@@ -170,6 +190,7 @@ export function TypingLine({ spec, text }: { spec: TypingSpec | null; text: stri
       )}
       <span
         className={cn(
+          'q-ty-words',
           words?.className,
           spec?.font && `q-font-${spec.font}`,
           spec?.bold && 'font-bold',
@@ -186,7 +207,7 @@ export function TypingLine({ spec, text }: { spec: TypingSpec | null; text: stri
 export function TypingGlyphs({ spec }: { spec: TypingSpec }) {
   return (
     <span
-      className={`q-ty q-ty-${spec.anim}`}
+      className={`q-ty q-ty-glyphs q-ty-${spec.anim}`}
       style={spec.color ? { color: spec.color } : undefined}
       aria-hidden="true"
     >

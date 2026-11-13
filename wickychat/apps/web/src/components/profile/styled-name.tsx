@@ -1,8 +1,8 @@
 'use client'
-import { specFromValue, type UserSummary } from '@quid/shared'
+import type { UserSummary } from '@quid/shared'
 import { cn } from '@quid/ui'
 import { displayName } from '@/lib/format'
-import { nameEffectProps } from './flair'
+import { nameFxFor } from './flair'
 
 const HEX = /^#[0-9a-fA-F]{6}$/
 
@@ -23,7 +23,7 @@ export function nameStyleProps(style: UserSummary['nameStyle'], className?: stri
 
 /** A person's display name in their chosen font and colour. */
 export function StyledName({ user, className }: { user: UserSummary; className?: string }) {
-  const fx = nameEffectProps(specFromValue('name_effect', user.nameEffect))
+  const fx = nameFxFor(user.nameEffect)
   if (fx) {
     const f = user.nameStyle?.font
     return (

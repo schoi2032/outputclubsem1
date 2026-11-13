@@ -5,6 +5,7 @@ import { use, useEffect } from 'react'
 import { ErrorScreen } from '@/components/error-screen'
 import { OrgProvider } from '@/components/org-context'
 import { AppShell } from '@/components/shell/app-shell'
+import { FlairStyles } from '@/lib/flair-css'
 import { useMe } from '@/lib/queries'
 
 export default function OrgLayout({
@@ -65,6 +66,7 @@ export default function OrgLayout({
         api: `/api/orgs/${org.id}`,
       }}
     >
+      <FlairStyles />
       <AppShell>{children}</AppShell>
     </OrgProvider>
   )

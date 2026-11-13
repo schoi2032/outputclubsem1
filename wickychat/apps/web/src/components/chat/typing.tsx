@@ -33,7 +33,7 @@ export function TypingIndicator({
           : 'Several people are typing'
   return (
     <div className="flex h-5 items-center px-5 text-2xs text-fg-subtle" aria-live="polite">
-      {text && <TypingLine spec={custom} text={text} />}
+      {text && <TypingLine spec={custom} value={first?.typingStyle} text={text} />}
     </div>
   )
 }

@@ -48,6 +48,7 @@ import {
 import { type LocalMessage, useMessageActions } from '@/lib/actions'
 import { errorMessage, post } from '@/lib/api'
 import { useEmojiMap } from '@/lib/expressions'
+import { flairCssClass } from '@/lib/flair-css'
 import { displayName, formatFull, formatTime, relative } from '@/lib/format'
 import { usePreferences } from '@/lib/preferences'
 import { reminderChoices, whenLabel } from '@/lib/productivity'
@@ -253,6 +254,7 @@ export const MessageItem = memo(function MessageItem({
         highlighted && 'bg-mention/60 hover:bg-mention/60',
         editing && 'bg-accent-subtle/40 hover:bg-accent-subtle/40',
         m._status === 'sending' && 'q-sending',
+        fx && flairCssClass('message_effect', m.author.messageEffect),
         toolbarVisible && 'bg-bg-subtle',
       )}
     >

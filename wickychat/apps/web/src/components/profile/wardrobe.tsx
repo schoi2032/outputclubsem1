@@ -4,7 +4,6 @@
  * something on in the preview, click to wear it (click again to take it off).
  */
 import type { FlairKind, ItemKind, Wallet } from '@quid/shared'
-import { specFromValue } from '@quid/shared'
 import { Avatar, Button, cn, Input, Select, Skeleton, toast } from '@quid/ui'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, Search, X } from 'lucide-react'
@@ -17,7 +16,7 @@ import { errorMessage, get, put } from '@/lib/api'
 import { displayName } from '@/lib/format'
 import { keys } from '@/lib/queries'
 import { NamePlate, ProfileEffect } from './cosmetics-fx'
-import { bubbleProps, nameEffectProps } from './flair'
+import { bubbleProps, nameFxFor } from './flair'
 
 type Filter = ItemKind | 'all' | 'wearing'
 
@@ -143,7 +142,7 @@ export function Wardrobe() {
     bubble: hover?.kind === 'bubble' ? hover.value : w?.equippedBubble,
     name: hover?.kind === 'name_effect' ? hover.value : w?.equippedFlair.name_effect,
   }
-  const nameFx = nameEffectProps(specFromValue('name_effect', look.name))
+  const nameFx = nameFxFor(look.name)
   const bubbleLook = bubbleProps(look.bubble)
   const otherFlair =
     hover && hover.kind !== 'name_effect' && hover.kind in (w?.equippedFlair ?? {}) ? hover : null

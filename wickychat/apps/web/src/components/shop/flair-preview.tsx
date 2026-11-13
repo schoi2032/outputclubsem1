@@ -8,7 +8,7 @@ import {
   bubbleProps,
   MessageFxLayer,
   mentionStyleProps,
-  nameEffectProps,
+  nameFxFor,
   reactionSkinProps,
   TypingLine,
 } from '@/components/profile/flair'
@@ -59,7 +59,7 @@ export function FlairPreview({
   const name = displayName(me)
   if (!value) return null
   if (kind === 'name_effect') {
-    const p = nameEffectProps(specFromValue('name_effect', value))
+    const p = nameFxFor(value)
     return (
       <span
         className={cn('truncate font-bold', compact ? 'text-[14px]' : 'text-[18px]', p?.className)}
@@ -74,7 +74,7 @@ export function FlairPreview({
     const spec = specFromValue('typing', value)
     return spec ? (
       <span className="text-[12px] text-fg-subtle">
-        <TypingLine spec={spec} text={typingText(name.split(' ')[0]!, spec)} />
+        <TypingLine spec={spec} value={value} text={typingText(name.split(' ')[0]!, spec)} />
       </span>
     ) : null
   }

@@ -7,11 +7,13 @@ import {
   codeToSpec,
   FLAIR,
   FLAIR_LABEL,
+  flairCssTargets,
   MESSAGE_MOTIONS,
   NAME_ANIMS,
   PROFILE_FONTS,
   parseSpec,
   type SpecKind,
+  scopeFlairCss,
   specToCode,
   specValue,
   TYPING_ANIMS,
@@ -19,12 +21,64 @@ import {
 import { Button, cn, Field, Input, Select, Switch, toast } from '@quid/ui'
 import { useQueryClient } from '@tanstack/react-query'
 import { Copy, Minus, Play, Plus, Upload } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useOrgContext } from '@/components/org-context'
 import { FlairPreview } from '@/components/shop/flair-preview'
 import { errorMessage, post, upload } from '@/lib/api'
+import { setLocalFlairCss } from '@/lib/flair-css'
 
 const PREVIEW_ID = '00000000-0000-4000-8000-000000000000'
+
+const CSS_START: Record<Exclude<SpecKind, 'sound_pack'>, string> = {
+  bubble: `& {
+  border-radius: 18px 18px 18px 4px;
+  box-shadow: 0 0 12px #ff5cc8;
+}
+&::after {
+  content: "✨";
+  position: absolute;
+  right: -10px;
+  top: -10px;
+  animation: twinkle 1.5s infinite;
+}
+@keyframes twinkle {
+  50% { opacity: 0.3; transform: scale(1.3); }
+}`,
+  typing: `& .q-ty-words {
+  letter-spacing: 1px;
+  text-shadow: 0 0 6px #8052ff;
+}
+& .q-ty-glyphs {
+  animation: spinny 2s linear infinite;
+}
+@keyframes spinny {
+  to { transform: rotate(360deg); }
+}`,
+  name_effect: `& {
+  text-shadow: 2px 2px 0 #000;
+  transform: skew(-8deg);
+}
+&::after {
+  content: " 👑";
+}`,
+  message_effect: `& {
+  animation: jelly 0.6s;
+}
+@keyframes jelly {
+  30% { transform: scale(1.04, 0.96); }
+  60% { transform: scale(0.98, 1.02); }
+}`,
+  reaction_skin: `& {
+  border-radius: 6px;
+  transform: rotate(-3deg);
+  box-shadow: 2px 2px 0 #000;
+}`,
+  mention_style: `& {
+  border-radius: 4px;
+  padding: 0 4px;
+  outline: 2px dashed currentColor;
+}`,
+}
 
 const HINT: Record<SpecKind, string> = {
   bubble: 'Pick colours, a border and a pattern for the bubble behind messages.',
@@ -235,9 +289,18 @@ export function CreateFlair({
                   }
                 : null
   const [code, setCode] = useState<string | null>(null)
+  const [css, setCss] = useState<string | null>(null)
+  const cssCheck =
+    css?.trim() && kind !== 'sound_pack' ? scopeFlairCss(kind, PREVIEW_ID, css) : null
+  const cssError = cssCheck && 'error' in cssCheck ? cssCheck.error : null
+  useEffect(() => {
+    if (kind === 'sound_pack') return
+    setLocalFlairCss(PREVIEW_ID, kind, css?.trim() && !cssError ? css : null)
+    return () => setLocalFlairCss(PREVIEW_ID, kind, null)
+  }, [kind, css, cssError])
   const coded = code != null && kind !== 'sound_pack' ? codeToSpec(kind, code) : null
   const finalSpec = coded ? ('spec' in coded ? coded.spec : null) : spec
-  const valid = kind === 'sound_pack' ? !!notify : !!parseSpec(kind, finalSpec)
+  const valid = kind === 'sound_pack' ? !!notify : !!parseSpec(kind, finalSpec) && !cssError
   const preview = kind === 'sound_pack' ? undefined : specValue({ id: PREVIEW_ID, spec: finalSpec })
 
   const fill = (raw: unknown) => {
@@ -299,6 +362,7 @@ export function CreateFlair({
         description,
         price,
         spec: body,
+        ...(css?.trim() && { css }),
         ...availabilityBody,
       })
       toast.success('Sent to a teacher for review. It shows in the Shop once approved!')
@@ -796,6 +860,41 @@ export function CreateFlair({
               </Field>
             )}
           </>
+        )}
+
+        {kind !== 'sound_pack' && (
+          <div className="flex flex-col gap-1.5 rounded-lg border border-border p-3">
+            <Toggle
+              id="cf-css"
+              label="🎨 Custom CSS (go wild, anything you can do with CSS)"
+              checked={css != null}
+              onChange={(on) => setCss(on ? CSS_START[kind] : null)}
+            />
+            {css != null && (
+              <>
+                <textarea
+                  aria-label="Custom CSS"
+                  value={css}
+                  onChange={(e) => setCss(e.target.value)}
+                  spellCheck={false}
+                  rows={Math.min(24, Math.max(8, css.split('\n').length + 1))}
+                  className="w-full rounded-lg border border-border bg-bg-subtle p-3 font-mono text-[12px] leading-relaxed outline-none focus:border-accent"
+                />
+                {cssError ? (
+                  <p className="text-xs text-danger">⚠️ {cssError}</p>
+                ) : (
+                  <p className="text-xs text-success">✓ Working, check the preview</p>
+                )}
+                <p className="text-2xs text-fg-subtle">
+                  It goes on top of the look above. Target {flairCssTargets(kind)}. You can use
+                  &amp;::before and &amp;::after, @keyframes, gradients, shadows, transforms,
+                  filters and pretty much everything else. Stuff that could mess up the page for
+                  others (fixed position, screen sized things, images from other sites) isn't
+                  allowed, and a teacher checks it before its in the Shop.
+                </p>
+              </>
+            )}
+          </div>
         )}
 
         <p className="text-xs text-fg-subtle">

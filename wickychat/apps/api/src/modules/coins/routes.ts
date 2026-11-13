@@ -47,6 +47,7 @@ import {
   STREAK_CRATE,
   type StickerPosition,
   sanitizeThemeCss,
+  scopeFlairCss,
   specValue,
   streakBonus,
   THEME_IDS,
@@ -104,6 +105,8 @@ function equipFor(
 }
 
 type CosmeticRow = typeof cosmetics.$inferSelect
+
+const FLAIR_CSS_CHECK_ID = '00000000-0000-4000-8000-000000000000'
 
 async function checkSpec(ctx: AppContext, userId: string, kind: SpecKind, raw: unknown) {
   const spec = parseSpec(kind, raw)
@@ -636,7 +639,12 @@ export async function coinRoutes(app: App, ctx: AppContext) {
       const scope = await requireOrg(ctx, req, req.params.orgId)
       const b = req.body
       const isTheme = b.kind === 'theme'
-      const css = isTheme ? sanitizeThemeCss(b.css ?? '').css : null
+      const flairCss = isSpecKind(b.kind) && b.kind !== 'sound_pack' ? b.css?.trim() || null : null
+      if (flairCss && isSpecKind(b.kind)) {
+        const scoped = scopeFlairCss(b.kind, FLAIR_CSS_CHECK_ID, flairCss)
+        if ('error' in scoped) throw badRequest(scoped.error)
+      }
+      const css = isTheme ? sanitizeThemeCss(b.css ?? '').css : flairCss
       if (isTheme && !css) throw badRequest('Write some CSS for your theme.')
       const isImage = b.kind === 'effect' || b.kind === 'plate'
       if (isImage && !b.frameFileId) throw badRequest('Add an image.')
@@ -694,6 +702,41 @@ export async function coinRoutes(app: App, ctx: AppContext) {
         columns: { id: true, name: true, displayName: true },
       })
       return reply.code(201).send(serializeCosmetic(row!, me!))
+    },
+  )
+
+  app.get(
+    '/api/orgs/:orgId/cosmetics/styles',
+    {
+      schema: {
+        params: orgParams,
+        querystring: z.object({ ids: z.string().max(40 * 37) }),
+      },
+    },
+    async (req) => {
+      const scope = await requireOrg(ctx, req, req.params.orgId)
+      const ids = [...new Set(req.query.ids.split(','))]
+        .filter((x) => z.uuid().safeParse(x).success)
+        .slice(0, 40)
+      if (!ids.length) return {}
+      const teacher = scope.role === 'owner' || scope.role === 'admin'
+      const rows = await ctx.db
+        .select({
+          id: cosmetics.id,
+          kind: cosmetics.kind,
+          css: cosmetics.css,
+          status: cosmetics.status,
+          creatorId: cosmetics.creatorId,
+        })
+        .from(cosmetics)
+        .where(and(eq(cosmetics.orgId, scope.orgId), inArray(cosmetics.id, ids)))
+      const out: Record<string, string> = {}
+      for (const r of rows) {
+        if (!r.css || !isSpecKind(r.kind) || r.kind === 'sound_pack') continue
+        if (r.status !== 'approved' && r.creatorId !== scope.userId && !teacher) continue
+        out[r.id] = r.css
+      }
+      return out
     },
   )
 
