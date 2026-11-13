@@ -1,5 +1,5 @@
 'use client'
-import { specFromValue } from '@quid/shared'
+import { specFromValue, typingText } from '@quid/shared'
 import { TypingGlyphs } from '@/components/profile/flair'
 import { displayName } from '@/lib/format'
 import { useAiStatus, useMembers } from '@/lib/queries'
@@ -27,7 +27,7 @@ export function TypingIndicator({
     names.length === 0
       ? ''
       : names.length === 1
-        ? `${names[0]} is typing`
+        ? typingText(names[0]!, custom)
         : names.length === 2
           ? `${names[0]} and ${names[1]} are typing`
           : 'Several people are typing'
@@ -48,7 +48,13 @@ export function TypingIndicator({
               ))}
             </span>
           )}
-          {text}…
+          <span
+            style={
+              names.length === 1 && custom?.phraseColor ? { color: custom.phraseColor } : undefined
+            }
+          >
+            {text}…
+          </span>
         </span>
       )}
     </div>

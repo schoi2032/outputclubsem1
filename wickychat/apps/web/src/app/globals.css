@@ -1454,3 +1454,12 @@
     display: none;
   }
 }
+
+.q-sending {
+  animation: q-sending 0.25s ease 0.9s forwards;
+}
+@keyframes q-sending {
+  to {
+    opacity: 0.55;
+  }
+}

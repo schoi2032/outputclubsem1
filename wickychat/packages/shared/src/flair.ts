@@ -36,6 +36,16 @@ const glyph = z
   .max(8)
   .regex(/^[^<>"'`\\{}();:]+$/)
 
+const typingPhrase = z
+  .string()
+  .trim()
+  .min(2)
+  .max(24)
+  .regex(/^[^<>"`\\{}]+$/)
+
+export const typingText = (name: string, spec?: { phrase?: string } | null) =>
+  `${name} ${spec?.phrase || 'is typing'}`
+
 export const NAME_ANIMS = [
   'none',
   'shimmer',
@@ -82,6 +92,8 @@ export const SPEC_SCHEMAS = {
     glyphs: z.array(glyph).min(1).max(3),
     anim: z.enum(TYPING_ANIMS),
     color: hex.optional(),
+    phrase: typingPhrase.optional(),
+    phraseColor: hex.optional(),
   }),
   reaction_skin: z.object({
     bg: z.array(hex).min(1).max(2),
@@ -202,13 +214,14 @@ const ty = (
   glyphs: string[],
   anim: TypingSpec['anim'],
   color?: string,
+  phrase?: string,
 ): FlairItem => ({
   id,
   kind: 'typing',
   name,
   description,
   price,
-  spec: { glyphs, anim, ...(color && { color }) },
+  spec: { glyphs, anim, ...(color && { color }), ...(phrase && { phrase }) },
 })
 
 const rs = (
@@ -337,6 +350,37 @@ export const FLAIR: FlairItem[] = [
   ty('ty-music', 'Humming', 'Music notes bouncing', 130, ['🎵', '🎶', '🎵'], 'wave'),
   ty('ty-loading', 'Loading', 'A spinning loader', 100, ['⏳'], 'spin'),
   ty('ty-fire', 'Fired Up', 'Three flames', 150, ['🔥', '🔥', '🔥'], 'bounce'),
+  ty('ty-cook', 'Cooking', 'Says they are cooking', 160, ['🍳'], 'spin', undefined, 'is cooking'),
+  ty(
+    'ty-draw',
+    'Drawing',
+    'Says they are drawing',
+    160,
+    ['🎨', '✏️'],
+    'wave',
+    undefined,
+    'is drawing',
+  ),
+  ty(
+    'ty-essay',
+    'Essay Mode',
+    'For really long messages',
+    170,
+    ['📜'],
+    'pulse',
+    undefined,
+    'is writing an essay',
+  ),
+  ty(
+    'ty-brain',
+    'Big Brain',
+    'Thinking hard',
+    170,
+    ['🧠'],
+    'pulse',
+    '#ff5cc8',
+    'is thinking really hard',
+  ),
 
   rs(
     'rs-gold',

@@ -1,5 +1,5 @@
 'use client'
-import { type SpecKind, specFromValue } from '@quid/shared'
+import { type SpecKind, specFromValue, typingText } from '@quid/shared'
 import { cn } from '@quid/ui'
 import { Play } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -75,7 +75,9 @@ export function FlairPreview({
     return spec ? (
       <span className="inline-flex items-center gap-1.5 text-[12px] text-fg-subtle">
         <TypingGlyphs spec={spec} />
-        {name.split(' ')[0]} is typing…
+        <span style={spec.phraseColor ? { color: spec.phraseColor } : undefined}>
+          {typingText(name.split(' ')[0]!, spec)}…
+        </span>
       </span>
     ) : null
   }

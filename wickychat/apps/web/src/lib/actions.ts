@@ -156,6 +156,7 @@ export function useMessageActions() {
       } else upsertMessage(qc, m)
     }
     place(optimistic)
+    playPack(me.soundPack, 'send')
     const attempt = async () => {
       try {
         const saved = await post<Message>(`${api}/channels/${channel.id}/messages`, {
@@ -165,7 +166,6 @@ export function useMessageActions() {
           clientId,
         })
         place(saved)
-        playPack(me.soundPack, 'send')
         void qc.invalidateQueries({ queryKey: keys.drafts(org.id) })
       } catch (e) {
         place({

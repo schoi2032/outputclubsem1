@@ -118,7 +118,7 @@ export function ThreadPanel({
                 new Date(m.createdAt).getTime() - new Date(prev.createdAt).getTime() < 300_000
               return (
                 <MessageItem
-                  key={m.clientId && m._status ? m.clientId : m.id}
+                  key={m.clientId || m.id}
                   m={m}
                   channel={channel}
                   grouped={grouped}

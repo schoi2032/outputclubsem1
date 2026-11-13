@@ -298,7 +298,7 @@ export function MessageList({
           const prev = messages[i - 1]
           const newDay = !prev || !sameDay(prev.createdAt, m.createdAt)
           return (
-            <div key={m.clientId && m._status ? m.clientId : m.id}>
+            <div key={m.clientId || m.id}>
               {newDay && <DayDivider iso={m.createdAt} />}
               {i === firstUnreadIdx && hadUnread && <NewDivider />}
               <MessageItem

@@ -170,6 +170,9 @@ export function CreateFlair({
   const [emoji, setEmoji] = useState(kind === 'typing' ? '⭐ ⭐ ⭐' : '🎉 ✨')
   const [accent, setAccent] = useState('#8052ff')
   const [useAccent, setUseAccent] = useState(false)
+  const [phrase, setPhrase] = useState('')
+  const [phraseColor, setPhraseColor] = useState('#ff7a00')
+  const [usePhraseColor, setUsePhraseColor] = useState(false)
   const [text, setText] = useState('#ffffff')
   const [border, setBorder] = useState('#ff3ccf')
   const [borderStyle, setBorderStyle] = useState('none')
@@ -189,7 +192,13 @@ export function CreateFlair({
             ...(motion === 'glow' && { color: accent }),
           }
         : kind === 'typing'
-          ? { glyphs: glyphs(emoji, 3), anim, ...(useAccent && { color: accent }) }
+          ? {
+              glyphs: glyphs(emoji, 3),
+              anim,
+              ...(useAccent && { color: accent }),
+              ...(phrase.trim().length >= 2 && { phrase: phrase.trim() }),
+              ...(usePhraseColor && { phraseColor }),
+            }
           : kind === 'reaction_skin'
             ? { bg: colors.slice(0, 2), border, text, shape, glow }
             : kind === 'mention_style'
@@ -466,6 +475,34 @@ export function CreateFlair({
               <Color label="Colour" value={accent} onChange={setAccent} />
             )}
           </div>
+        )}
+
+        {kind === 'typing' && (
+          <>
+            <Field label="What it says after your name (leave empty for “is typing”)">
+              {(p) => (
+                <Input
+                  {...p}
+                  value={phrase}
+                  maxLength={24}
+                  placeholder="is cooking"
+                  onChange={(e) => setPhrase(e.target.value)}
+                  className="w-56"
+                />
+              )}
+            </Field>
+            <div className="flex items-center gap-3">
+              <Toggle
+                id="cf-phrase-color"
+                label="Colour the words"
+                checked={usePhraseColor}
+                onChange={setUsePhraseColor}
+              />
+              {usePhraseColor && (
+                <Color label="Words colour" value={phraseColor} onChange={setPhraseColor} />
+              )}
+            </div>
+          </>
         )}
 
         {kind === 'sound_pack' &&

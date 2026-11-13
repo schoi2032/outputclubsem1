@@ -204,7 +204,7 @@ export const MessageItem = memo(function MessageItem({
     m.clientId || m.id,
     m.createdAt,
     m.author.messageEffect,
-    !local && m.kind === 'user' && !m.author.isBot,
+    m._status !== 'failed' && m.kind === 'user' && !m.author.isBot,
   )
   const jumbo = prefs.jumboEmoji && isEmojiOnly(m.text, emojis)
   const bubble = !m.author.isBot && !jumbo ? bubbleProps(m.author.chatBubble) : null
@@ -252,7 +252,7 @@ export const MessageItem = memo(function MessageItem({
         grouped ? (compact ? 'py-0' : 'py-0.5') : compact ? 'pt-1 pb-0' : 'pt-2 pb-0.5',
         highlighted && 'bg-mention/60 hover:bg-mention/60',
         editing && 'bg-accent-subtle/40 hover:bg-accent-subtle/40',
-        m._status === 'sending' && 'opacity-60',
+        m._status === 'sending' && 'q-sending',
         toolbarVisible && 'bg-bg-subtle',
       )}
     >
