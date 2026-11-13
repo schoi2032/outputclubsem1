@@ -1188,12 +1188,27 @@ export const MAX_THEME_CSS = 20_000
  * could track people), no imports, and nothing that could break out of the <style> tag.
  * Returns the cleaned CSS and what was removed, so the editor can tell the creator.
  */
+const OWN_IMAGE = /url\(\s*(["']?)\/api\/files\/([0-9a-f-]{36})\/content\?inline=1\1\s*\)/gi
+
+export const cssImageUrl = (id: string) => `url("/api/files/${id}/content?inline=1")`
+
+export function cssImageIds(css: string) {
+  return [...new Set([...css.matchAll(OWN_IMAGE)].map((m) => m[2]!.toLowerCase()))]
+}
+
 export function sanitizeThemeCss(raw: string): { css: string; removed: string[] } {
   const removed = new Set<string>()
-  let css = raw.slice(0, MAX_THEME_CSS).replace(/\/\*[\s\S]*?\*\//g, (c) =>
-    // Keep comments, but they mustn't hide anything.
-    c.replace(/</g, ''),
-  )
+  const images: string[] = []
+  let css = raw
+    .slice(0, MAX_THEME_CSS)
+    .replace(OWN_IMAGE, (_m, _q, id: string) => {
+      images.push(id.toLowerCase())
+      return `__WIMG${images.length - 1}__`
+    })
+    .replace(/\/\*[\s\S]*?\*\//g, (c) =>
+      // Keep comments, but they mustn't hide anything.
+      c.replace(/</g, ''),
+    )
   const strip = (re: RegExp, what: string) => {
     css = css.replace(re, () => {
       removed.add(what)
@@ -1214,6 +1229,10 @@ export function sanitizeThemeCss(raw: string): { css: string; removed: string[] 
   strip(/javascript:/gi, 'javascript:')
   strip(/behavior\s*:/gi, 'behavior')
   strip(/-moz-binding/gi, '-moz-binding')
+  css = css.replace(/__WIMG(\d+)__/g, (m, n: string) => {
+    const id = images[Number(n)]
+    return id ? cssImageUrl(id) : m
+  })
   return { css: css.trim(), removed: [...removed] }
 }
 

@@ -21,8 +21,9 @@ import {
 import { Button, cn, Field, Input, Select, Switch, toast } from '@quid/ui'
 import { useQueryClient } from '@tanstack/react-query'
 import { Copy, Minus, Play, Plus, Upload } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useOrgContext } from '@/components/org-context'
+import { CssImageButton, insertAtCursor } from '@/components/shop/css-image'
 import { FlairPreview } from '@/components/shop/flair-preview'
 import { errorMessage, post, upload } from '@/lib/api'
 import { setLocalFlairCss } from '@/lib/flair-css'
@@ -290,6 +291,7 @@ export function CreateFlair({
                 : null
   const [code, setCode] = useState<string | null>(null)
   const [css, setCss] = useState<string | null>(null)
+  const cssBox = useRef<HTMLTextAreaElement>(null)
   const cssCheck =
     css?.trim() && kind !== 'sound_pack' ? scopeFlairCss(kind, PREVIEW_ID, css) : null
   const cssError = cssCheck && 'error' in cssCheck ? cssCheck.error : null
@@ -872,7 +874,11 @@ export function CreateFlair({
             />
             {css != null && (
               <>
+                <div className="flex justify-end">
+                  <CssImageButton onAdd={(u) => insertAtCursor(cssBox, css, u, setCss)} />
+                </div>
                 <textarea
+                  ref={cssBox}
                   aria-label="Custom CSS"
                   value={css}
                   onChange={(e) => setCss(e.target.value)}
@@ -888,9 +894,10 @@ export function CreateFlair({
                 <p className="text-2xs text-fg-subtle">
                   It goes on top of the look above. Target {flairCssTargets(kind)}. You can use
                   &amp;::before and &amp;::after, @keyframes, gradients, shadows, transforms,
-                  filters and pretty much everything else. Stuff that could mess up the page for
-                  others (fixed position, screen sized things, images from other sites) isn't
-                  allowed, and a teacher checks it before its in the Shop.
+                  filters and pretty much everything else. Add image puts your own pictures in, like{' '}
+                  <code>background: url(...)</code> on a &amp;::before. Stuff that could mess up the
+                  page for others (fixed position, screen sized things, images from other sites)
+                  isn't allowed, and a teacher checks it before its in the Shop.
                 </p>
               </>
             )}

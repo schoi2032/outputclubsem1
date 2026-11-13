@@ -26,6 +26,7 @@ import {
   CREATOR_SHARE,
   censorText,
   cosmeticDecoration,
+  cssImageIds,
   customImageValue,
   DECORATION_IDS,
   decorationById,
@@ -655,6 +656,23 @@ export async function coinRoutes(app: App, ctx: AppContext) {
         throw badRequest('Keep the name and description school-friendly.')
       if (css && censorText(css).hits)
         throw badRequest('Keep the CSS (and its comments) school-friendly.')
+      const cssImages = css ? cssImageIds(css) : []
+      if (cssImages.length) {
+        if (cssImages.length > 20) throw badRequest('Use up to 20 images.')
+        const own = await ctx.db
+          .select({ id: files.id })
+          .from(files)
+          .where(
+            and(
+              inArray(files.id, cssImages),
+              eq(files.uploaderId, scope.userId),
+              eq(files.purpose, 'cosmetic'),
+              isNull(files.deletedAt),
+            ),
+          )
+        if (own.length !== cssImages.length)
+          throw badRequest('Only use images you uploaded with the Add image button.')
+      }
       const ids =
         isTheme || spec ? [] : [b.frameFileId, b.stickerFileId].filter((x): x is string => !!x)
       const mine = !ids.length

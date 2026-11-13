@@ -68,7 +68,7 @@ import {
   X,
 } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Suspense, useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { PeoplePicker } from '@/components/dialogs/people-picker'
 import { useOrgContext } from '@/components/org-context'
 import { PageHeader } from '@/components/page-header'
@@ -81,6 +81,7 @@ import { BundlesView, CreateBundle, MyBundles, useBundleDefs } from '@/component
 import { ClassWarView } from '@/components/shop/classwar'
 import { CrateArt, CratesView, CreateCrate, MyCrates, useCrateDefs } from '@/components/shop/crates'
 import { CreateFlair } from '@/components/shop/create-flair'
+import { CssImageButton, insertAtCursor } from '@/components/shop/css-image'
 import { EarnView, earnWaiting, useEarn, useTrivia } from '@/components/shop/earn'
 import { FlairPreview } from '@/components/shop/flair-preview'
 import { InvestView, useStocks } from '@/components/shop/invest'
@@ -2031,6 +2032,7 @@ function CreateTheme() {
   const [price, setPrice] = useState(150)
   const avail = useAvailability()
   const [css, setCss] = useState(THEME_TEMPLATE)
+  const cssBox = useRef<HTMLTextAreaElement>(null)
   const [previewing, setPreviewing] = useState(false)
   const [saving, setSaving] = useState(false)
   const clean = useMemo(() => sanitizeThemeCss(css), [css])
@@ -2126,6 +2128,7 @@ function CreateTheme() {
           <div className="mb-1 flex items-center justify-between gap-2">
             <p className="text-[13px] font-medium">CSS</p>
             <div className="flex gap-1.5">
+              <CssImageButton onAdd={(u) => insertAtCursor(cssBox, css, u, setCss)} />
               <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs hover:bg-bg-muted">
                 <Upload className="size-3.5" /> Load .css file
                 <input
@@ -2145,6 +2148,7 @@ function CreateTheme() {
             </div>
           </div>
           <Textarea
+            ref={cssBox}
             aria-label="Theme CSS"
             spellCheck={false}
             rows={18}
@@ -2154,8 +2158,10 @@ function CreateTheme() {
           />
           <p className="mt-1 text-2xs text-fg-subtle">
             Set the <code>--q-…</code> colour variables (bg, fg, accent, border…). You can add other
-            CSS too. Links to other sites (<code>url()</code>, <code>@import</code>) are removed so
-            nobody gets tracked.
+            CSS too, like backgrounds, fonts sizes, animations and whole new layouts for parts of
+            the app. Use <b>Add image</b> to put your own pictures in (backgrounds, stickers,
+            patterns). Links to other sites (<code>url()</code> to the web, <code>@import</code>)
+            are removed so nobody gets tracked.
           </p>
           {!!clean.removed.length && (
             <p className="mt-1 text-xs text-warning">
