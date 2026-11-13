@@ -3,18 +3,22 @@ import {
   type Attachment,
   COSMETIC_PRICE,
   CREATOR_SHARE,
+  codeFields,
+  codeToSpec,
+  FLAIR,
   FLAIR_LABEL,
   MESSAGE_MOTIONS,
   NAME_ANIMS,
   PROFILE_FONTS,
   parseSpec,
   type SpecKind,
+  specToCode,
   specValue,
   TYPING_ANIMS,
 } from '@quid/shared'
-import { Button, Field, Input, Select, Switch, toast } from '@quid/ui'
+import { Button, cn, Field, Input, Select, Switch, toast } from '@quid/ui'
 import { useQueryClient } from '@tanstack/react-query'
-import { Minus, Play, Plus, Upload } from 'lucide-react'
+import { Copy, Minus, Play, Plus, Upload } from 'lucide-react'
 import { useState } from 'react'
 import { useOrgContext } from '@/components/org-context'
 import { FlairPreview } from '@/components/shop/flair-preview'
@@ -230,13 +234,60 @@ export function CreateFlair({
                     anim,
                   }
                 : null
-  const valid = kind === 'sound_pack' ? !!notify : !!parseSpec(kind, spec)
-  const preview = kind === 'sound_pack' ? undefined : specValue({ id: PREVIEW_ID, spec })
+  const [code, setCode] = useState<string | null>(null)
+  const coded = code != null && kind !== 'sound_pack' ? codeToSpec(kind, code) : null
+  const finalSpec = coded ? ('spec' in coded ? coded.spec : null) : spec
+  const valid = kind === 'sound_pack' ? !!notify : !!parseSpec(kind, finalSpec)
+  const preview = kind === 'sound_pack' ? undefined : specValue({ id: PREVIEW_ID, spec: finalSpec })
+
+  const fill = (raw: unknown) => {
+    if (kind === 'sound_pack') return
+    const x = parseSpec(kind, raw) as Record<string, any> | null
+    if (!x) return
+    if (kind === 'name_effect') {
+      setColors(x.colors)
+      setAnim(x.anim)
+      setSpeed(x.speed)
+    } else if (kind === 'message_effect') {
+      setMotion(x.motion)
+      setEmoji(x.particles.join(' '))
+      if (x.color) setAccent(x.color)
+    } else if (kind === 'typing') {
+      setEmoji(x.glyphs.join(' '))
+      setAnim(x.anim)
+      setUseAccent(!!x.color)
+      if (x.color) setAccent(x.color)
+      setPhrase(x.phrase ?? '')
+      setUseWords(!!x.textColors)
+      if (x.textColors) setWordColors(x.textColors)
+      setWordAnim(x.textAnim ?? 'none')
+      setFont(x.font ?? 'default')
+      setBold(!!x.bold)
+      setItalic(!!x.italic)
+      setSize(x.size ?? 'normal')
+      setUsePill(!!x.bg)
+      if (x.bg) setPillBg(x.bg)
+      setUsePillBorder(!!x.border)
+      if (x.border) setPillBorder(x.border)
+    } else {
+      setColors(x.bg)
+      setText(x.text)
+      if (x.border) setBorder(x.border)
+      if ('shape' in x) setShape(x.shape)
+      if ('glow' in x) setGlow(x.glow)
+      if (kind === 'bubble') {
+        setBorderStyle(x.border ? x.borderStyle : 'none')
+        setPattern(x.pattern)
+        setAnim(x.anim)
+      }
+    }
+  }
+  const starters = FLAIR.filter((f) => f.kind === kind)
 
   const submit = async () => {
     setSaving(true)
     try {
-      let body = spec
+      let body = finalSpec
       if (kind === 'sound_pack') {
         const n = await upload<Attachment>(`${api}/files?purpose=sound`, notify!).promise
         const s = send ? await upload<Attachment>(`${api}/files?purpose=sound`, send).promise : null
@@ -304,350 +355,449 @@ export function CreateFlair({
           )}
         </Field>
 
-        {(kind === 'name_effect' ||
-          kind === 'reaction_skin' ||
-          kind === 'mention_style' ||
-          kind === 'bubble') && (
-          <div>
-            <p className="mb-1 text-[13px] font-medium">
-              {kind === 'name_effect' ? 'Colours' : 'Background'}
-            </p>
-            <Colors
-              value={colors}
-              onChange={setColors}
-              max={kind === 'name_effect' ? 4 : kind === 'bubble' ? 3 : 2}
-            />
-          </div>
-        )}
-
-        {(kind === 'reaction_skin' || kind === 'mention_style' || kind === 'bubble') && (
-          <div className="flex flex-wrap items-end gap-4">
-            <div>
-              <p className="mb-1 text-[13px] font-medium">Text</p>
-              <Color label="Text colour" value={text} onChange={setText} />
-            </div>
-            {kind !== 'mention_style' && (
-              <div>
-                <p className="mb-1 text-[13px] font-medium">Border</p>
-                <Color label="Border colour" value={border} onChange={setBorder} />
-              </div>
-            )}
-            {kind === 'bubble' && (
-              <Field label="Border style">
-                {(p) => (
-                  <Select
-                    {...p}
-                    className="w-auto"
-                    value={borderStyle}
-                    onChange={(e) => setBorderStyle(e.target.value)}
-                  >
-                    {['none', 'solid', 'dashed', 'dotted'].map((x) => (
-                      <option key={x} value={x}>
-                        {x === 'none' ? 'No border' : x}
-                      </option>
-                    ))}
-                  </Select>
-                )}
-              </Field>
-            )}
-            <Field label="Shape">
-              {(p) => (
-                <Select
-                  {...p}
-                  className="w-auto"
-                  value={shape}
-                  onChange={(e) => setShape(e.target.value)}
+        {kind !== 'sound_pack' && (
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex rounded-lg border border-border p-0.5 text-[13px]">
+              {(
+                [
+                  ['form', '🧩 Form'],
+                  ['code', '</> Code'],
+                ] as const
+              ).map(([m, label]) => (
+                <button
+                  key={m}
+                  type="button"
+                  aria-pressed={(code != null) === (m === 'code')}
+                  onClick={() => {
+                    if (m === 'code' && code == null)
+                      setCode(specToCode(kind, parseSpec(kind, spec) ?? spec))
+                    if (m === 'form' && code != null) {
+                      if (coded && 'spec' in coded) fill(coded.spec)
+                      setCode(null)
+                    }
+                  }}
+                  className={cn(
+                    'rounded-md px-3 py-1',
+                    (code != null) === (m === 'code')
+                      ? 'bg-accent-subtle font-semibold text-accent-text'
+                      : 'text-fg-muted hover:text-fg',
+                  )}
                 >
-                  {(kind === 'bubble'
-                    ? ['round', 'soft', 'square']
-                    : kind === 'reaction_skin'
-                      ? ['pill', 'square', 'pixel']
-                      : ['pill', 'box', 'underline']
-                  ).map((x) => (
-                    <option key={x} value={x}>
-                      {x}
-                    </option>
-                  ))}
-                </Select>
-              )}
-            </Field>
-            {kind === 'bubble' && (
-              <Field label="Pattern">
-                {(p) => (
-                  <Select
-                    {...p}
-                    className="w-auto"
-                    value={pattern}
-                    onChange={(e) => setPattern(e.target.value)}
-                  >
-                    {['none', 'dots', 'stripes', 'grid', 'stars'].map((x) => (
-                      <option key={x} value={x}>
-                        {x}
-                      </option>
-                    ))}
-                  </Select>
-                )}
-              </Field>
-            )}
-          </div>
-        )}
-
-        {(kind === 'reaction_skin' || kind === 'mention_style') && (
-          <Toggle id="cf-glow" label="Glow" checked={glow} onChange={setGlow} />
-        )}
-
-        {(kind === 'name_effect' || kind === 'typing' || kind === 'bubble') && (
-          <Field label="Animation">
-            {(p) => (
-              <Select
-                {...p}
-                className="w-auto"
-                value={anim}
-                onChange={(e) => setAnim(e.target.value)}
-              >
-                {(kind === 'name_effect'
-                  ? NAME_ANIMS
-                  : kind === 'typing'
-                    ? TYPING_ANIMS
-                    : (['none', 'shimmer', 'glow', 'gradient'] as const)
-                ).map((x) => (
-                  <option key={x} value={x}>
-                    {ANIM_LABEL[x] ?? x}
-                  </option>
-                ))}
-              </Select>
-            )}
-          </Field>
-        )}
-
-        {kind === 'name_effect' && (
-          <Field label={`Speed (${speed.toFixed(1)}x)`}>
-            {(p) => (
-              <input
-                {...p}
-                type="range"
-                min={0.5}
-                max={3}
-                step={0.1}
-                value={speed}
-                onChange={(e) => setSpeed(Number(e.target.value))}
-                className="w-48"
-              />
-            )}
-          </Field>
-        )}
-
-        {kind === 'message_effect' && (
-          <Field label="Motion">
-            {(p) => (
-              <Select
-                {...p}
-                className="w-auto"
-                value={motion}
-                onChange={(e) => setMotion(e.target.value)}
-              >
-                {MESSAGE_MOTIONS.map((x) => (
-                  <option key={x} value={x}>
-                    {ANIM_LABEL[x] ?? x}
-                  </option>
-                ))}
-              </Select>
-            )}
-          </Field>
-        )}
-
-        {(kind === 'typing' ||
-          (kind === 'message_effect' && ['burst', 'rain', 'float'].includes(motion))) && (
-          <Field
-            label={
-              kind === 'typing'
-                ? 'Emoji or symbols (1 to 3, with spaces between)'
-                : 'Emoji (up to 4, with spaces between)'
-            }
-          >
-            {(p) => (
-              <Input
-                {...p}
-                value={emoji}
-                maxLength={40}
-                onChange={(e) => setEmoji(e.target.value)}
-                className="w-56"
-              />
-            )}
-          </Field>
-        )}
-
-        {(kind === 'typing' || (kind === 'message_effect' && motion === 'glow')) && (
-          <div className="flex items-center gap-3">
-            {kind === 'typing' && (
-              <Toggle
-                id="cf-accent"
-                label="Colour the symbols"
-                checked={useAccent}
-                onChange={setUseAccent}
-              />
-            )}
-            {(kind !== 'typing' || useAccent) && (
-              <Color label="Colour" value={accent} onChange={setAccent} />
-            )}
-          </div>
-        )}
-
-        {kind === 'typing' && (
-          <>
-            <Field label="What it says after your name (leave empty for “is typing”)">
-              {(p) => (
-                <Input
-                  {...p}
-                  value={phrase}
-                  maxLength={24}
-                  placeholder="is cooking"
-                  onChange={(e) => setPhrase(e.target.value)}
-                  className="w-56"
-                />
-              )}
-            </Field>
-            <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
-              <Toggle
-                id="cf-words"
-                label="Colour the words (pick 2 or 3 for a gradient)"
-                checked={useWords}
-                onChange={setUseWords}
-              />
-              {useWords && (
-                <div className="flex flex-wrap items-end gap-4">
-                  <Colors value={wordColors} onChange={setWordColors} max={3} />
-                  <Field label="Words animation">
-                    {(p) => (
-                      <Select
-                        {...p}
-                        className="w-auto"
-                        value={wordAnim}
-                        onChange={(e) => setWordAnim(e.target.value)}
-                      >
-                        {NAME_ANIMS.map((x) => (
-                          <option key={x} value={x}>
-                            {ANIM_LABEL[x] ?? x}
-                          </option>
-                        ))}
-                      </Select>
-                    )}
-                  </Field>
-                </div>
-              )}
+                  {label}
+                </button>
+              ))}
             </div>
-            <div className="flex flex-wrap items-end gap-4">
-              <Field label="Font">
-                {(p) => (
+            {code != null && (
+              <>
+                {starters.length > 0 && (
                   <Select
-                    {...p}
+                    aria-label="Start from a Shop item"
                     className="w-auto"
-                    value={font}
-                    onChange={(e) => setFont(e.target.value)}
+                    value=""
+                    onChange={(e) => {
+                      const it = starters.find((f) => f.id === e.target.value)
+                      if (it) setCode(specToCode(kind, it.spec))
+                    }}
                   >
-                    {PROFILE_FONTS.map((f) => (
+                    <option value="">Start from a Shop item…</option>
+                    {starters.map((f) => (
                       <option key={f.id} value={f.id}>
                         {f.name}
                       </option>
                     ))}
                   </Select>
                 )}
-              </Field>
-              <Field label="Size">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    void navigator.clipboard.writeText(code)
+                    toast.success('Code copied')
+                  }}
+                >
+                  <Copy /> Copy
+                </Button>
+              </>
+            )}
+          </div>
+        )}
+
+        {code != null && kind !== 'sound_pack' ? (
+          <div className="flex flex-col gap-1.5">
+            <textarea
+              aria-label="Cosmetic code"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              spellCheck={false}
+              rows={Math.max(6, code.split('\n').length + 1)}
+              className="w-full rounded-lg border border-border bg-bg-subtle p-3 font-mono text-[13px] leading-relaxed outline-none focus:border-accent"
+            />
+            {coded && 'error' in coded ? (
+              <p className="text-xs text-danger">⚠️ {coded.error}</p>
+            ) : (
+              <p className="text-xs text-success">✓ Looks good</p>
+            )}
+            <p className="text-2xs text-fg-subtle">
+              One setting per line, like <code>anim: bounce</code>. Lists go with spaces between (
+              <code>bg: #ff5cc8 #8052ff</code>), yes or no for switches, and lines starting with{' '}
+              <code>{'//'}</code> are ignored. You can use: {codeFields(kind).join(', ')}. Pasting
+              JSON works to.
+            </p>
+          </div>
+        ) : (
+          <>
+            {(kind === 'name_effect' ||
+              kind === 'reaction_skin' ||
+              kind === 'mention_style' ||
+              kind === 'bubble') && (
+              <div>
+                <p className="mb-1 text-[13px] font-medium">
+                  {kind === 'name_effect' ? 'Colours' : 'Background'}
+                </p>
+                <Colors
+                  value={colors}
+                  onChange={setColors}
+                  max={kind === 'name_effect' ? 4 : kind === 'bubble' ? 3 : 2}
+                />
+              </div>
+            )}
+
+            {(kind === 'reaction_skin' || kind === 'mention_style' || kind === 'bubble') && (
+              <div className="flex flex-wrap items-end gap-4">
+                <div>
+                  <p className="mb-1 text-[13px] font-medium">Text</p>
+                  <Color label="Text colour" value={text} onChange={setText} />
+                </div>
+                {kind !== 'mention_style' && (
+                  <div>
+                    <p className="mb-1 text-[13px] font-medium">Border</p>
+                    <Color label="Border colour" value={border} onChange={setBorder} />
+                  </div>
+                )}
+                {kind === 'bubble' && (
+                  <Field label="Border style">
+                    {(p) => (
+                      <Select
+                        {...p}
+                        className="w-auto"
+                        value={borderStyle}
+                        onChange={(e) => setBorderStyle(e.target.value)}
+                      >
+                        {['none', 'solid', 'dashed', 'dotted'].map((x) => (
+                          <option key={x} value={x}>
+                            {x === 'none' ? 'No border' : x}
+                          </option>
+                        ))}
+                      </Select>
+                    )}
+                  </Field>
+                )}
+                <Field label="Shape">
+                  {(p) => (
+                    <Select
+                      {...p}
+                      className="w-auto"
+                      value={shape}
+                      onChange={(e) => setShape(e.target.value)}
+                    >
+                      {(kind === 'bubble'
+                        ? ['round', 'soft', 'square']
+                        : kind === 'reaction_skin'
+                          ? ['pill', 'square', 'pixel']
+                          : ['pill', 'box', 'underline']
+                      ).map((x) => (
+                        <option key={x} value={x}>
+                          {x}
+                        </option>
+                      ))}
+                    </Select>
+                  )}
+                </Field>
+                {kind === 'bubble' && (
+                  <Field label="Pattern">
+                    {(p) => (
+                      <Select
+                        {...p}
+                        className="w-auto"
+                        value={pattern}
+                        onChange={(e) => setPattern(e.target.value)}
+                      >
+                        {['none', 'dots', 'stripes', 'grid', 'stars'].map((x) => (
+                          <option key={x} value={x}>
+                            {x}
+                          </option>
+                        ))}
+                      </Select>
+                    )}
+                  </Field>
+                )}
+              </div>
+            )}
+
+            {(kind === 'reaction_skin' || kind === 'mention_style') && (
+              <Toggle id="cf-glow" label="Glow" checked={glow} onChange={setGlow} />
+            )}
+
+            {(kind === 'name_effect' || kind === 'typing' || kind === 'bubble') && (
+              <Field label="Animation">
                 {(p) => (
                   <Select
                     {...p}
                     className="w-auto"
-                    value={size}
-                    onChange={(e) => setSize(e.target.value)}
+                    value={anim}
+                    onChange={(e) => setAnim(e.target.value)}
                   >
-                    <option value="small">Small</option>
-                    <option value="normal">Normal</option>
-                    <option value="big">Big</option>
+                    {(kind === 'name_effect'
+                      ? NAME_ANIMS
+                      : kind === 'typing'
+                        ? TYPING_ANIMS
+                        : (['none', 'shimmer', 'glow', 'gradient'] as const)
+                    ).map((x) => (
+                      <option key={x} value={x}>
+                        {ANIM_LABEL[x] ?? x}
+                      </option>
+                    ))}
                   </Select>
                 )}
               </Field>
-            </div>
-            <div className="flex flex-wrap items-center gap-4">
-              <Toggle id="cf-bold" label="Bold" checked={bold} onChange={setBold} />
-              <Toggle id="cf-italic" label="Italic" checked={italic} onChange={setItalic} />
-            </div>
-            <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
-              <Toggle
-                id="cf-pill"
-                label="Put it in a pill"
-                checked={usePill}
-                onChange={setUsePill}
-              />
-              {usePill && (
-                <div className="flex flex-wrap items-center gap-4">
-                  <Colors value={pillBg} onChange={setPillBg} max={2} />
-                  <Toggle
-                    id="cf-pill-border"
-                    label="Border"
-                    checked={usePillBorder}
-                    onChange={setUsePillBorder}
+            )}
+
+            {kind === 'name_effect' && (
+              <Field label={`Speed (${speed.toFixed(1)}x)`}>
+                {(p) => (
+                  <input
+                    {...p}
+                    type="range"
+                    min={0.5}
+                    max={3}
+                    step={0.1}
+                    value={speed}
+                    onChange={(e) => setSpeed(Number(e.target.value))}
+                    className="w-48"
                   />
-                  {usePillBorder && (
-                    <Color label="Pill border colour" value={pillBorder} onChange={setPillBorder} />
+                )}
+              </Field>
+            )}
+
+            {kind === 'message_effect' && (
+              <Field label="Motion">
+                {(p) => (
+                  <Select
+                    {...p}
+                    className="w-auto"
+                    value={motion}
+                    onChange={(e) => setMotion(e.target.value)}
+                  >
+                    {MESSAGE_MOTIONS.map((x) => (
+                      <option key={x} value={x}>
+                        {ANIM_LABEL[x] ?? x}
+                      </option>
+                    ))}
+                  </Select>
+                )}
+              </Field>
+            )}
+
+            {(kind === 'typing' ||
+              (kind === 'message_effect' && ['burst', 'rain', 'float'].includes(motion))) && (
+              <Field
+                label={
+                  kind === 'typing'
+                    ? 'Emoji or symbols (1 to 3, with spaces between)'
+                    : 'Emoji (up to 4, with spaces between)'
+                }
+              >
+                {(p) => (
+                  <Input
+                    {...p}
+                    value={emoji}
+                    maxLength={40}
+                    onChange={(e) => setEmoji(e.target.value)}
+                    className="w-56"
+                  />
+                )}
+              </Field>
+            )}
+
+            {(kind === 'typing' || (kind === 'message_effect' && motion === 'glow')) && (
+              <div className="flex items-center gap-3">
+                {kind === 'typing' && (
+                  <Toggle
+                    id="cf-accent"
+                    label="Colour the symbols"
+                    checked={useAccent}
+                    onChange={setUseAccent}
+                  />
+                )}
+                {(kind !== 'typing' || useAccent) && (
+                  <Color label="Colour" value={accent} onChange={setAccent} />
+                )}
+              </div>
+            )}
+
+            {kind === 'typing' && (
+              <>
+                <Field label="What it says after your name (leave empty for “is typing”)">
+                  {(p) => (
+                    <Input
+                      {...p}
+                      value={phrase}
+                      maxLength={24}
+                      placeholder="is cooking"
+                      onChange={(e) => setPhrase(e.target.value)}
+                      className="w-56"
+                    />
+                  )}
+                </Field>
+                <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
+                  <Toggle
+                    id="cf-words"
+                    label="Colour the words (pick 2 or 3 for a gradient)"
+                    checked={useWords}
+                    onChange={setUseWords}
+                  />
+                  {useWords && (
+                    <div className="flex flex-wrap items-end gap-4">
+                      <Colors value={wordColors} onChange={setWordColors} max={3} />
+                      <Field label="Words animation">
+                        {(p) => (
+                          <Select
+                            {...p}
+                            className="w-auto"
+                            value={wordAnim}
+                            onChange={(e) => setWordAnim(e.target.value)}
+                          >
+                            {NAME_ANIMS.map((x) => (
+                              <option key={x} value={x}>
+                                {ANIM_LABEL[x] ?? x}
+                              </option>
+                            ))}
+                          </Select>
+                        )}
+                      </Field>
+                    </div>
                   )}
                 </div>
-              )}
-            </div>
+                <div className="flex flex-wrap items-end gap-4">
+                  <Field label="Font">
+                    {(p) => (
+                      <Select
+                        {...p}
+                        className="w-auto"
+                        value={font}
+                        onChange={(e) => setFont(e.target.value)}
+                      >
+                        {PROFILE_FONTS.map((f) => (
+                          <option key={f.id} value={f.id}>
+                            {f.name}
+                          </option>
+                        ))}
+                      </Select>
+                    )}
+                  </Field>
+                  <Field label="Size">
+                    {(p) => (
+                      <Select
+                        {...p}
+                        className="w-auto"
+                        value={size}
+                        onChange={(e) => setSize(e.target.value)}
+                      >
+                        <option value="small">Small</option>
+                        <option value="normal">Normal</option>
+                        <option value="big">Big</option>
+                      </Select>
+                    )}
+                  </Field>
+                </div>
+                <div className="flex flex-wrap items-center gap-4">
+                  <Toggle id="cf-bold" label="Bold" checked={bold} onChange={setBold} />
+                  <Toggle id="cf-italic" label="Italic" checked={italic} onChange={setItalic} />
+                </div>
+                <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
+                  <Toggle
+                    id="cf-pill"
+                    label="Put it in a pill"
+                    checked={usePill}
+                    onChange={setUsePill}
+                  />
+                  {usePill && (
+                    <div className="flex flex-wrap items-center gap-4">
+                      <Colors value={pillBg} onChange={setPillBg} max={2} />
+                      <Toggle
+                        id="cf-pill-border"
+                        label="Border"
+                        checked={usePillBorder}
+                        onChange={setUsePillBorder}
+                      />
+                      {usePillBorder && (
+                        <Color
+                          label="Pill border colour"
+                          value={pillBorder}
+                          onChange={setPillBorder}
+                        />
+                      )}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
+            {kind === 'sound_pack' &&
+              (
+                [
+                  ['Ping sound (required)', notify, setNotify],
+                  ['Send sound (optional)', send, setSend],
+                ] as const
+              ).map(([label, f, set]) => (
+                <div key={label}>
+                  <p className="mb-1 text-[13px] font-medium">{label}</p>
+                  <div className="flex items-center gap-2">
+                    <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-[13px] hover:bg-bg-muted">
+                      <Upload className="size-3.5" /> {f ? f.name : 'Choose sound'}
+                      <input
+                        type="file"
+                        accept="audio/mpeg,audio/wav,audio/ogg,.mp3,.wav,.ogg"
+                        hidden
+                        onChange={(e) => {
+                          set(e.target.files?.[0] ?? null)
+                          e.target.value = ''
+                        }}
+                      />
+                    </label>
+                    {f && (
+                      <Button type="button" size="sm" variant="ghost" onClick={() => playLocal(f)}>
+                        <Play />
+                        Play
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+
+            {availability}
+            {isPublic && (
+              <Field
+                label="Price"
+                hint={`${COSMETIC_PRICE.min}–${COSMETIC_PRICE.max} coins. You get ${Math.round(CREATOR_SHARE * 100)}% of every sale.`}
+              >
+                {(p) => (
+                  <Input
+                    {...p}
+                    type="number"
+                    min={COSMETIC_PRICE.min}
+                    max={COSMETIC_PRICE.max}
+                    value={price}
+                    onChange={(e) => setPrice(Number(e.target.value))}
+                    className="w-32"
+                  />
+                )}
+              </Field>
+            )}
           </>
         )}
 
-        {kind === 'sound_pack' &&
-          (
-            [
-              ['Ping sound (required)', notify, setNotify],
-              ['Send sound (optional)', send, setSend],
-            ] as const
-          ).map(([label, f, set]) => (
-            <div key={label}>
-              <p className="mb-1 text-[13px] font-medium">{label}</p>
-              <div className="flex items-center gap-2">
-                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-[13px] hover:bg-bg-muted">
-                  <Upload className="size-3.5" /> {f ? f.name : 'Choose sound'}
-                  <input
-                    type="file"
-                    accept="audio/mpeg,audio/wav,audio/ogg,.mp3,.wav,.ogg"
-                    hidden
-                    onChange={(e) => {
-                      set(e.target.files?.[0] ?? null)
-                      e.target.value = ''
-                    }}
-                  />
-                </label>
-                {f && (
-                  <Button type="button" size="sm" variant="ghost" onClick={() => playLocal(f)}>
-                    <Play />
-                    Play
-                  </Button>
-                )}
-              </div>
-            </div>
-          ))}
-
-        {availability}
-        {isPublic && (
-          <Field
-            label="Price"
-            hint={`${COSMETIC_PRICE.min}–${COSMETIC_PRICE.max} coins. You get ${Math.round(CREATOR_SHARE * 100)}% of every sale.`}
-          >
-            {(p) => (
-              <Input
-                {...p}
-                type="number"
-                min={COSMETIC_PRICE.min}
-                max={COSMETIC_PRICE.max}
-                value={price}
-                onChange={(e) => setPrice(Number(e.target.value))}
-                className="w-32"
-              />
-            )}
-          </Field>
-        )}
         <p className="text-xs text-fg-subtle">
           {kind === 'sound_pack'
             ? 'Only use sounds you made or have permission to use. A teacher checks it first.'
