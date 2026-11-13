@@ -421,6 +421,24 @@ export async function createMessage(
   const id = uuidv7()
   const now = new Date()
   const row = await ctx.db.transaction(async (tx) => {
+    const [m] = await tx
+      .insert(messages)
+      .values({
+        id,
+        orgId: scope.orgId,
+        channelId: channel.id,
+        parentId: parent?.id ?? null,
+        authorId: scope.userId,
+        kind: input.kind ?? 'user',
+        bodyJson: body,
+        bodyText: text,
+        clientId: input.clientId ?? null,
+        forwardedFromId: input.forward?.id ?? null,
+        forwardSnapshot: input.forward?.snapshot ?? null,
+        createdAt: now,
+      })
+      .returning()
+
     if (fileIds.length) {
       const attached = await tx
         .update(files)
@@ -439,24 +457,6 @@ export async function createMessage(
       if (attached.length !== fileIds.length)
         throw badRequest('One or more attachments are invalid.')
     }
-
-    const [m] = await tx
-      .insert(messages)
-      .values({
-        id,
-        orgId: scope.orgId,
-        channelId: channel.id,
-        parentId: parent?.id ?? null,
-        authorId: scope.userId,
-        kind: input.kind ?? 'user',
-        bodyJson: body,
-        bodyText: text,
-        clientId: input.clientId ?? null,
-        forwardedFromId: input.forward?.id ?? null,
-        forwardSnapshot: input.forward?.snapshot ?? null,
-        createdAt: now,
-      })
-      .returning()
 
     if (notifyIds.size) {
       await tx
