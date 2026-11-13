@@ -3,6 +3,7 @@ import type { UserSummary } from '@quid/shared'
 import { cn } from '@quid/ui'
 import { displayName } from '@/lib/format'
 import { nameFxFor } from './flair'
+import { LiveLayer } from './live-layer'
 
 const HEX = /^#[0-9a-fA-F]{6}$/
 
@@ -28,9 +29,15 @@ export function StyledName({ user, className }: { user: UserSummary; className?:
     const f = user.nameStyle?.font
     return (
       <span
-        className={cn(f && f !== 'default' && `q-font-${f}`, fx.className, className)}
+        className={cn(
+          f && f !== 'default' && `q-font-${f}`,
+          fx.className,
+          'q-live-host',
+          className,
+        )}
         style={fx.style}
       >
+        <LiveLayer kind="name_effect" value={user.nameEffect} pad={4} />
         {displayName(user)}
       </span>
     )

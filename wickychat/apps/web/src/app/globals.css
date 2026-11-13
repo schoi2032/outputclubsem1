@@ -1471,3 +1471,47 @@
   border: 1px solid var(--typ-border);
   line-height: 16px;
 }
+
+.q-live-host {
+  position: relative;
+  isolation: isolate;
+}
+.q-live {
+  position: absolute;
+  display: block;
+  pointer-events: none;
+  z-index: -1;
+  overflow: hidden;
+  border-radius: inherit;
+}
+.q-live-front {
+  z-index: 3;
+}
+.q-live iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+  background: transparent;
+  pointer-events: none;
+}
+.q-live-app {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+.q-live-app iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+  background: transparent;
+}
+.q-live-preview iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+  background: transparent;
+}

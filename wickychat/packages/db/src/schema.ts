@@ -1020,6 +1020,7 @@ export const cosmetics = pgTable(
     kind: text('kind').notNull().default('decoration'),
     /** Theme CSS, already cleaned by sanitizeThemeCss (themes only). */
     css: text('css'),
+    live: text('live'),
     spec: jsonb('spec'),
     /** Image drawn around the whole avatar (transparent in the middle). */
     frameFileId: uuid('frame_file_id').references(() => files.id, { onDelete: 'set null' }),

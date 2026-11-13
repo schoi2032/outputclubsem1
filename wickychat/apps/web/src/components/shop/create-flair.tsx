@@ -25,6 +25,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useOrgContext } from '@/components/org-context'
 import { CssImageButton, insertAtCursor } from '@/components/shop/css-image'
 import { FlairPreview } from '@/components/shop/flair-preview'
+import { LiveEditor } from '@/components/shop/live-editor'
 import { errorMessage, post, upload } from '@/lib/api'
 import { setLocalFlairCss } from '@/lib/flair-css'
 
@@ -291,6 +292,7 @@ export function CreateFlair({
                 : null
   const [code, setCode] = useState<string | null>(null)
   const [css, setCss] = useState<string | null>(null)
+  const [live, setLive] = useState<string | null>(null)
   const cssBox = useRef<HTMLTextAreaElement>(null)
   const cssCheck =
     css?.trim() && kind !== 'sound_pack' ? scopeFlairCss(kind, PREVIEW_ID, css) : null
@@ -365,6 +367,7 @@ export function CreateFlair({
         price,
         spec: body,
         ...(css?.trim() && { css }),
+        ...(live?.trim() && { live }),
         ...availabilityBody,
       })
       toast.success('Sent to a teacher for review. It shows in the Shop once approved!')
@@ -903,6 +906,8 @@ export function CreateFlair({
             )}
           </div>
         )}
+
+        {kind !== 'sound_pack' && <LiveEditor kind={kind} value={live} onChange={setLive} />}
 
         <p className="text-xs text-fg-subtle">
           {kind === 'sound_pack'

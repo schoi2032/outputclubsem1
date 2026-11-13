@@ -38,6 +38,8 @@ import {
   flairById,
   isEventLive,
   isSpecKind,
+  liveImageIds,
+  MAX_LIVE_CODE,
   MAX_THEME_CSS,
   PLATE_IDS,
   parseSpec,
@@ -619,6 +621,7 @@ export async function coinRoutes(app: App, ctx: AppContext) {
             .enum(['decoration', 'theme', 'effect', 'plate', ...SPEC_KINDS])
             .default('decoration'),
           css: z.string().max(MAX_THEME_CSS).optional(),
+          live: z.string().max(MAX_LIVE_CODE).optional(),
           spec: z.unknown().optional(),
           frameFileId: z.uuid().nullable().default(null),
           stickerFileId: z.uuid().nullable().default(null),
@@ -656,7 +659,11 @@ export async function coinRoutes(app: App, ctx: AppContext) {
         throw badRequest('Keep the name and description school-friendly.')
       if (css && censorText(css).hits)
         throw badRequest('Keep the CSS (and its comments) school-friendly.')
-      const cssImages = css ? cssImageIds(css) : []
+      const live = b.kind !== 'sound_pack' ? b.live?.trim() || null : null
+      if (live && censorText(live).hits) throw badRequest('Keep the code school-friendly.')
+      const cssImages = [
+        ...new Set([...(css ? cssImageIds(css) : []), ...(live ? liveImageIds(live) : [])]),
+      ]
       if (cssImages.length) {
         if (cssImages.length > 20) throw badRequest('Use up to 20 images.')
         const own = await ctx.db
@@ -705,6 +712,7 @@ export async function coinRoutes(app: App, ctx: AppContext) {
           price: b.price,
           kind: b.kind,
           css,
+          live,
           spec,
           frameFileId: isTheme || spec ? null : b.frameFileId,
           stickerFileId: isTheme || isImage || spec ? null : b.stickerFileId,
@@ -743,16 +751,18 @@ export async function coinRoutes(app: App, ctx: AppContext) {
           id: cosmetics.id,
           kind: cosmetics.kind,
           css: cosmetics.css,
+          live: cosmetics.live,
           status: cosmetics.status,
           creatorId: cosmetics.creatorId,
         })
         .from(cosmetics)
         .where(and(eq(cosmetics.orgId, scope.orgId), inArray(cosmetics.id, ids)))
-      const out: Record<string, string> = {}
+      const out: Record<string, { css?: string; live?: string }> = {}
       for (const r of rows) {
-        if (!r.css || !isSpecKind(r.kind) || r.kind === 'sound_pack') continue
         if (r.status !== 'approved' && r.creatorId !== scope.userId && !teacher) continue
-        out[r.id] = r.css
+        const css = r.css && isSpecKind(r.kind) && r.kind !== 'sound_pack' ? r.css : undefined
+        const live = r.live ?? undefined
+        if (css || live) out[r.id] = { ...(css && { css }), ...(live && { live }) }
       }
       return out
     },

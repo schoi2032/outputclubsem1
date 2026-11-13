@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { use, useEffect } from 'react'
 import { ErrorScreen } from '@/components/error-screen'
 import { OrgProvider } from '@/components/org-context'
+import { LiveMount } from '@/components/profile/live-mount'
 import { AppShell } from '@/components/shell/app-shell'
 import { FlairStyles } from '@/lib/flair-css'
 import { useMe } from '@/lib/queries'
@@ -67,6 +68,7 @@ export default function OrgLayout({
       }}
     >
       <FlairStyles />
+      <LiveMount />
       <AppShell>{children}</AppShell>
     </OrgProvider>
   )

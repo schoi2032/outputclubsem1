@@ -358,6 +358,13 @@
       "when": 1794473951908,
       "tag": "0050_artist_follows",
       "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1794564360984,
+      "tag": "0051_cosmetic_live",
+      "breakpoints": true
     }
   ]
 }

@@ -45,6 +45,7 @@ import {
   reactionSkinProps,
   useMessageFx,
 } from '@/components/profile/flair'
+import { LiveLayer } from '@/components/profile/live-layer'
 import { type LocalMessage, useMessageActions } from '@/lib/actions'
 import { errorMessage, post } from '@/lib/api'
 import { useEmojiMap } from '@/lib/expressions'
@@ -109,8 +110,10 @@ function Reactions({ m, onToggle }: { m: Message; onToggle: (emoji: string) => v
                   ? 'border-accent/50 bg-accent-subtle font-medium text-accent-text'
                   : 'border-border bg-bg-subtle text-fg-muted hover:border-border-strong',
                 skin?.className,
+                skin && 'q-live-host',
               )}
             >
+              {skin && <LiveLayer kind="reaction_skin" value={m.author.reactionSkin} pad={2} />}
               {r.emoji.startsWith('sticker:') ? (
                 // Until the server answers, a just-added built-in sticker draws from its key.
                 (r.sticker ?? builtinSticker(r.emoji.slice(8))) ? (
@@ -259,6 +262,7 @@ export const MessageItem = memo(function MessageItem({
       )}
     >
       {fx && <MessageFxLayer spec={fx} seed={m.id.length + m.createdAt.length} />}
+      {fx && <LiveLayer kind="message_effect" value={m.author.messageEffect} front pad={0} />}
       <div className={cn('shrink-0', compact ? 'w-8' : 'w-9')}>
         {grouped ? (
           <Tooltip content={formatFull(m.createdAt)}>
@@ -342,6 +346,7 @@ export const MessageItem = memo(function MessageItem({
             className={cn(
               jumbo ? 'q-jumbo' : 'q-msg-text',
               bubble?.className,
+              bubble?.className && 'q-live-host',
               mention?.className,
               fx && `q-mfx-${fx.motion}`,
             )}
@@ -351,6 +356,7 @@ export const MessageItem = memo(function MessageItem({
               ...(fx?.color && ({ '--mfx-c': fx.color } as React.CSSProperties)),
             }}
           >
+            {bubble?.className && <LiveLayer kind="bubble" value={m.author.chatBubble} />}
             <RichText doc={m.body} />
             {m.editedAt && <span className="text-2xs opacity-60"> (edited)</span>}
           </div>

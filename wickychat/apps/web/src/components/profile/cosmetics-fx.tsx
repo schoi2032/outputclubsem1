@@ -4,6 +4,7 @@
  * ones (`u:<id>|i:<image file id>`).
  */
 import { bubbleById, customImageFile, effectById } from '@quid/shared'
+import { LiveLayer } from './live-layer'
 
 const CONFETTI = ['#ff5c8a', '#ffd23f', '#3bceac', '#5b6ee8', '#ff8c42']
 
@@ -23,6 +24,7 @@ export function ProfileEffect({ value }: { value?: string | null }) {
       <div className="q-fx" aria-hidden="true">
         {/* biome-ignore lint/performance/noImgElement: animated GIF/WebP overlays need a plain img */}
         <img src={fileUrl(img)} alt="" />
+        <LiveLayer kind="effect" value={value} front pad={0} />
       </div>
     )
   const fx = effectById(value)
@@ -69,7 +71,9 @@ export function NamePlate({ value }: { value?: string | null }) {
         aria-hidden="true"
         className="q-plate q-plate-img"
         style={{ backgroundImage: `url("${fileUrl(img)}")` }}
-      />
+      >
+        <LiveLayer kind="plate" value={value} pad={0} className="q-live-front" />
+      </span>
     )
   if (!/^p-[a-z]+$/.test(value)) return null
   return <span aria-hidden="true" className={`q-plate q-plate-${value.slice(2)}`} />

@@ -1,0 +1,1 @@
+ALTER TABLE "cosmetics" ADD COLUMN "live" text;

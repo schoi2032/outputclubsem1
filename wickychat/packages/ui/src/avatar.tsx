@@ -57,6 +57,12 @@ const fileUrl = (id: string) => `/api/files/${id}/content?inline=1`
  * sticker at /decorations/<id>.webp. Student-made ones arrive as `u:<id>|f:<frame file>|
  * s:<sticker file>:<position>` and use their own images.
  */
+let liveDecoration: ((value: string) => React.ReactNode) | null = null
+
+export function setLiveDecoration(fn: ((value: string) => React.ReactNode) | null) {
+  liveDecoration = fn
+}
+
 function DecorationLayer({ value }: { value: string }) {
   if (value.startsWith('u:')) {
     let frame: string | undefined
@@ -90,6 +96,7 @@ function DecorationLayer({ value }: { value: string }) {
             draggable={false}
           />
         )}
+        {liveDecoration?.(value)}
       </span>
     )
   }

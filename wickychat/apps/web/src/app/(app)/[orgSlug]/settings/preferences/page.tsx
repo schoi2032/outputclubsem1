@@ -2,9 +2,11 @@
 import { ACCENT_PRESETS, type Preferences, type PreferencesUpdate } from '@quid/shared'
 import { Avatar, Button, cn, Switch } from '@quid/ui'
 import { Check, RotateCcw } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { EmojiValue } from '@/components/chat/custom-emoji'
 import { EmojiPicker } from '@/components/chat/emoji-picker'
 import { useOrgContext } from '@/components/org-context'
+import { LIVE_KEY, liveOn } from '@/components/profile/live-layer'
 import { SettingsCard, SettingsTitle } from '@/components/settings-ui'
 import { useIsMac } from '@/components/shell/command-palette'
 import { displayName, formatTime } from '@/lib/format'
@@ -80,6 +82,33 @@ function Toggle({ name, label, hint }: { name: keyof Preferences; label: string;
         checked={prefs[name] as boolean}
         onCheckedChange={(v) => setPreferences({ [name]: v } as PreferencesUpdate)}
         label={label}
+      />
+    </div>
+  )
+}
+
+function LiveToggle() {
+  const [on, setOn] = useState(true)
+  useEffect(() => setOn(liveOn()), [])
+  return (
+    <div className="flex items-center justify-between gap-4 py-3 text-[13px] first:pt-0 last:pb-0">
+      <span>
+        Live cosmetics
+        <span className="block text-xs text-fg-subtle">
+          Artist made bubbles, decorations and themes that run their own code. Turn off if things
+          feel slow on this device. You'll still see there normal look.
+        </span>
+      </span>
+      <Switch
+        checked={on}
+        onCheckedChange={(v) => {
+          setOn(v)
+          try {
+            localStorage.setItem(LIVE_KEY, v ? 'on' : 'off')
+          } catch {}
+          location.reload()
+        }}
+        label="Live cosmetics"
       />
     </div>
   )
@@ -358,6 +387,7 @@ export default function PreferencesSettings() {
             label="Large emoji"
             hint="Messages that are only emoji show big."
           />
+          <LiveToggle />
           <Row label="Quick reactions" hint="The three emoji on a message's hover toolbar.">
             <div className="flex gap-2">
               {prefs.quickReactions.map((e, i) => (

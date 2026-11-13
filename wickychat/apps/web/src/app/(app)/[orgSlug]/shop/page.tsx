@@ -98,6 +98,7 @@ import {
   useCommunity,
   useMakers,
 } from '@/components/shop/items'
+import { LiveEditor } from '@/components/shop/live-editor'
 import { QuestsView, questsClaimable, useQuests } from '@/components/shop/quests'
 import { SendCoinsDialog } from '@/components/shop/send-coins'
 import { StickersView } from '@/components/shop/sticker-shop'
@@ -1717,6 +1718,7 @@ function CreateImageItem({ kind }: { kind: 'effect' | 'plate' }) {
   const avail = useAvailability()
   const [file, setFile] = useState<File | null>(null)
   const [saving, setSaving] = useState(false)
+  const [live, setLive] = useState<string | null>(null)
   const url = useMemo(() => (file ? URL.createObjectURL(file) : null), [file])
   useEffect(() => () => void (url && URL.revokeObjectURL(url)), [url])
 
@@ -1731,6 +1733,7 @@ function CreateImageItem({ kind }: { kind: 'effect' | 'plate' }) {
         description,
         price,
         frameFileId: f.id,
+        ...(live?.trim() && { live }),
         ...avail.body,
       })
       toast.success('Sent to a teacher for review. It shows in the Shop once approved!')
@@ -1816,6 +1819,7 @@ function CreateImageItem({ kind }: { kind: 'effect' | 'plate' }) {
             Up to 2 MB.
           </p>
         </div>
+        <LiveEditor kind={kind} value={live} onChange={setLive} />
         <p className="text-xs text-fg-subtle">
           Only use art you made yourself or have permission to use. A teacher checks it first.
         </p>
@@ -2035,6 +2039,7 @@ function CreateTheme() {
   const cssBox = useRef<HTMLTextAreaElement>(null)
   const [previewing, setPreviewing] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [live, setLive] = useState<string | null>(null)
   const clean = useMemo(() => sanitizeThemeCss(css), [css])
   const myThemeKey = JSON.stringify(me.appTheme)
 
@@ -2060,6 +2065,7 @@ function CreateTheme() {
         description,
         price,
         css,
+        ...(live?.trim() && { live }),
         ...avail.body,
       })
       toast.success('Sent to a teacher for review. It shows under Themes once approved!')
@@ -2169,6 +2175,7 @@ function CreateTheme() {
             </p>
           )}
         </div>
+        <LiveEditor kind="theme" value={live} onChange={setLive} />
         <p className="text-xs text-fg-subtle">
           A teacher checks every theme before it goes on sale. Themes that make WickyChat hard to
           use or hide things won't be approved.
@@ -2203,6 +2210,7 @@ function CreateCosmetic() {
   const [sticker, setSticker] = useState<File | null>(null)
   const [position, setPosition] = useState<StickerPosition>('tr')
   const [saving, setSaving] = useState(false)
+  const [live, setLive] = useState<string | null>(null)
 
   const frameUrl = useMemo(() => (frame ? URL.createObjectURL(frame) : null), [frame])
   const stickerUrl = useMemo(() => (sticker ? URL.createObjectURL(sticker) : null), [sticker])
@@ -2260,6 +2268,7 @@ function CreateCosmetic() {
         frameFileId,
         stickerFileId,
         stickerPosition: position,
+        ...(live?.trim() && { live }),
         ...avail.body,
       })
       toast.success('Sent to a teacher for review. It shows in the Shop once approved!')
@@ -2416,6 +2425,7 @@ function CreateCosmetic() {
             )}
           </Field>
         )}
+        <LiveEditor kind="decoration" value={live} onChange={setLive} />
         <p className="text-xs text-fg-subtle">
           Only use art you made yourself or have permission to use. No art copied from Discord,
           games or other apps. A teacher checks every cosmetic before it goes on sale.

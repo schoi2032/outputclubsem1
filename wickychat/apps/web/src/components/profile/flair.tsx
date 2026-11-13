@@ -12,6 +12,7 @@ import {
 import { cn } from '@quid/ui'
 import { type CSSProperties, useEffect, useState } from 'react'
 import { flairCssClass } from '@/lib/flair-css'
+import { LiveLayer } from './live-layer'
 
 type Vars = CSSProperties & Record<`--${string}`, string | number>
 
@@ -170,11 +171,13 @@ export function TypingLine({
         'inline-flex items-center gap-1.5',
         pill && 'q-ty-pill',
         flairCssClass('typing', value),
+        'q-live-host',
         spec?.size === 'small' && 'text-[10px]',
         spec?.size === 'big' && 'text-[13px]',
       )}
       style={pill}
     >
+      <LiveLayer kind="typing" value={value} pad={3} />
       {spec ? (
         <TypingGlyphs spec={spec} />
       ) : (
