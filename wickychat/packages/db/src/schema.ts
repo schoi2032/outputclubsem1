@@ -1848,6 +1848,7 @@ export const artists = pgTable(
     bio: text('bio').notNull().default(''),
     open: boolean('open').notNull().default(true),
     minPrice: integer('min_price').notNull().default(50),
+    featured: uuid('featured').array().notNull().default(sql`'{}'::uuid[]`),
     reviewedBy: uuid('reviewed_by').references(() => users.id, { onDelete: 'set null' }),
     createdAt: createdAt(),
   },
@@ -2018,5 +2019,23 @@ export const officeHourBookings = pgTable(
       .where(sql`${t.status} = 'booked'`),
     index('office_hour_bookings_student_idx').on(t.studentId, t.startsAt),
     index('office_hour_bookings_teacher_idx').on(t.teacherId, t.startsAt),
+  ],
+)
+
+export const artistFollows = pgTable(
+  'artist_follows',
+  {
+    orgId: orgRef(),
+    followerId: uuid('follower_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    artistId: uuid('artist_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.followerId, t.artistId] }),
+    index('artist_follows_artist_idx').on(t.artistId),
   ],
 )

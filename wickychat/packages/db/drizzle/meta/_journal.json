@@ -351,6 +351,13 @@
       "when": 1794473243224,
       "tag": "0049_flair",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1794473951908,
+      "tag": "0050_artist_follows",
+      "breakpoints": true
     }
   ]
 }

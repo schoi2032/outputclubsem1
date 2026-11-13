@@ -270,6 +270,7 @@ export type NotificationKind =
   | 'reminder'
   | 'calendar'
   | 'office_hours'
+  | 'artist_drop'
 
 export interface Notification {
   id: string

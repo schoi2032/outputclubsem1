@@ -3,11 +3,21 @@
  * request custom profile art from them. The request's coins are held until the artist
  * delivers (they get ARTIST.share) or it's declined or cancelled (all coins back).
  */
-import { artists, commissions, cosmetics, userItems, users } from '@quid/db'
+import {
+  artistFollows,
+  artists,
+  commissions,
+  cosmetics,
+  organizations,
+  userItems,
+  users,
+} from '@quid/db'
 import {
   ARTIST,
   type Artist,
+  type ArtistPage,
   type ArtistsPage,
+  builtinMakers,
   type Commission,
   censorText,
   SPEC_KINDS,
@@ -19,8 +29,9 @@ import { authorize, type OrgScope, requireOrg } from '../../core/auth'
 import type { AppContext } from '../../core/context'
 import { badRequest, conflict, forbidden, notFound } from '../../core/errors'
 import { type App, orgIdParams, orgParams } from '../../core/http'
+import { createNotifications } from '../notifications/service'
 import { toUserSummary, userCols } from '../users/serialize'
-import { loadWallet, takeCopy } from './routes'
+import { loadWallet, serializeCosmetic, takeCopy } from './routes'
 import { changeCoins } from './service'
 
 const isTeacher = (s: OrgScope) => s.role === 'owner' || s.role === 'admin'
@@ -29,7 +40,12 @@ async function notify(ctx: AppContext, orgId: string, userId: string, text: stri
   await ctx.bus.publish(topics.user(userId), { type: 'wicky.updated', orgId, text }).catch(() => {})
 }
 
-async function artistRows(ctx: AppContext, orgId: string, where: ReturnType<typeof and>) {
+async function artistRows(
+  ctx: AppContext,
+  orgId: string,
+  where: ReturnType<typeof and>,
+  viewerId: string,
+) {
   const rows = await ctx.db
     .select({ a: artists, user: userCols })
     .from(artists)
@@ -54,6 +70,17 @@ async function artistRows(ctx: AppContext, orgId: string, where: ReturnType<type
     )
     .groupBy(commissions.artistId)
   const by = new Map(counts.map((c) => [c.artistId, c]))
+  const ids = rows.map((r) => r.a.userId)
+  const follows = await ctx.db
+    .select({
+      artistId: artistFollows.artistId,
+      n: sql<number>`count(*)::int`,
+      mine: sql<boolean>`bool_or(${artistFollows.followerId} = ${viewerId})`,
+    })
+    .from(artistFollows)
+    .where(and(eq(artistFollows.orgId, orgId), inArray(artistFollows.artistId, ids)))
+    .groupBy(artistFollows.artistId)
+  const fby = new Map(follows.map((f) => [f.artistId, f]))
   return rows.map(
     (r): Artist => ({
       user: toUserSummary(r.user),
@@ -63,6 +90,8 @@ async function artistRows(ctx: AppContext, orgId: string, where: ReturnType<type
       minPrice: r.a.minPrice,
       delivered: Number(by.get(r.a.userId)?.delivered ?? 0),
       waiting: Number(by.get(r.a.userId)?.waiting ?? 0),
+      followers: Number(fby.get(r.a.userId)?.n ?? 0),
+      following: !!fby.get(r.a.userId)?.mine,
     }),
   )
 }
@@ -111,9 +140,11 @@ async function commissionsFor(ctx: AppContext, orgId: string, userId: string) {
 
 async function page(ctx: AppContext, scope: OrgScope): Promise<ArtistsPage> {
   const [list, mine, pending, comm] = await Promise.all([
-    artistRows(ctx, scope.orgId, eq(artists.status, 'approved')),
-    artistRows(ctx, scope.orgId, eq(artists.userId, scope.userId)),
-    isTeacher(scope) ? artistRows(ctx, scope.orgId, eq(artists.status, 'pending')) : [],
+    artistRows(ctx, scope.orgId, eq(artists.status, 'approved'), scope.userId),
+    artistRows(ctx, scope.orgId, eq(artists.userId, scope.userId), scope.userId),
+    isTeacher(scope)
+      ? artistRows(ctx, scope.orgId, eq(artists.status, 'pending'), scope.userId)
+      : [],
     commissionsFor(ctx, scope.orgId, scope.userId),
   ])
   return {
@@ -125,6 +156,44 @@ async function page(ctx: AppContext, scope: OrgScope): Promise<ArtistsPage> {
 }
 
 const idParams = orgIdParams
+
+export async function notifyArtistFollowers(
+  ctx: AppContext,
+  c: { id: string; orgId: string; creatorId: string; name: string; kind: string },
+) {
+  const a = await ctx.db.query.artists.findFirst({
+    where: and(eq(artists.orgId, c.orgId), eq(artists.userId, c.creatorId)),
+  })
+  if (a?.status !== 'approved') return
+  const fans = await ctx.db
+    .select({ id: artistFollows.followerId })
+    .from(artistFollows)
+    .where(and(eq(artistFollows.orgId, c.orgId), eq(artistFollows.artistId, c.creatorId)))
+  if (!fans.length) return
+  const [maker] = await ctx.db
+    .select({ name: users.name, displayName: users.displayName })
+    .from(users)
+    .where(eq(users.id, c.creatorId))
+  const [org] = await ctx.db
+    .select({ slug: organizations.slug })
+    .from(organizations)
+    .where(eq(organizations.id, c.orgId))
+  await createNotifications(
+    ctx,
+    fans.map((f) => ({
+      orgId: c.orgId,
+      userId: f.id,
+      kind: 'artist_drop' as const,
+      actorId: c.creatorId,
+      channelId: null,
+      messageId: null,
+      threadId: null,
+      title: `${maker?.displayName || maker?.name || 'An artist you follow'} released ${c.name}`,
+      preview: 'New in the Shop. Go take a look!',
+      link: `/${org?.slug}/artists/${c.creatorId}`,
+    })),
+  )
+}
 
 export async function artistRoutes(app: App, ctx: AppContext) {
   app.get('/api/orgs/:orgId/artists', { schema: { params: orgParams } }, async (req) =>
@@ -141,6 +210,7 @@ export async function artistRoutes(app: App, ctx: AppContext) {
           bio: z.string().trim().max(300).default(''),
           open: z.boolean().default(true),
           minPrice: z.number().int().min(ARTIST.offer.min).max(ARTIST.offer.max).default(50),
+          featured: z.array(z.uuid()).max(4).optional(),
         }),
       },
     },
@@ -151,6 +221,20 @@ export async function artistRoutes(app: App, ctx: AppContext) {
         where: and(eq(artists.orgId, scope.orgId), eq(artists.userId, scope.userId)),
       })
       if (cur?.status === 'revoked') throw forbidden('A teacher took away your artist status.')
+      if (req.body.featured?.length) {
+        const ok = await ctx.db
+          .select({ id: cosmetics.id })
+          .from(cosmetics)
+          .where(
+            and(
+              inArray(cosmetics.id, req.body.featured),
+              eq(cosmetics.creatorId, scope.userId),
+              eq(cosmetics.status, 'approved'),
+            ),
+          )
+        if (ok.length !== new Set(req.body.featured).size)
+          throw badRequest('You can only feature your own approved cosmetics.')
+      }
       if (cur)
         await ctx.db
           .update(artists)
@@ -165,6 +249,94 @@ export async function artistRoutes(app: App, ctx: AppContext) {
           .insert(artists)
           .values({ orgId: scope.orgId, userId: scope.userId, ...req.body })
       return page(ctx, scope)
+    },
+  )
+
+  app.get(
+    '/api/orgs/:orgId/artists/:id/page',
+    { schema: { params: idParams } },
+    async (req): Promise<ArtistPage> => {
+      const scope = await requireOrg(ctx, req, req.params.orgId)
+      const [artist] = await artistRows(
+        ctx,
+        scope.orgId,
+        eq(artists.userId, req.params.id),
+        scope.userId,
+      )
+      if (!artist || (artist.status !== 'approved' && artist.user.id !== scope.userId))
+        throw notFound('Artist')
+      const row = await ctx.db.query.artists.findFirst({
+        where: and(eq(artists.orgId, scope.orgId), eq(artists.userId, req.params.id)),
+        columns: { featured: true },
+      })
+      const creator = await ctx.db.query.users.findFirst({
+        where: eq(users.id, req.params.id),
+        columns: { id: true, name: true, displayName: true, email: true },
+      })
+      const works = await ctx.db
+        .select()
+        .from(cosmetics)
+        .where(
+          and(
+            eq(cosmetics.orgId, scope.orgId),
+            eq(cosmetics.creatorId, req.params.id),
+            eq(cosmetics.status, 'approved'),
+            eq(cosmetics.visibility, 'public'),
+          ),
+        )
+        .orderBy(desc(cosmetics.sales), desc(cosmetics.id))
+        .limit(200)
+      const email = creator?.email.toLowerCase()
+      const official = Object.entries(builtinMakers())
+        .filter(([, e]) => e === email)
+        .map(([id]) => id)
+      const who = creator
+        ? { id: creator.id, name: creator.name, displayName: creator.displayName }
+        : { id: req.params.id, name: 'Artist', displayName: null }
+      return {
+        artist,
+        works: works.map((c) => serializeCosmetic(c, who)),
+        featured: (row?.featured ?? []).filter((id) => works.some((w) => w.id === id)),
+        official,
+        sales: works.reduce((n, w) => n + w.sales, 0),
+      }
+    },
+  )
+
+  app.post(
+    '/api/orgs/:orgId/artists/:id/follow',
+    {
+      schema: { params: idParams, body: z.object({ follow: z.boolean() }) },
+      config: { rateLimit: { max: 30, timeWindow: '1 minute' } },
+    },
+    async (req) => {
+      const scope = await requireOrg(ctx, req, req.params.orgId)
+      if (req.params.id === scope.userId) throw badRequest("You can't follow yourself.")
+      const a = await ctx.db.query.artists.findFirst({
+        where: and(eq(artists.orgId, scope.orgId), eq(artists.userId, req.params.id)),
+      })
+      if (a?.status !== 'approved') throw notFound('Artist')
+      if (req.body.follow)
+        await ctx.db
+          .insert(artistFollows)
+          .values({ orgId: scope.orgId, followerId: scope.userId, artistId: req.params.id })
+          .onConflictDoNothing()
+      else
+        await ctx.db
+          .delete(artistFollows)
+          .where(
+            and(
+              eq(artistFollows.followerId, scope.userId),
+              eq(artistFollows.artistId, req.params.id),
+            ),
+          )
+      const [artist] = await artistRows(
+        ctx,
+        scope.orgId,
+        eq(artists.userId, req.params.id),
+        scope.userId,
+      )
+      return artist
     },
   )
 

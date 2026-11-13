@@ -6,6 +6,7 @@
 import {
   ARTIST,
   type Artist,
+  type ArtistPage,
   type ArtistsPage,
   type Commission,
   type CommissionKind,
@@ -27,6 +28,7 @@ import {
 } from '@quid/ui'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Palette } from 'lucide-react'
+import Link from 'next/link'
 import { useState } from 'react'
 import { useOrgContext } from '@/components/org-context'
 import { errorMessage, get, post } from '@/lib/api'
@@ -63,7 +65,7 @@ export function useArtists() {
 }
 
 export function ArtistsView({ wallet, preset }: { wallet: Wallet | undefined; preset?: string }) {
-  const { api, org, me } = useOrgContext()
+  const { api, org, me, base } = useOrgContext()
   const qc = useQueryClient()
   const q = useArtists()
   const [asking, setAsking] = useState<Artist | null>(null)
@@ -107,15 +109,25 @@ export function ArtistsView({ wallet, preset }: { wallet: Wallet | undefined; pr
           size="lg"
         />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[14px] font-semibold">{displayName(a.user)}</p>
+          <Link
+            href={`${base}/artists/${a.user.id}`}
+            className="block truncate text-[14px] font-semibold hover:underline"
+          >
+            {displayName(a.user)}
+          </Link>
           <p className="text-2xs font-semibold text-[#c2410c]">🎨 Official Artist</p>
           <p className="text-2xs text-fg-subtle">
-            {a.delivered} delivered · {a.open ? `from 🪙 ${a.minPrice}` : 'not taking requests'}
+            {a.followers} {a.followers === 1 ? 'follower' : 'followers'}
+            {a.following && ' (you too)'} · {a.delivered} delivered ·{' '}
+            {a.open ? `from 🪙 ${a.minPrice}` : 'not taking requests'}
           </p>
         </div>
       </div>
       {a.bio && <p className="text-xs whitespace-pre-wrap text-fg-muted">{a.bio}</p>}
       <div className="mt-auto flex gap-1.5">
+        <Button size="sm" asChild>
+          <Link href={`${base}/artists/${a.user.id}`}>See work</Link>
+        </Button>
         <Button
           size="sm"
           variant="primary"
@@ -224,9 +236,10 @@ export function ArtistsView({ wallet, preset }: { wallet: Wallet | undefined; pr
       <section className="rounded-xl border border-border bg-gradient-to-br from-[#ff7a00]/10 to-[#8052ff]/10 p-4">
         <p className="text-[16px] font-bold">🎨 Official Artists</p>
         <p className="mt-1 text-[13px] text-fg-muted">
-          Want a one-of-a-kind decoration, effect, name plate or theme? Ask an artist. Your offer is
-          held (not paid) until they deliver. They get {Math.round(ARTIST.share * 100)}%; if they
-          decline, or don't deliver within {ARTIST.deliverDays} days, you get it all back.
+          Want a one of a kind chat bubble, typing indicator, decoration, name plate or theme? Ask a
+          artist. Your offer is held (not paid) until they deliver. They get{' '}
+          {Math.round(ARTIST.share * 100)}%; if they decline, or don't deliver within{' '}
+          {ARTIST.deliverDays} days, you get it all back.
         </p>
       </section>
 
@@ -324,12 +337,30 @@ function ArtistProfile({
   busy,
 }: {
   mine: Artist | null
-  onSave: (body: { bio: string; open: boolean; minPrice: number }) => void
+  onSave: (body: { bio: string; open: boolean; minPrice: number; featured?: string[] }) => void
   busy: boolean
 }) {
+  const { api, org, me, base } = useOrgContext()
   const [bio, setBio] = useState(mine?.bio ?? '')
   const [open, setOpen] = useState(mine?.open ?? true)
   const [minPrice, setMinPrice] = useState(mine?.minPrice ?? 50)
+  const [picked, setPicked] = useState<string[] | null>(null)
+  const isArtist = mine?.status === 'approved'
+  const myPage = useQuery({
+    queryKey: ['artist-page', org.id, me.id],
+    queryFn: ({ signal }) => get<ArtistPage>(`${api}/artists/${me.id}/page`, signal),
+    enabled: isArtist,
+  })
+  const works = myPage.data?.works ?? []
+  const featured = picked ?? myPage.data?.featured ?? []
+  const toggle = (id: string) =>
+    setPicked(
+      featured.includes(id)
+        ? featured.filter((x) => x !== id)
+        : featured.length < 4
+          ? [...featured, id]
+          : featured,
+    )
   if (mine?.status === 'revoked') return null
   const status = mine?.status
   return (
@@ -379,16 +410,61 @@ function ArtistProfile({
           className="ml-auto"
           loading={busy}
           disabled={status === 'pending' && bio === (mine?.bio ?? '')}
-          onClick={() => onSave({ bio, open, minPrice })}
+          onClick={() => onSave({ bio, open, minPrice, ...(picked && { featured: picked }) })}
         >
           {status === 'approved' ? 'Save' : status === 'pending' ? 'Update application' : 'Apply'}
         </Button>
       </div>
+      {isArtist && (
+        <div className="mt-4 border-t border-border pt-3">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <p className="text-[13px] font-medium">
+              ⭐ Featured on your page ({featured.length}/4)
+            </p>
+            <Link
+              href={`${base}/artists/${me.id}`}
+              className="ml-auto text-xs font-medium text-accent-text hover:underline"
+            >
+              See your artist page
+            </Link>
+          </div>
+          {!works.length ? (
+            <p className="text-xs text-fg-subtle">
+              Once a teacher approves something you made (and its public), you can feature it here.
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-1.5">
+              {works.map((w) => {
+                const on = featured.includes(w.id)
+                return (
+                  <button
+                    key={w.id}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => toggle(w.id)}
+                    disabled={!on && featured.length >= 4}
+                    className={cn(
+                      'rounded-full border px-2.5 py-1 text-xs disabled:opacity-40',
+                      on
+                        ? 'border-accent bg-accent-subtle font-semibold text-accent-text'
+                        : 'border-border hover:bg-bg-muted',
+                    )}
+                  >
+                    {on ? '⭐ ' : ''}
+                    {w.name}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+          {picked && <p className="mt-2 text-2xs text-fg-subtle">Hit Save to keep it.</p>}
+        </div>
+      )}
     </section>
   )
 }
 
-function RequestDialog({
+export function RequestDialog({
   artist,
   wallet,
   onClose,

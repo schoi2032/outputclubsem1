@@ -61,6 +61,7 @@ import type { AppContext } from '../../core/context'
 import { badRequest, conflict, forbidden, notFound } from '../../core/errors'
 import { type App, orgIdParams, orgParams } from '../../core/http'
 import { avatarUrl } from '../users/serialize'
+import { notifyArtistFollowers } from './artists'
 import { settleAuctions } from './auctions'
 import { listed, lockSupply, orgOf, setSupply } from './invest'
 import { changeCoins, currentStreak, earnedFromMessagesToday, startOfSchoolDay } from './service'
@@ -733,6 +734,10 @@ export async function coinRoutes(app: App, ctx: AppContext) {
             .values({ userId: c.creatorId, itemId: `u:${c.id}` })
             .onConflictDoNothing()
       })
+      if (req.body.approve && c.status !== 'approved' && c.visibility === 'public')
+        await notifyArtistFollowers(ctx, c).catch((err) =>
+          ctx.log.warn({ err }, 'artist follower notify failed'),
+        )
       await audit(ctx.db, {
         orgId: scope.orgId,
         actorId: scope.userId,

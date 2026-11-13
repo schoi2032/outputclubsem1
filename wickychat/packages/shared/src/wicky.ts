@@ -1994,6 +1994,16 @@ export interface Artist {
   minPrice: number
   delivered: number
   waiting: number
+  followers: number
+  following: boolean
+}
+
+export interface ArtistPage {
+  artist: Artist
+  works: Cosmetic[]
+  featured: string[]
+  official: string[]
+  sales: number
 }
 
 export interface Commission {

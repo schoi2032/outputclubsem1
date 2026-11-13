@@ -88,6 +88,7 @@ const PREF_FOR: Record<NotificationKind, keyof NotificationPrefs | null> = {
   reminder: null,
   calendar: null,
   office_hours: null,
+  artist_drop: null,
 }
 
 export async function createNotifications(ctx: AppContext, items: NotificationInput[]) {

@@ -14,6 +14,7 @@ import {
   Megaphone,
   MessageSquareText,
   MessagesSquare,
+  Palette,
   Phone,
   PhoneMissed,
   Video,
@@ -46,6 +47,7 @@ function kindIcon(n: Notification) {
   if (n.kind === 'reminder') return AlarmClock
   if (n.kind === 'calendar') return CalendarDays
   if (n.kind === 'office_hours') return Clock
+  if (n.kind === 'artist_drop') return Palette
   return Bell
 }
 
