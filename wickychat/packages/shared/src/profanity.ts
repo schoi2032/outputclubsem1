@@ -129,13 +129,14 @@ const PHRASES = [
   'eat my ass',
   'suck my',
   'kys',
+  'kms',
   'kill yourself',
+  'kill myself',
 ]
 
 /** Real words that happen to contain a root. */
 const ALLOWED = [
   'scunthorpe',
-  'shiitake',
   'shitake',
   'cocktail',
   'cockpit',
@@ -144,7 +145,6 @@ const ALLOWED = [
   'hancock',
   'hitchcock',
   'dickens',
-  'dickinson',
   'prickly',
   'bassist',
   'class',
@@ -183,12 +183,7 @@ const ALLOWED = [
   'drape',
   'skunk',
   'knobs',
-  'sussex',
-  'essex',
-  'middlesex',
-  'shoe',
   'retardant',
-  'pornography',
 ]
 
 const LEET: Record<string, string> = {
